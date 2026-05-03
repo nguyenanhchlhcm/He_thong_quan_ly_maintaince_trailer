@@ -8,8 +8,10 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Camera } from 'lucide-react'
 import { QuanLyVoXe } from '@/types/database'
+import { SinglePhotoUploader } from '@/features/mechanic/components/SinglePhotoUploader'
+import { uploadBase64Image } from '@/lib/supabase/storage'
 
 interface TireDialogProps {
   open: boolean
@@ -22,6 +24,8 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
   const [idVo, setIdVo] = useState('')
   const [tinhTrangGai, setTinhTrangGai] = useState('')
   const [trangThai, setTrangThai] = useState('Đang chạy')
+  const [serialPhoto, setSerialPhoto] = useState<string | null>(null)
+  const [treadPhoto, setTreadPhoto] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -29,10 +33,14 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
       setIdVo(initialData.id_vo)
       setTinhTrangGai(initialData.tinh_trang_gai?.toString() || '')
       setTrangThai(initialData.trang_thai_vo || 'Đang chạy')
+      setSerialPhoto(initialData.serial_photo_url || null)
+      setTreadPhoto(initialData.tread_condition_photo_url || null)
     } else {
       setIdVo('')
       setTinhTrangGai('')
       setTrangThai('Đang chạy')
+      setSerialPhoto(null)
+      setTreadPhoto(null)
     }
   }, [initialData, open])
 
@@ -43,10 +51,33 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
     setIsSubmitting(true)
 
     try {
+      // 1. Validate Scrap Evidence
+      const needsEvidence = trangThai === 'Thanh lý' || trangThai === 'Chờ đắp'
+      if (needsEvidence) {
+        if (!serialPhoto || !treadPhoto) {
+          throw new Error('Vui lòng cung cấp đủ hình ảnh Serial và tình trạng gai lốp để làm bằng chứng.')
+        }
+      }
+
+      // 2. Upload Images if they are base64 (newly captured)
+      let finalSerialUrl = serialPhoto
+      let finalTreadUrl = treadPhoto
+
+      if (serialPhoto?.startsWith('data:image')) {
+        const path = `tires/${idVo}_serial_${Date.now()}.webp`
+        finalSerialUrl = await uploadBase64Image('t2m-evidence', path, serialPhoto)
+      }
+      if (treadPhoto?.startsWith('data:image')) {
+        const path = `tires/${idVo}_tread_${Date.now()}.webp`
+        finalTreadUrl = await uploadBase64Image('t2m-evidence', path, treadPhoto)
+      }
+
       const payload = { 
         id_vo: idVo, 
         tinh_trang_gai: tinhTrangGai ? parseFloat(tinhTrangGai) : 0,
-        trang_thai_vo: trangThai
+        trang_thai_vo: trangThai,
+        serial_photo_url: finalSerialUrl,
+        tread_condition_photo_url: finalTreadUrl
       }
 
       if (initialData) {
@@ -122,6 +153,36 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
                 </SelectContent>
               </Select>
             </div>
+            
+            {(trangThai === 'Thanh lý' || trangThai === 'Chờ đắp') && (
+              <div className="grid gap-4 mt-2 pt-4 border-t border-slate-800">
+                <div className="text-sm font-semibold text-amber-500">
+                  Bằng chứng bắt buộc (Anti-Fraud)
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <SinglePhotoUploader 
+                    title="Serial Number" 
+                    description="Chụp rõ số Serial" 
+                    required={true}
+                    onPhotoChange={setSerialPhoto}
+                    icon={<Camera className="w-5 h-5" />}
+                  />
+                  <SinglePhotoUploader 
+                    title="Tình trạng Gai/Rách" 
+                    description="Chụp rõ mặt lốp" 
+                    required={true}
+                    onPhotoChange={setTreadPhoto}
+                    icon={<Camera className="w-5 h-5" />}
+                  />
+                </div>
+                {initialData?.serial_photo_url && !serialPhoto?.startsWith('data:') && (
+                  <p className="text-xs text-green-500">Đã có ảnh Serial trong hệ thống.</p>
+                )}
+                {initialData?.tread_condition_photo_url && !treadPhoto?.startsWith('data:') && (
+                  <p className="text-xs text-green-500">Đã có ảnh Gai lốp trong hệ thống.</p>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button 

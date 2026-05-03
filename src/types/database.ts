@@ -61,6 +61,7 @@ export interface PhieuBaoTri {
   tong_chi_phi: number;
   odometer_photo_url?: string | null;
   receipt_photo_url?: string | null;
+  checkin_photos_url?: string[] | null;
   last_updated: string;
   created_at: string;
 }

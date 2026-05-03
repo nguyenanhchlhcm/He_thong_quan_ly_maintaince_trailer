@@ -34,6 +34,7 @@ type TicketFormValues = {
   tien_cong: number
   odometer_photo_base64: string | null
   receipt_photo_base64: string | null
+  checkin_photos_base64: (string | null)[]
   parts: {
     id_sku: string
     so_luong: number
@@ -59,6 +60,7 @@ export function TicketForm() {
       tien_cong: 0,
       odometer_photo_base64: null,
       receipt_photo_base64: null,
+      checkin_photos_base64: [null, null, null, null],
       parts: [],
     }
   })
@@ -72,6 +74,7 @@ export function TicketForm() {
         tien_cong: draftTicket.tien_cong,
         odometer_photo_base64: draftTicket.odometer_photo_base64 || null,
         receipt_photo_base64: draftTicket.receipt_photo_base64 || null,
+        checkin_photos_base64: draftTicket.checkin_photos_base64 || [null, null, null, null],
         parts: draftTicket.parts,
       })
     }
@@ -224,7 +227,52 @@ export function TicketForm() {
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-4 pt-4 border-t border-slate-700/50">
+            <div>
+              <Label>Ảnh Tình Trạng Xe Lúc Giao Nhận (Tùy chọn)</Label>
+              <p className="text-xs text-slate-500 mb-2">Chụp 4 góc xe để tránh tranh chấp xước xát sau sửa chữa.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <SinglePhotoUploader 
+                title="Góc Trái Trước" 
+                required={false}
+                onPhotoChange={(base64) => {
+                  const current = watch('checkin_photos_base64') || [null, null, null, null]
+                  current[0] = base64
+                  setValue('checkin_photos_base64', current)
+                }}
+              />
+              <SinglePhotoUploader 
+                title="Góc Phải Trước" 
+                required={false}
+                onPhotoChange={(base64) => {
+                  const current = watch('checkin_photos_base64') || [null, null, null, null]
+                  current[1] = base64
+                  setValue('checkin_photos_base64', current)
+                }}
+              />
+              <SinglePhotoUploader 
+                title="Góc Trái Sau" 
+                required={false}
+                onPhotoChange={(base64) => {
+                  const current = watch('checkin_photos_base64') || [null, null, null, null]
+                  current[2] = base64
+                  setValue('checkin_photos_base64', current)
+                }}
+              />
+              <SinglePhotoUploader 
+                title="Góc Phải Sau" 
+                required={false}
+                onPhotoChange={(base64) => {
+                  const current = watch('checkin_photos_base64') || [null, null, null, null]
+                  current[3] = base64
+                  setValue('checkin_photos_base64', current)
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2 pt-4 border-t border-slate-700/50">
             <Label htmlFor="id_gara">Chọn Gara Sửa Chữa</Label>
             <Select onValueChange={(val: any) => setValue('id_gara', val)}>
               <SelectTrigger className="bg-slate-800/50 border-slate-700 h-12">
