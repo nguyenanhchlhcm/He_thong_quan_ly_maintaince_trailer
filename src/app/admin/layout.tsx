@@ -8,11 +8,18 @@ export const metadata: Metadata = {
   title: 'Admin Dashboard | C.H.L',
 }
 
-export default function AdminLayout({
+import { createClient } from '@/lib/supabase/server'
+
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const role = user?.user_metadata?.role || 'mechanic'
+  const isAdmin = role === 'admin'
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-950 text-slate-100 pb-16 md:pb-0">
       {/* Sidebar - Desktop Only */}
@@ -43,10 +50,12 @@ export default function AdminLayout({
             <Disc className="w-5 h-5" />
             Quản lý Lốp xe
           </Link>
-          <Link href="/admin/master-data?tab=users" className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors">
-            <Users className="w-5 h-5" />
-            Nhân viên
-          </Link>
+          {isAdmin && (
+            <Link href="/admin/master-data?tab=users" className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors">
+              <Users className="w-5 h-5" />
+              Nhân viên
+            </Link>
+          )}
         </nav>
         
       </aside>

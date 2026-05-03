@@ -20,12 +20,15 @@ import { Suspense, useState, useEffect } from 'react'
 import { useVehicles, useParts, useGarages, useUsers, useAuditLogs, useDeleteVehicle, useDeletePart, useDeleteGarage, useDeleteUser, MASTER_DATA_KEYS } from '@/hooks/useMasterData'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/store/authStore'
 
 function MasterDataContent() {
   const searchParams = useSearchParams()
   const initialTab = searchParams.get('tab') || 'vehicles'
   const [activeTab, setActiveTab] = useState(initialTab)
   const queryClient = useQueryClient()
+  const { profile } = useAuthStore()
+  const isAdmin = profile?.role === 'admin'
   
   // React Query Hooks
   const { data: vehicles = [], isLoading: isLoadingVehicles } = useVehicles()
@@ -123,10 +126,12 @@ function MasterDataContent() {
             <Warehouse className="w-4 h-4" />
             Gara
           </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Users className="w-4 h-4" />
-            Nhân viên
-          </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Users className="w-4 h-4" />
+              Nhân viên
+            </TabsTrigger>
+          )}
           <TabsTrigger value="logs" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <History className="w-4 h-4" />
             Nhật ký
