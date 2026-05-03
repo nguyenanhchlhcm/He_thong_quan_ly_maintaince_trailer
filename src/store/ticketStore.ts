@@ -20,6 +20,8 @@ export type OfflineTicket = {
   id_xe: string
   id_gara: string
   tien_cong: number
+  odometer_photo_base64?: string | null
+  receipt_photo_base64?: string | null
   parts: {
     id_sku: string
     so_luong: number

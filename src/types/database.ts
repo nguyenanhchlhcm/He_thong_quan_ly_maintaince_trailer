@@ -40,6 +40,8 @@ export interface QuanLyVoXe {
   vi_tri_lap: string | null;
   tinh_trang_gai: number | null;
   trang_thai_vo: 'Đang chạy' | 'Chờ đắp' | 'Thanh lý' | null;
+  serial_photo_url?: string | null;
+  tread_condition_photo_url?: string | null;
   created_at: string;
 }
 
@@ -57,6 +59,8 @@ export interface PhieuBaoTri {
   tong_vat_tu: number;
   tien_cong: number;
   tong_chi_phi: number;
+  odometer_photo_url?: string | null;
+  receipt_photo_url?: string | null;
   last_updated: string;
   created_at: string;
 }

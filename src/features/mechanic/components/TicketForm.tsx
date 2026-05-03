@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Truck, Plus, Trash2, Save, Wrench, AlertCircle, Warehouse, WifiOff, Fingerprint } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { PhotoUploader } from './PhotoUploader'
+import { SinglePhotoUploader } from './SinglePhotoUploader'
 import { GPSLocator } from './GPSLocator'
 import { calculateDistance } from '@/lib/utils/haversine'
 import { useTicketStore } from '@/store/ticketStore'
@@ -31,6 +32,8 @@ type TicketFormValues = {
   id_xe: string
   id_gara: string
   tien_cong: number
+  odometer_photo_base64: string | null
+  receipt_photo_base64: string | null
   parts: {
     id_sku: string
     so_luong: number
@@ -54,6 +57,8 @@ export function TicketForm() {
       id_xe: '',
       id_gara: '',
       tien_cong: 0,
+      odometer_photo_base64: null,
+      receipt_photo_base64: null,
       parts: [],
     }
   })
@@ -65,6 +70,8 @@ export function TicketForm() {
         id_xe: draftTicket.id_xe,
         id_gara: draftTicket.id_gara,
         tien_cong: draftTicket.tien_cong,
+        odometer_photo_base64: draftTicket.odometer_photo_base64 || null,
+        receipt_photo_base64: draftTicket.receipt_photo_base64 || null,
         parts: draftTicket.parts,
       })
     }
@@ -119,8 +126,18 @@ export function TicketForm() {
     }
 
     // Validation Rule 1: Visual Proof
-    if (data.parts.length === 0) {
-      alert('Vui lòng thêm ít nhất 1 vật tư vào phiếu bảo trì.')
+    if (!data.odometer_photo_base64) {
+      alert('Vui lòng chụp ảnh đồng hồ ODO (Bắt buộc) để xác minh số Km.')
+      return
+    }
+
+    if (data.tien_cong > 0 && !data.receipt_photo_base64) {
+      alert('Vui lòng chụp ảnh hóa đơn/chứng từ khi có phát sinh chi phí mua ngoài/tiền công thợ ngoài.')
+      return
+    }
+
+    if (data.parts.length === 0 && data.tien_cong === 0) {
+      alert('Vui lòng thêm ít nhất 1 vật tư hoặc khai báo tiền công vào phiếu bảo trì.')
       return
     }
 
@@ -199,6 +216,15 @@ export function TicketForm() {
           </div>
 
           <div className="space-y-2">
+            <SinglePhotoUploader 
+              title="Ảnh Đồng Hồ ODO" 
+              description="Bắt buộc chụp rõ số Km hiện tại" 
+              required={true}
+              onPhotoChange={(base64) => setValue('odometer_photo_base64', base64)}
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="id_gara">Chọn Gara Sửa Chữa</Label>
             <Select onValueChange={(val: any) => setValue('id_gara', val)}>
               <SelectTrigger className="bg-slate-800/50 border-slate-700 h-12">
@@ -227,15 +253,26 @@ export function TicketForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="tien_cong">Tiền công thợ (VNĐ)</Label>
+            <Label htmlFor="tien_cong">Tiền công thợ ngoài / Mua ngoài (VNĐ)</Label>
             <Input 
               id="tien_cong" 
               type="number"
               placeholder="0" 
               className="bg-slate-800/50 border-slate-700 h-12 text-lg font-mono text-amber-400"
-              {...register('tien_cong')}
+              {...register('tien_cong', { valueAsNumber: true })}
             />
           </div>
+          
+          {watchTienCong > 0 && (
+            <div className="space-y-2 mt-4 pt-4 border-t border-slate-700/50">
+              <SinglePhotoUploader 
+                title="Hóa đơn / Chứng từ mua ngoài" 
+                description="Bắt buộc khi có phát sinh tiền công/vật tư ngoài" 
+                required={true}
+                onPhotoChange={(base64) => setValue('receipt_photo_base64', base64)}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
