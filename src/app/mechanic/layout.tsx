@@ -29,8 +29,13 @@ export default function MechanicLayout({
         </div>
         <LogoutButton 
           variant="ghost" 
+          showText={true} 
+          className="hidden sm:flex text-slate-400 hover:text-red-400 gap-2 font-medium" 
+        />
+        <LogoutButton 
+          variant="ghost" 
           showText={false} 
-          className="text-slate-400 hover:text-red-400" 
+          className="flex sm:hidden text-slate-400 hover:text-red-400" 
         />
       </header>
 

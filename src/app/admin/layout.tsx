@@ -49,11 +49,6 @@ export default function AdminLayout({
           </Link>
         </nav>
         
-        <div className="p-4 border-t border-slate-800">
-          <LogoutButton 
-            className="w-full justify-start gap-3 text-slate-400 hover:text-red-400 hover:bg-red-400/10"
-          />
-        </div>
       </aside>
 
       {/* Mobile Bottom Navigation */}
@@ -92,9 +87,16 @@ export default function AdminLayout({
               <p className="text-xs font-semibold text-slate-200">Administrator</p>
               <p className="text-[10px] text-slate-500 truncate max-w-[150px]">admin@chl-maintenance.com</p>
             </div>
-            <Button variant="outline" size="icon" className="w-9 h-9 rounded-full bg-slate-800/50 border-slate-700 hover:bg-primary/20 hover:border-primary/50 transition-all">
-              <Settings className="w-4 h-4 text-slate-300" />
-            </Button>
+            <LogoutButton 
+              variant="outline"
+              showText={true}
+              className="hidden sm:flex h-9 rounded-lg bg-slate-800/50 border-slate-700 hover:bg-red-500/20 hover:border-red-500/50 transition-all text-slate-400 hover:text-red-400 gap-2 px-3 font-semibold text-xs uppercase"
+            />
+            <LogoutButton 
+              variant="outline"
+              showText={false}
+              className="flex sm:hidden w-9 h-9 rounded-full bg-slate-800/50 border-slate-700 hover:bg-red-500/20 hover:border-red-500/50 transition-all text-slate-400 hover:text-red-400"
+            />
           </div>
         </header>
         
