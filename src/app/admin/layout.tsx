@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { Truck, Users, Warehouse, Package, Settings, LogOut, Disc, FileText, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { LogoutButton } from '@/components/layout/LogoutButton'
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard | C.H.L',
@@ -49,10 +50,9 @@ export default function AdminLayout({
         </nav>
         
         <div className="p-4 border-t border-slate-800">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-red-400 hover:bg-red-400/10">
-            <LogOut className="w-5 h-5" />
-            Đăng xuất
-          </Button>
+          <LogoutButton 
+            className="w-full justify-start gap-3 text-slate-400 hover:text-red-400 hover:bg-red-400/10"
+          />
         </div>
       </aside>
 

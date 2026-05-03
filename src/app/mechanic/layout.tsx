@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { ClipboardList, Home, User, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { LogoutButton } from '@/components/layout/LogoutButton'
 
 export const metadata: Metadata = {
   title: 'Mechanic App | C.H.L',
@@ -26,9 +27,11 @@ export default function MechanicLayout({
           </div>
           <h1 className="font-semibold text-lg tracking-tight">Thợ Máy</h1>
         </div>
-        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-400">
-          <LogOut className="w-5 h-5" />
-        </Button>
+        <LogoutButton 
+          variant="ghost" 
+          showText={false} 
+          className="text-slate-400 hover:text-red-400" 
+        />
       </header>
 
       <NetworkStatus />
