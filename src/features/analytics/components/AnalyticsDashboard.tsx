@@ -94,67 +94,79 @@ export function AnalyticsDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-100">Báo cáo & Phân tích</h2>
-          <p className="text-slate-400">Tổng quan chi phí và hiệu suất bảo trì toàn hệ thống.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-100 bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Báo cáo & Phân tích</h1>
+          <p className="text-sm text-slate-400">Tổng quan chi phí và hiệu suất bảo trì toàn hệ thống.</p>
         </div>
-        <Button onClick={exportToExcel} className="gap-2 bg-green-600 hover:bg-green-700 font-bold">
+        <Button onClick={exportToExcel} className="gap-2 bg-green-600 hover:bg-green-700 font-bold shadow-lg shadow-green-900/20 w-full sm:w-auto">
           <FileDown className="w-4 h-4" />
           Xuất Excel
         </Button>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-primary/50 transition-all">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Tổng chi phí (Đã xong)</CardTitle>
-            <Wallet className="h-4 w-4 text-primary" />
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Tổng chi phí (Đã xong)</CardTitle>
+            <div className="p-2 bg-blue-500/10 rounded-lg">
+              <Wallet className="h-4 w-4 text-blue-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-100">
+            <div className="text-2xl font-bold text-slate-100 font-mono">
               {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.totalAllTime)}
             </div>
-            <p className="text-xs text-green-500 flex items-center mt-1">
+            <p className="text-[10px] text-green-400 flex items-center mt-1 font-medium">
               <TrendingUp className="h-3 w-3 mr-1" />
-              +12% so với tháng trước
+              +12.5% vs tháng trước
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
+        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-amber-500/50 transition-all">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Phiếu đang xử lý</CardTitle>
-            <Ticket className="h-4 w-4 text-amber-500" />
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Phiếu đang xử lý</CardTitle>
+            <div className="p-2 bg-amber-500/10 rounded-lg">
+              <Ticket className="h-4 w-4 text-amber-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-100">{stats.activeTickets}</div>
-            <p className="text-xs text-slate-500 mt-1 italic">Cần kiểm tra và phê duyệt</p>
+            <div className="text-2xl font-bold text-slate-100 font-mono">{stats.activeTickets}</div>
+            <p className="text-[10px] text-slate-500 mt-1 italic">Cần kiểm tra và phê duyệt</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
+        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-indigo-500/50 transition-all">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Tổng số phương tiện</CardTitle>
-            <Truck className="h-4 w-4 text-blue-500" />
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Đội xe quản lý</CardTitle>
+            <div className="p-2 bg-indigo-500/10 rounded-lg">
+              <Truck className="h-4 w-4 text-indigo-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-100">{stats.totalVehicles}</div>
-            <p className="text-xs text-slate-500 mt-1">Đang quản lý trong danh mục</p>
+            <div className="text-2xl font-bold text-slate-100 font-mono">{stats.totalVehicles}</div>
+            <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-tight">Phương tiện vận tải</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
+        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-purple-500/50 transition-all">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Trung bình/Phiếu</CardTitle>
-            <BarChart3 className="h-4 w-4 text-purple-500" />
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Trung bình/Phiếu</CardTitle>
+            <div className="p-2 bg-purple-500/10 rounded-lg">
+              <BarChart3 className="h-4 w-4 text-purple-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-100">
+            <div className="text-2xl font-bold text-slate-100 font-mono">
               {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.averageCostPerTicket)}
             </div>
-            <p className="text-xs text-slate-500 mt-1">Hiệu suất chi phí vận hành</p>
+            <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-tight font-medium">Chi phí/Lượt bảo trì</p>
           </CardContent>
         </Card>
       </div>
