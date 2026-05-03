@@ -65,7 +65,7 @@ export function TicketForm() {
     }
   })
 
-  // Restore draft on mount
+  // Restore draft on mount only
   useEffect(() => {
     if (draftTicket) {
       reset({
@@ -78,16 +78,22 @@ export function TicketForm() {
         parts: draftTicket.parts,
       })
     }
-  }, [draftTicket, reset])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reset]) // Only run once on mount or when reset changes
 
-  // Auto-save draft on changes (Debouncing would be better in prod)
+  // Auto-save draft on changes
   const formValues = watch()
   useEffect(() => {
-    if (formValues.id_xe || formValues.parts?.length) {
-      saveDraft({
-        ...formValues,
-        createdAt: Date.now()
-      } as any)
+    const hasData = formValues.id_xe || formValues.parts?.length || formValues.tien_cong > 0
+    if (hasData) {
+      // Use a timeout or debounce to prevent excessive writes
+      const timeout = setTimeout(() => {
+        saveDraft({
+          ...formValues,
+          createdAt: Date.now()
+        } as any)
+      }, 1000)
+      return () => clearTimeout(timeout)
     }
   }, [formValues, saveDraft])
 
