@@ -1,0 +1,110 @@
+'use client'
+
+import { useState } from 'react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Search, Eye, AlertCircle, Clock, CheckCircle2, Hammer, FileText } from 'lucide-react'
+import { PhieuBaoTri } from '@/types/database'
+
+interface AdminTicketTableProps {
+  data: PhieuBaoTri[]
+  onViewDetails: (ticket: PhieuBaoTri) => void
+}
+
+export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps) {
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const filteredData = data.filter(ticket => 
+    ticket.id_xe?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ticket.id.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'Báo giá': 
+        return <Badge variant="outline" className="bg-slate-500/10 text-slate-400 border-slate-500/20">Báo giá</Badge>
+      case 'Chờ duyệt': 
+        return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 gap-1"><Clock className="w-3 h-3" /> Chờ duyệt</Badge>
+      case 'Đang sửa': 
+        return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 gap-1"><Hammer className="w-3 h-3" /> Đang sửa</Badge>
+      case 'Đã xong': 
+        return <Badge className="bg-green-500/10 text-green-500 border-green-500/20 gap-1"><CheckCircle2 className="w-3 h-3" /> Đã xong</Badge>
+      default: return <Badge>{status}</Badge>
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Input 
+            placeholder="Tìm theo Biển số xe hoặc Mã phiếu..." 
+            className="pl-9 bg-slate-800/50 border-slate-700 text-slate-100"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="border border-slate-800 rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader className="bg-slate-900/80">
+            <TableRow className="border-slate-800 hover:bg-transparent">
+              <TableHead className="text-slate-400">Mã Phiếu</TableHead>
+              <TableHead className="text-slate-400">Biển số Xe</TableHead>
+              <TableHead className="text-slate-400">Trạng thái</TableHead>
+              <TableHead className="text-slate-400 text-right">Tổng chi phí</TableHead>
+              <TableHead className="text-slate-400">GPS</TableHead>
+              <TableHead className="text-slate-400 text-right">Thao tác</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredData.length > 0 ? (
+              filteredData.map((ticket) => (
+                <TableRow key={ticket.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
+                  <TableCell className="font-mono text-xs font-bold text-slate-400">
+                    {ticket.ma_phieu || ticket.id.slice(0, 8)}
+                  </TableCell>
+                  <TableCell className="font-bold text-primary">{ticket.id_xe || 'N/A'}</TableCell>
+                  <TableCell>{getStatusBadge(ticket.trang_thai_phieu)}</TableCell>
+                  <TableCell className="text-right font-mono font-bold text-slate-200">
+                    {ticket.tong_chi_phi.toLocaleString()} đ
+                  </TableCell>
+                  <TableCell>
+                    {ticket.canh_bao_gps ? (
+                      <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20 gap-1 animate-pulse">
+                        <AlertCircle className="w-3 h-3" /> Lệch vị trí
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-green-500/5 text-green-500/50 border-green-500/10">Hợp lệ</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="gap-2 text-slate-400 hover:text-primary hover:bg-primary/10"
+                      onClick={() => onViewDetails(ticket)}
+                    >
+                      <Eye className="w-4 h-4" />
+                      Chi tiết
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="h-32 text-center text-slate-500 italic">
+                  Không tìm thấy phiếu bảo trì nào.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  )
+}
