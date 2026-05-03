@@ -96,11 +96,11 @@ export function TicketForm() {
     name: 'parts'
   })
 
-  const watchParts = watch('parts')
+  const watchParts = watch('parts') || []
   const watchTienCong = watch('tien_cong')
 
   // Calculate total dynamically (for UI only, DB Trigger will enforce real total)
-  const totalPartsCost = watchParts.reduce((acc, curr) => acc + (curr.so_luong || 0) * (curr.don_gia || 0), 0)
+  const totalPartsCost = watchParts.reduce((acc, curr) => acc + (curr?.so_luong || 0) * (curr?.don_gia || 0), 0)
   const totalCost = totalPartsCost + (Number(watchTienCong) || 0)
 
   const onSubmit = async (data: TicketFormValues) => {
@@ -181,7 +181,7 @@ export function TicketForm() {
     if (sku) {
       setValue(`parts.${index}.id_sku`, skuId)
       setValue(`parts.${index}.don_gia`, sku.price)
-      if (!watchParts[index].so_luong) {
+      if (!watchParts[index]?.so_luong) {
         setValue(`parts.${index}.so_luong`, 1)
       }
     }
