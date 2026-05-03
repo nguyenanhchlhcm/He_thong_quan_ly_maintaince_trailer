@@ -14,7 +14,7 @@ export default function MechanicProfilePage() {
   }
 
   return (
-    <div className="p-4 md:p-8 md:ml-64 space-y-6 max-w-2xl mx-auto">
+    <div className="p-4 md:p-8 md:ml-16 space-y-6 max-w-2xl mx-auto">
       <div className="flex flex-col items-center gap-4 py-8">
         <div className="w-24 h-24 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center">
           <User className="w-12 h-12 text-primary" />

@@ -46,7 +46,7 @@ export default function TicketDetailPage() {
   }
 
   return (
-    <main className="p-4 md:p-8 md:ml-64 space-y-6 relative min-h-[calc(100vh-3.5rem)] pb-24 md:pb-8">
+    <main className="p-4 md:p-8 md:ml-16 space-y-6 relative min-h-[calc(100vh-3.5rem)] pb-24 md:pb-8">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button 

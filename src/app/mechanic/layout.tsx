@@ -64,19 +64,19 @@ export default function MechanicLayout({
       </nav>
 
       {/* Sidebar - Desktop/Tablet Fallback */}
-      <aside className="fixed top-14 bottom-0 left-0 w-64 bg-slate-900 border-r border-slate-800 hidden md:block">
-        <nav className="p-4 space-y-2">
-          <Link href="/mechanic" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-colors">
-            <Home className="w-5 h-5" />
-            <span className="font-medium">Trang chủ</span>
+      <aside className="fixed top-14 bottom-0 left-0 w-16 hover:w-64 bg-slate-900 border-r border-slate-800 hidden md:block transition-[width] duration-300 ease-in-out z-40 overflow-hidden group">
+        <nav className="p-2 space-y-2 mt-4">
+          <Link href="/mechanic" className="flex items-center px-3 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-colors whitespace-nowrap">
+            <Home className="w-6 h-6 flex-shrink-0" />
+            <span className="font-medium ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Trang chủ</span>
           </Link>
-          <Link href="/mechanic/tickets" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary transition-colors">
-            <ClipboardList className="w-5 h-5" />
-            <span className="font-medium">Phiếu bảo trì</span>
+          <Link href="/mechanic/tickets" className="flex items-center px-3 py-3 rounded-xl bg-primary/10 text-primary transition-colors whitespace-nowrap">
+            <ClipboardList className="w-6 h-6 flex-shrink-0" />
+            <span className="font-medium ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Phiếu bảo trì</span>
           </Link>
-          <Link href="/mechanic/profile" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-colors">
-            <User className="w-5 h-5" />
-            <span className="font-medium">Cá nhân</span>
+          <Link href="/mechanic/profile" className="flex items-center px-3 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-colors whitespace-nowrap">
+            <User className="w-6 h-6 flex-shrink-0" />
+            <span className="font-medium ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Cá nhân</span>
           </Link>
         </nav>
       </aside>

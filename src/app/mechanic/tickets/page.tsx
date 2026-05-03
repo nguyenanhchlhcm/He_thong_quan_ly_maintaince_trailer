@@ -47,7 +47,7 @@ export default function MechanicTicketsPage() {
   }
 
   return (
-    <main className="p-4 md:p-8 md:ml-64 space-y-6 relative min-h-[calc(100vh-3.5rem)] pb-24 md:pb-8">
+    <main className="p-4 md:p-8 md:ml-16 space-y-6 relative min-h-[calc(100vh-3.5rem)] pb-24 md:pb-8">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-100">Phiếu bảo trì của tôi</h1>

@@ -23,41 +23,40 @@ export default async function AdminLayout({
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-950 text-slate-100 pb-16 md:pb-0">
       {/* Sidebar - Desktop Only */}
-      <aside className="w-64 border-r border-slate-800 bg-slate-900/50 backdrop-blur-xl hidden md:flex flex-col sticky top-0 h-screen">
-        <div className="p-6">
-          <Link href="/admin" className="flex items-center gap-2 font-bold text-2xl tracking-tighter">
-            <div className="bg-primary p-1.5 rounded-lg">
+      <aside className="w-16 hover:w-64 border-r border-slate-800 bg-slate-900/50 backdrop-blur-xl hidden md:flex flex-col sticky top-0 h-screen transition-[width] duration-300 ease-in-out overflow-hidden group z-40">
+        <div className="p-4 flex items-center justify-center group-hover:justify-start transition-all duration-300">
+          <Link href="/admin" className="flex items-center gap-2 font-bold text-2xl tracking-tighter whitespace-nowrap">
+            <div className="bg-primary p-1.5 rounded-lg flex-shrink-0">
               <Truck className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span>C.H.L</span>
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">C.H.L</span>
           </Link>
         </div>
         
-        <nav className="flex-1 px-4 space-y-1">
-          <Link href="/admin" className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors">
-            <LayoutDashboard className="w-5 h-5" />
-            Bảng điều khiển
+        <nav className="flex-1 px-2 space-y-1 mt-4">
+          <Link href="/admin" className="flex items-center px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors whitespace-nowrap">
+            <LayoutDashboard className="w-5 h-5 flex-shrink-0" />
+            <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Bảng điều khiển</span>
           </Link>
-          <Link href="/admin/master-data" className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors">
-            <Settings className="w-5 h-5" />
-            Quản lý Danh mục
+          <Link href="/admin/master-data" className="flex items-center px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors whitespace-nowrap">
+            <Settings className="w-5 h-5 flex-shrink-0" />
+            <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Quản lý Danh mục</span>
           </Link>
-          <Link href="/admin/tickets" className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors">
-            <FileText className="w-5 h-5" />
-            Phiếu Bảo Trì
+          <Link href="/admin/tickets" className="flex items-center px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors whitespace-nowrap">
+            <FileText className="w-5 h-5 flex-shrink-0" />
+            <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Phiếu Bảo Trì</span>
           </Link>
-          <Link href="/admin/tires" className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors">
-            <Disc className="w-5 h-5" />
-            Quản lý Lốp xe
+          <Link href="/admin/tires" className="flex items-center px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors whitespace-nowrap">
+            <Disc className="w-5 h-5 flex-shrink-0" />
+            <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Quản lý Lốp xe</span>
           </Link>
           {isAdmin && (
-            <Link href="/admin/master-data?tab=users" className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors">
-              <Users className="w-5 h-5" />
-              Nhân viên
+            <Link href="/admin/master-data?tab=users" className="flex items-center px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors whitespace-nowrap">
+              <Users className="w-5 h-5 flex-shrink-0" />
+              <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Nhân viên</span>
             </Link>
           )}
         </nav>
-        
       </aside>
 
       {/* Mobile Bottom Navigation */}
