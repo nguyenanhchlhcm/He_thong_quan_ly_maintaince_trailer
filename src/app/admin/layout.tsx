@@ -17,8 +17,8 @@ export default async function AdminLayout({
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const role = user?.user_metadata?.role || 'MECHANIC'
-  const isAdmin = role === 'ADMIN'
+  const role = (user?.user_metadata?.role as string) || 'MECHANIC'
+  const isAdmin = role.toUpperCase() === 'ADMIN'
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-950 text-slate-100 pb-16 md:pb-0">

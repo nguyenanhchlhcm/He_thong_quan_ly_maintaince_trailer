@@ -44,15 +44,16 @@ export async function updateSession(request: NextRequest) {
 
   // RBAC Enforcement (Rule 4 & 5)
   if (user) {
-    const role = user.user_metadata?.role || 'MECHANIC'
+    const role = (user.user_metadata?.role as string) || 'MECHANIC'
+    const upperRole = role.toUpperCase()
 
-    if (path.startsWith('/admin') && role !== 'ADMIN') {
+    if (path.startsWith('/admin') && upperRole !== 'ADMIN') {
       const url = request.nextUrl.clone()
       url.pathname = '/mechanic'
       return NextResponse.redirect(url)
     }
 
-    if (path.startsWith('/manager') && role !== 'ADMIN' && role !== 'MANAGER') {
+    if (path.startsWith('/manager') && upperRole !== 'ADMIN' && upperRole !== 'MANAGER') {
       const url = request.nextUrl.clone()
       url.pathname = '/mechanic'
       return NextResponse.redirect(url)

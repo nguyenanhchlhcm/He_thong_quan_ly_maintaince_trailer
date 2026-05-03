@@ -10,9 +10,9 @@ export default async function RootPage() {
   }
   
   // Phân quyền điều hướng dựa trên role trong metadata
-  const role = user.user_metadata?.role || 'MECHANIC'
+  const role = (user.user_metadata?.role as string) || 'MECHANIC'
   
-  if (role === 'ADMIN') {
+  if (role.toUpperCase() === 'ADMIN') {
     redirect('/admin')
   }
   
