@@ -22,19 +22,19 @@ export function UserRoleDialog({ open, onOpenChange, onSuccess, user }: UserRole
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState<'admin' | 'mechanic'>('mechanic')
+  const [role, setRole] = useState<'ADMIN' | 'MECHANIC'>('MECHANIC')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (user) {
       setEmail(user.email || '')
       setFullName(user.full_name || '')
-      setRole((user.role?.toLowerCase() as 'admin' | 'mechanic') || 'mechanic')
+      setRole((user.role?.toUpperCase() as 'ADMIN' | 'MECHANIC') || 'MECHANIC')
       setPassword('') // Don't show existing password
     } else {
       setEmail('')
       setFullName('')
-      setRole('mechanic')
+      setRole('MECHANIC')
       setPassword('')
     }
   }, [user, open])
@@ -141,8 +141,8 @@ export function UserRoleDialog({ open, onOpenChange, onSuccess, user }: UserRole
                   <SelectValue placeholder="Chọn vai trò" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                  <SelectItem value="admin">Quản trị viên (Admin)</SelectItem>
-                  <SelectItem value="mechanic">Thợ máy (Mechanic)</SelectItem>
+                  <SelectItem value="ADMIN">Quản trị viên (Admin)</SelectItem>
+                  <SelectItem value="MECHANIC">Thợ máy (Mechanic)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

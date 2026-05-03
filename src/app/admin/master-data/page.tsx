@@ -28,7 +28,7 @@ function MasterDataContent() {
   const [activeTab, setActiveTab] = useState(initialTab)
   const queryClient = useQueryClient()
   const { profile } = useAuthStore()
-  const isAdmin = profile?.role === 'admin'
+  const isAdmin = profile?.role === 'ADMIN'
   
   // React Query Hooks
   const { data: vehicles = [], isLoading: isLoadingVehicles } = useVehicles()
