@@ -4,8 +4,9 @@ import { AnalyticsDashboard } from '@/features/analytics/components/AnalyticsDas
 
 export default function AdminPage() {
   return (
-    <div className="p-6">
+    <main className="p-6">
+      <h1 className="sr-only">Bảng điều khiển quản trị - Admin Dashboard</h1>
       <AnalyticsDashboard />
-    </div>
+    </main>
   )
 }

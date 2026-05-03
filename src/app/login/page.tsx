@@ -52,13 +52,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+      <section className="w-full max-w-md">
+        <header className="flex justify-center mb-8">
           <div className="bg-primary p-3 rounded-2xl shadow-lg shadow-primary/20">
             <Truck className="w-10 h-10 text-primary-foreground" />
           </div>
-        </div>
+        </header>
         
         <Card className="border-slate-700 bg-slate-900/50 backdrop-blur-xl text-slate-100 shadow-2xl">
           <CardHeader className="space-y-1 text-center">
@@ -70,12 +70,12 @@ export default function LoginPage() {
           <form onSubmit={handleLogin}>
             <CardContent className="grid gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email tài khoản</Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="name@company.com"
-                  className="bg-slate-800/50 border-slate-700 focus:ring-primary"
+                  className="bg-slate-800/50 border-slate-700 focus:ring-primary h-11"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -83,12 +83,12 @@ export default function LoginPage() {
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Mật khẩu</Label>
+                  <Label htmlFor="password">Mật khẩu bảo mật</Label>
                 </div>
                 <Input
                   id="password"
                   type="password"
-                  className="bg-slate-800/50 border-slate-700 focus:ring-primary"
+                  className="bg-slate-800/50 border-slate-700 focus:ring-primary h-11"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -98,19 +98,19 @@ export default function LoginPage() {
             <CardFooter>
               <Button 
                 type="submit" 
-                className="w-full h-11 text-lg font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]" 
+                className="w-full h-11 text-lg font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] bg-primary text-primary-foreground" 
                 disabled={isLoading}
               >
-                {isLoading ? 'Đang xác thực...' : 'Đăng nhập'}
+                {isLoading ? 'Đang xác thực...' : 'Đăng nhập hệ thống'}
               </Button>
             </CardFooter>
           </form>
         </Card>
         
-        <p className="mt-8 text-center text-sm text-slate-500">
-          © 2026 C.H.L Maintenance. All rights reserved.
-        </p>
-      </div>
-    </div>
+        <footer className="mt-8 text-center text-sm text-slate-500">
+          <p>© 2026 C.H.L Maintenance. Giải pháp số hóa quản lý vận tải.</p>
+        </footer>
+      </section>
+    </main>
   )
 }

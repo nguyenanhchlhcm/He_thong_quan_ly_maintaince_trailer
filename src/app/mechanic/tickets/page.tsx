@@ -47,13 +47,13 @@ export default function MechanicTicketsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 md:ml-64 space-y-6 relative min-h-[calc(100vh-3.5rem)] pb-24 md:pb-8">
-      <div className="flex items-center justify-between">
+    <main className="p-4 md:p-8 md:ml-64 space-y-6 relative min-h-[calc(100vh-3.5rem)] pb-24 md:pb-8">
+      <header className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Phiếu của tôi</h2>
-          <p className="text-sm text-slate-400">Danh sách các xe đang đảm nhận</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-100">Phiếu bảo trì của tôi</h1>
+          <p className="text-sm text-slate-400">Danh sách các xe đang đảm nhận và sửa chữa</p>
         </div>
-      </div>
+      </header>
 
       {/* Ticket List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -110,6 +110,6 @@ export default function MechanicTicketsPage() {
           </Button>
         </Link>
       </div>
-    </div>
+    </main>
   )
 }

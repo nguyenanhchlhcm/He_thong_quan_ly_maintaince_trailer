@@ -1,7 +1,7 @@
 'use client'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Truck, Users, Warehouse, Package, Loader2, History } from 'lucide-react'
+import { Truck, Users, Warehouse, Package, Loader2, History, RefreshCcw } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,30 +14,27 @@ import { PartDialog } from '@/features/master-data/components/PartDialog'
 import { GarageDialog } from '@/features/master-data/components/GarageDialog'
 import { UserRoleDialog } from '@/features/master-data/components/UserRoleDialog'
 import { Xe, VatTuSKU, Gara, Profile } from '@/types/database'
-import { useSearchParams } from 'next/navigation'
-import { Suspense, useState, useEffect, useCallback } from 'react'
-import { supabase } from '@/lib/supabase/client'
-import { toast } from 'sonner'
-
-interface AuditLog {
-  id: string
-  user_email: string
-  action: string
-  target: string
-  description: string
-  created_at: string
-}
+import { useVehicles, useParts, useGarages, useUsers, useAuditLogs, useDeleteVehicle, useDeletePart, useDeleteGarage, useDeleteUser, MASTER_DATA_KEYS } from '@/hooks/useMasterData'
+import { useQueryClient } from '@tanstack/react-query'
 
 function MasterDataContent() {
   const searchParams = useSearchParams()
   const initialTab = searchParams.get('tab') || 'vehicles'
   const [activeTab, setActiveTab] = useState(initialTab)
+  const queryClient = useQueryClient()
   
-  const [vehicles, setVehicles] = useState<Xe[]>([])
-  const [parts, setParts] = useState<VatTuSKU[]>([])
-  const [garages, setGarages] = useState<Gara[]>([])
-  const [users, setUsers] = useState<Profile[]>([])
-  const [logs, setLogs] = useState<AuditLog[]>([])
+  // React Query Hooks
+  const { data: vehicles = [], isLoading: isLoadingVehicles } = useVehicles()
+  const { data: parts = [], isLoading: isLoadingParts } = useParts()
+  const { data: garages = [], isLoading: isLoadingGarages } = useGarages()
+  const { data: users = [], isLoading: isLoadingUsers } = useUsers()
+  const { data: logs = [], isLoading: isLoadingLogs } = useAuditLogs()
+
+  // Mutation Hooks
+  const deleteVehicle = useDeleteVehicle()
+  const deletePart = useDeletePart()
+  const deleteGarage = useDeleteGarage()
+  const deleteUser = useDeleteUser()
   
   const [selectedVehicle, setSelectedVehicle] = useState<Xe | null>(null)
   const [selectedPart, setSelectedPart] = useState<VatTuSKU | null>(null)
@@ -49,115 +46,63 @@ function MasterDataContent() {
   const [isGarageDialogOpen, setIsGarageDialogOpen] = useState(false)
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false)
 
-  const [isLoading, setIsLoading] = useState(true)
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const [vRes, pRes, gRes, uRes, lRes] = await Promise.all([
-        supabase.from('vehicles').select('*').order('created_at', { ascending: false }),
-        supabase.from('skus').select('*').order('created_at', { ascending: false }),
-        supabase.from('garages').select('*').order('created_at', { ascending: false }),
-        supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-        supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50),
-      ])
-
-      // Xử lý từng phần
-      if (vRes.error) toast.error('Không thể tải danh sách xe') 
-      else setVehicles(vRes.data || [])
-
-      if (pRes.error) toast.error('Không thể tải danh sách vật tư')
-      else setParts(pRes.data || [])
-
-      if (gRes.error) toast.error('Không thể tải danh sách Gara')
-      else setGarages(gRes.data || [])
-
-      if (uRes.error) console.warn('Profiles fetch skipped:', uRes.error.message)
-      else setUsers(uRes.data || [])
-
-      if (lRes.error) console.warn('Logs fetch failed:', lRes.error.message)
-      else setLogs(lRes.data || [])
-      
-    } catch (error: any) {
-      console.error('Critical Fetch Error:', error)
-      toast.error('Lỗi kết nối nghiêm trọng: ' + error.message)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
   useEffect(() => {
     const tab = searchParams.get('tab')
     if (tab) setActiveTab(tab)
   }, [searchParams])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-
-  const handleDeleteVehicle = async (id: string) => {
+  const handleDeleteVehicle = (id: string) => {
     if (!confirm(`Bạn có chắc chắn muốn xóa xe ${id} không?`)) return
-    
-    try {
-      const { error } = await supabase.from('vehicles').delete().eq('id', id)
-      if (error) throw error
-      toast.success('Đã xóa xe thành công')
-      fetchData()
-    } catch (error: any) {
-      toast.error('Lỗi khi xóa xe: ' + error.message)
-    }
+    deleteVehicle.mutate(id)
   }
 
-  const handleDeletePart = async (id: string) => {
+  const handleDeletePart = (id: string) => {
     if (!confirm(`Bạn có chắc chắn muốn xóa vật tư này không?`)) return
-    try {
-      const { error } = await supabase.from('skus').delete().eq('id', id)
-      if (error) throw error
-      toast.success('Đã xóa vật tư thành công')
-      fetchData()
-    } catch (error: any) {
-      toast.error('Lỗi khi xóa vật tư: ' + error.message)
-    }
+    deletePart.mutate(id)
   }
 
-  const handleDeleteGarage = async (id: string) => {
+  const handleDeleteGarage = (id: string) => {
     if (!confirm(`Bạn có chắc chắn muốn xóa Gara này không?`)) return
-    try {
-      const { error } = await supabase.from('garages').delete().eq('id', id)
-      if (error) throw error
-      toast.success('Đã xóa Gara thành công')
-      fetchData()
-    } catch (error: any) {
-      toast.error('Lỗi khi xóa Gara: ' + error.message)
-    }
+    deleteGarage.mutate(id)
   }
 
-  const handleDeleteUser = async (id: string) => {
+  const handleDeleteUser = (id: string) => {
     if (!confirm(`Bạn có chắc chắn muốn xóa nhân viên này không?`)) return
-    try {
-      const { error } = await supabase.from('profiles').delete().eq('id', id)
-      if (error) throw error
-      toast.success('Đã xóa nhân viên thành công')
-      fetchData()
-    } catch (error: any) {
-      toast.error('Lỗi khi xóa nhân viên: ' + error.message)
-    }
+    deleteUser.mutate(id)
   }
+
+  const isLoading = isLoadingVehicles || isLoadingParts || isLoadingGarages || isLoadingUsers || isLoadingLogs
 
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
         <Loader2 className="w-10 h-10 text-primary animate-spin" />
-        <p className="text-slate-400 animate-pulse">Đang kết nối với cơ sở dữ liệu Supabase...</p>
+        <p className="text-slate-400 animate-pulse">Đang đồng bộ dữ liệu với cache React Query...</p>
       </div>
     )
   }
 
+  const refreshAll = () => {
+    queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.all })
+    toast.success('Đã làm mới dữ liệu từ server')
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-100">Quản lý Danh mục</h1>
-        <p className="text-slate-400">Dữ liệu thực tế từ hệ thống quản trị C.H.L.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-100">Quản lý Danh mục</h1>
+          <p className="text-slate-400">Dữ liệu thực tế từ hệ thống quản trị C.H.L.</p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={refreshAll}
+          className="border-slate-800 text-slate-400 hover:text-primary hover:border-primary/50 gap-2"
+        >
+          <RefreshCcw className="w-4 h-4" />
+          Làm mới bộ nhớ đệm
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -306,28 +251,28 @@ function MasterDataContent() {
         key={selectedVehicle ? `edit-${selectedVehicle.id}` : 'add-vehicle'}
         open={isVehicleDialogOpen} 
         onOpenChange={(open) => { setIsVehicleDialogOpen(open); if (!open) setSelectedVehicle(null); }} 
-        onSuccess={fetchData}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.vehicles })}
         initialData={selectedVehicle}
       />
       <PartDialog 
         key={selectedPart ? `edit-${selectedPart.id}` : 'add-part'}
         open={isPartDialogOpen} 
         onOpenChange={(open) => { setIsPartDialogOpen(open); if (!open) setSelectedPart(null); }} 
-        onSuccess={fetchData}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.parts })}
         initialData={selectedPart}
       />
       <GarageDialog 
         key={selectedGarage ? `edit-${selectedGarage.id}` : 'add-garage'}
         open={isGarageDialogOpen} 
         onOpenChange={(open) => { setIsGarageDialogOpen(open); if (!open) setSelectedGarage(null); }} 
-        onSuccess={fetchData}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.garages })}
         initialData={selectedGarage}
       />
       <UserRoleDialog 
         key={selectedUser ? `edit-${selectedUser.id}` : 'add-user'}
         open={isUserDialogOpen} 
         onOpenChange={(open) => { setIsUserDialogOpen(open); if (!open) setSelectedUser(null); }} 
-        onSuccess={fetchData}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.users })}
         user={selectedUser}
       />
     </div>
