@@ -84,9 +84,11 @@ export default function MechanicTicketsPage() {
               )}
             </CardContent>
             <CardFooter className="pt-0 flex justify-end">
-              <Button variant="ghost" className="text-slate-300 hover:text-primary gap-1 pl-2 pr-0">
-                Xem chi tiết <ChevronRight className="w-4 h-4" />
-              </Button>
+              <Link href={`/mechanic/tickets/${ticket.id}`}>
+                <Button variant="ghost" className="text-slate-300 hover:text-primary gap-1 pl-2 pr-0">
+                  Xem chi tiết <ChevronRight className="w-4 h-4" />
+                </Button>
+              </Link>
             </CardFooter>
           </Card>
         ))}
