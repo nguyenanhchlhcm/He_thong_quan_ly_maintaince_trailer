@@ -15,7 +15,6 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!, // This key is SECRET and only used on server
       {
         auth: {
-          autoConfirm: true,
           persistSession: false
         }
       }
