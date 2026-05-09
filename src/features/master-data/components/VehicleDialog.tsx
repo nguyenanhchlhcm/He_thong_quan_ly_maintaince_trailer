@@ -13,7 +13,7 @@ import { Xe } from '@/types/database'
 interface VehicleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess: () => void
+  onSuccess: (id?: string) => void
   initialData?: Xe | null
 }
 
@@ -59,7 +59,7 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
       }
 
       onOpenChange(false)
-      onSuccess()
+      onSuccess(id)
     } catch (error: any) {
       console.error('Error saving vehicle:', error)
       toast.error('Lỗi: ' + error.message)

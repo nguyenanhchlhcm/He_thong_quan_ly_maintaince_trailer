@@ -14,7 +14,7 @@ import { Profile } from '@/types/database'
 interface UserRoleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess: () => void
+  onSuccess: (id?: string) => void
   user: Profile | null
 }
 
@@ -74,7 +74,7 @@ export function UserRoleDialog({ open, onOpenChange, onSuccess, user }: UserRole
       }
       
       onOpenChange(false)
-      onSuccess()
+      onSuccess(result.userId)
     } catch (error: any) {
       console.error('Error saving user:', error)
       toast.error('Lỗi: ' + error.message)

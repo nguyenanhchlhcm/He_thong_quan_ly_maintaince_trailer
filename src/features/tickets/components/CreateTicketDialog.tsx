@@ -12,6 +12,8 @@ import { Loader2, Plus, Trash2, Package, Truck, User } from 'lucide-react'
 import { Xe, VatTuSKU, Profile } from '@/types/database'
 import { logAction } from '@/lib/supabase/audit'
 import { useAuthStore } from '@/store/authStore'
+import { VehicleDialog } from '@/features/master-data/components/VehicleDialog'
+import { UserRoleDialog } from '@/features/master-data/components/UserRoleDialog'
 
 interface CreateTicketDialogProps {
   open: boolean
@@ -39,13 +41,16 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
+  const [showAddVehicle, setShowAddVehicle] = useState(false)
+  const [showAddMechanic, setShowAddMechanic] = useState(false)
+
   useEffect(() => {
     if (open) {
       fetchMasterData()
     }
   }, [open])
 
-  const fetchMasterData = async () => {
+  const fetchMasterData = async (autoSelectId?: string, type?: 'vehicle' | 'mechanic') => {
     setIsLoading(true)
     try {
       const [vRes, mRes, sRes] = await Promise.all([
@@ -56,6 +61,11 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       setVehicles(vRes.data || [])
       setMechanics(mRes.data || [])
       setSkus(sRes.data || [])
+
+      if (autoSelectId) {
+        if (type === 'vehicle') setSelectedVehicle(autoSelectId)
+        if (type === 'mechanic') setSelectedMechanic(autoSelectId)
+      }
     } catch (error: any) {
       toast.error('Lỗi tải danh mục: ' + error.message)
     } finally {
@@ -161,6 +171,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-slate-900 border-slate-800 text-slate-100 sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl font-bold">
@@ -176,29 +187,51 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="flex items-center gap-2"><Truck className="w-4 h-4 text-slate-500" /> Chọn phương tiện</Label>
-                <Select value={selectedVehicle} onValueChange={(val: any) => setSelectedVehicle(val)}>
-                  <SelectTrigger className="bg-slate-800 border-slate-700">
-                    <SelectValue placeholder="Chọn biển số xe..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                    {vehicles.map(v => (
-                      <SelectItem key={v.id} value={v.id}>{v.id} - {v.model}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select value={selectedVehicle} onValueChange={(val: any) => setSelectedVehicle(val)}>
+                    <SelectTrigger className="bg-slate-800 border-slate-700">
+                      <SelectValue placeholder="Chọn biển số xe..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                      {vehicles.map(v => (
+                        <SelectItem key={v.id} value={v.id}>{v.id} - {v.model}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon" 
+                    className="shrink-0 bg-slate-800 border-slate-700 hover:bg-primary/20 hover:border-primary/50"
+                    onClick={() => setShowAddVehicle(true)}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-2"><User className="w-4 h-4 text-slate-500" /> Gán thợ máy (Không bắt buộc)</Label>
-                <Select value={selectedMechanic} onValueChange={(val: any) => setSelectedMechanic(val)}>
-                  <SelectTrigger className="bg-slate-800 border-slate-700">
-                    <SelectValue placeholder="Chọn thợ máy..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                    {mechanics.map(m => (
-                      <SelectItem key={m.id} value={m.id}>{m.full_name || m.email}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select value={selectedMechanic} onValueChange={(val: any) => setSelectedMechanic(val)}>
+                    <SelectTrigger className="bg-slate-800 border-slate-700">
+                      <SelectValue placeholder="Chọn thợ máy..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                      {mechanics.map(m => (
+                        <SelectItem key={m.id} value={m.id}>{m.full_name || m.email}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon" 
+                    className="shrink-0 bg-slate-800 border-slate-700 hover:bg-primary/20 hover:border-primary/50"
+                    onClick={() => setShowAddMechanic(true)}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -292,5 +325,19 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
         </form>
       </DialogContent>
     </Dialog>
+
+    <VehicleDialog 
+      open={showAddVehicle} 
+      onOpenChange={setShowAddVehicle} 
+      onSuccess={(id) => fetchMasterData(id, 'vehicle')} 
+    />
+    
+    <UserRoleDialog 
+      open={showAddMechanic} 
+      onOpenChange={setShowAddMechanic} 
+      onSuccess={(id) => fetchMasterData(id, 'mechanic')}
+      user={null}
+    />
+    </>
   )
 }
