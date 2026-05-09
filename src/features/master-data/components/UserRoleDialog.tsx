@@ -59,6 +59,8 @@ export function UserRoleDialog({ open, onOpenChange, onSuccess, user }: UserRole
 
         if (error) throw error
         toast.success('Cập nhật nhân viên thành công!')
+        onOpenChange(false)
+        onSuccess(user.id)
       } else {
         // Mode: QUICK CREATE (Create Auth User + Profile via API)
         const response = await fetch('/api/admin/create-user', {
@@ -71,10 +73,9 @@ export function UserRoleDialog({ open, onOpenChange, onSuccess, user }: UserRole
         if (!response.ok) throw new Error(result.error || 'Lỗi khi tạo tài khoản')
 
         toast.success('Đã tạo tài khoản và hồ sơ nhân viên thành công!')
+        onOpenChange(false)
+        onSuccess(result.userId)
       }
-      
-      onOpenChange(false)
-      onSuccess(result.userId)
     } catch (error: any) {
       console.error('Error saving user:', error)
       toast.error('Lỗi: ' + error.message)
