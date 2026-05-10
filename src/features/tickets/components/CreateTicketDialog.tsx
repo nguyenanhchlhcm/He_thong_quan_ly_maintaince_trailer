@@ -67,7 +67,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
     try {
       const [vRes, mRes, sRes] = await Promise.all([
         supabase.from('vehicles').select('*'),
-        supabase.from('profiles').select('*').eq('role', 'mechanic'),
+        supabase.from('profiles').select('*').in('role', ['MECHANIC', 'DRIVER', 'DISPATCHER']),
         supabase.from('skus').select('*')
       ])
       setVehicles(vRes.data || [])
@@ -221,7 +221,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
               Lập phiếu bảo trì mới
             </DialogTitle>
             <DialogDescription className="text-slate-400">
-              Admin tạo phiếu trực tiếp cho phương tiện và gán thợ máy.
+              Admin tạo phiếu trực tiếp cho phương tiện và gán người thực hiện (Thợ máy/Tài xế/Điều độ).
             </DialogDescription>
           </DialogHeader>
 
@@ -252,15 +252,22 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2"><User className="w-4 h-4 text-slate-500" /> Gán thợ máy (Không bắt buộc)</Label>
+                <Label className="flex items-center gap-2"><User className="w-4 h-4 text-slate-500" /> Người thực hiện / Chịu trách nhiệm</Label>
                 <div className="flex gap-2">
                   <Select value={selectedMechanic} onValueChange={(val: any) => setSelectedMechanic(val)}>
                     <SelectTrigger className="bg-slate-800 border-slate-700">
-                      <SelectValue placeholder="Chọn thợ máy..." />
+                      <SelectValue placeholder="Chọn người thực hiện..." />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
                       {mechanics.map(m => (
-                        <SelectItem key={m.id} value={m.id}>{m.full_name || m.email}</SelectItem>
+                        <SelectItem key={m.id} value={m.id}>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${m.role === 'MECHANIC' ? 'bg-orange-500/20 text-orange-400' : m.role === 'DRIVER' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'}`}>
+                              {m.role === 'MECHANIC' ? 'Thợ' : m.role === 'DRIVER' ? 'Tài' : 'Đ.Độ'}
+                            </span>
+                            {m.full_name || m.email}
+                          </div>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

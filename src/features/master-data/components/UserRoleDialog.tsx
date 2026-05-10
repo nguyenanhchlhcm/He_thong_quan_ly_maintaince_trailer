@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Loader2, Shield, UserPlus } from 'lucide-react'
-import { Profile } from '@/types/database'
+import { Profile, Role } from '@/types/database'
 
 interface UserRoleDialogProps {
   open: boolean
@@ -22,14 +22,14 @@ export function UserRoleDialog({ open, onOpenChange, onSuccess, user }: UserRole
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState<'ADMIN' | 'MECHANIC'>('MECHANIC')
+  const [role, setRole] = useState<Role>('MECHANIC')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (user) {
       setEmail(user.email || '')
       setFullName(user.full_name || '')
-      setRole((user.role?.toUpperCase() as 'ADMIN' | 'MECHANIC') || 'MECHANIC')
+      setRole((user.role?.toUpperCase() as Role) || 'MECHANIC')
       setPassword('') // Don't show existing password
     } else {
       setEmail('')
@@ -144,6 +144,8 @@ export function UserRoleDialog({ open, onOpenChange, onSuccess, user }: UserRole
                 <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
                   <SelectItem value="ADMIN">Quản trị viên (Admin)</SelectItem>
                   <SelectItem value="MECHANIC">Thợ máy (Mechanic)</SelectItem>
+                  <SelectItem value="DRIVER">Tài xế (Driver)</SelectItem>
+                  <SelectItem value="DISPATCHER">Điều độ (Dispatcher)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
