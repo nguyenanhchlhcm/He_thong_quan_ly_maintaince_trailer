@@ -20,38 +20,42 @@ export async function POST(request: Request) {
       }
     )
 
-    // 1. Create user in Supabase Auth
+    // 1. Create or Identify User in Supabase Auth
     let userId: string | undefined
     
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { 
-        full_name: fullName,
-        role: role 
-      }
+      user_metadata: { full_name: fullName, role: role }
     })
 
     if (authError) {
-      // If user already exists, try to get their existing ID
       if (authError.message.includes('already been registered')) {
-        const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers()
-        const existingUser = existingUsers?.users.find(u => u.email === email)
-        if (existingUser) {
-          userId = existingUser.id
+        // Try to get existing user ID from profiles table or Auth
+        const { data: existingProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('email', email)
+          .single()
+        
+        if (existingProfile) {
+          userId = existingProfile.id
         } else {
-          throw authError // Should not happen if registered, but safety check
+          // If not in profiles, we must find them in Auth list to get ID
+          const { data: userList } = await supabaseAdmin.auth.admin.listUsers()
+          const found = userList?.users.find(u => u.email === email)
+          if (found) userId = found.id
         }
-      } else {
-        throw authError
       }
+      
+      // If we still don't have a userId, it's a real error we can't bypass
+      if (!userId) throw authError
     } else {
       userId = authUser.user.id
     }
 
-    // 2. The user profile is usually created via a database trigger in our schema.
-    // We manually upsert here to ensure profile is in sync even if it existed before.
+    // 2. Ensure Profile exists and is updated
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .upsert({
@@ -61,18 +65,15 @@ export async function POST(request: Request) {
         role: role
       })
 
-    if (profileError) {
-      console.error('Profile creation error:', profileError)
-      // We don't fail the whole request because the Auth user is already created
-    }
+    if (profileError) throw profileError
 
     return NextResponse.json({ 
-      message: 'Tạo tài khoản thành công',
+      message: 'Xử lý tài khoản thành công',
       userId: userId 
     })
 
   } catch (error: any) {
-    console.error('API Error:', error)
+    console.error('Create User API Error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
