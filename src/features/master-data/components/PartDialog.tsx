@@ -13,7 +13,7 @@ import { VatTuSKU } from '@/types/database'
 interface PartDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess: () => void
+  onSuccess: (id?: string) => void
   initialData?: VatTuSKU | null
 }
 
@@ -56,11 +56,16 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
         if (error) throw error
         toast.success('Cập nhật vật tư thành công!')
       } else {
-        const { error } = await supabase
+        const { data: newSku, error } = await supabase
           .from('skus')
           .insert([payload])
+          .select()
+          .single()
         if (error) throw error
         toast.success('Thêm vật tư mới thành công!')
+        onOpenChange(false)
+        onSuccess(newSku?.id)
+        return
       }
 
       onOpenChange(false)

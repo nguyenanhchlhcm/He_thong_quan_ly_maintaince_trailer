@@ -14,6 +14,7 @@ import { logAction } from '@/lib/supabase/audit'
 import { useAuthStore } from '@/store/authStore'
 import { VehicleDialog } from '@/features/master-data/components/VehicleDialog'
 import { UserRoleDialog } from '@/features/master-data/components/UserRoleDialog'
+import { PartDialog } from '@/features/master-data/components/PartDialog'
 
 interface CreateTicketDialogProps {
   open: boolean
@@ -43,6 +44,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
 
   const [showAddVehicle, setShowAddVehicle] = useState(false)
   const [showAddMechanic, setShowAddMechanic] = useState(false)
+  const [showAddPart, setShowAddPart] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -50,7 +52,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
     }
   }, [open])
 
-  const fetchMasterData = async (autoSelectId?: string, type?: 'vehicle' | 'mechanic') => {
+  const fetchMasterData = async (autoSelectId?: string, type?: 'vehicle' | 'mechanic' | 'sku') => {
     setIsLoading(true)
     try {
       const [vRes, mRes, sRes] = await Promise.all([
@@ -65,6 +67,18 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       if (autoSelectId) {
         if (type === 'vehicle') setSelectedVehicle(autoSelectId)
         if (type === 'mechanic') setSelectedMechanic(autoSelectId)
+        if (type === 'sku') {
+          // Auto-add the newly created SKU to selected items
+          const newSku = (sRes.data || []).find((s: VatTuSKU) => s.id === autoSelectId)
+          if (newSku && !selectedItems.find(item => item.id_sku === autoSelectId)) {
+            setSelectedItems(prev => [...prev, {
+              id_sku: newSku.id,
+              name: newSku.name,
+              so_luong: 1,
+              don_gia: newSku.price || 0
+            }])
+          }
+        }
       }
     } catch (error: any) {
       toast.error('Lỗi tải danh mục: ' + error.message)
@@ -240,16 +254,28 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
                 <Label className="flex items-center gap-2 text-primary font-bold">
                   <Package className="w-4 h-4" /> Danh mục vật tư
                 </Label>
-                <Select onValueChange={(val: any) => addItem(val)}>
-                  <SelectTrigger className="w-[200px] h-8 bg-primary/10 border-primary/20 text-primary text-xs">
-                    <SelectValue placeholder="+ Thêm vật tư" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                    {skus.map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <Select onValueChange={(val: any) => addItem(val)}>
+                    <SelectTrigger className="w-[200px] h-8 bg-primary/10 border-primary/20 text-primary text-xs">
+                      <SelectValue placeholder="+ Thêm vật tư" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                      {skus.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon" 
+                    className="shrink-0 h-8 w-8 bg-slate-800 border-slate-700 hover:bg-primary/20 hover:border-primary/50"
+                    onClick={() => setShowAddPart(true)}
+                    title="Tạo danh mục vật tư mới"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -337,6 +363,12 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       onOpenChange={setShowAddMechanic} 
       onSuccess={(id) => fetchMasterData(id, 'mechanic')}
       user={null}
+    />
+
+    <PartDialog 
+      open={showAddPart} 
+      onOpenChange={setShowAddPart} 
+      onSuccess={(id) => fetchMasterData(id, 'sku')}
     />
     </>
   )
