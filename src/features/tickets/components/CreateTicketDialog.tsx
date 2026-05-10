@@ -15,6 +15,7 @@ import { useAuthStore } from '@/store/authStore'
 import { VehicleDialog } from '@/features/master-data/components/VehicleDialog'
 import { UserRoleDialog } from '@/features/master-data/components/UserRoleDialog'
 import { PartDialog } from '@/features/master-data/components/PartDialog'
+import { PhotoUploader } from '@/features/mechanic/components/PhotoUploader'
 
 interface CreateTicketDialogProps {
   open: boolean
@@ -27,6 +28,9 @@ interface SelectedItem {
   so_luong: number
   don_gia: number
   name: string
+  loai: 'Vật tư' | 'Dịch vụ'
+  anh_cu?: string | null
+  anh_moi?: string | null
 }
 
 export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTicketDialogProps) {
@@ -49,6 +53,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
   // External repair fields
   const [loaiPhieu, setLoaiPhieu] = useState<LoaiPhieu>('Nội bộ')
   const [loaiSuaNgoai, setLoaiSuaNgoai] = useState<LoaiSuaNgoai | ''>('')
+  const [donViSuaNgoai, setDonViSuaNgoai] = useState('')
   const [ghiChuNgoai, setGhiChuNgoai] = useState('')
 
   useEffect(() => {
@@ -104,7 +109,10 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       id_sku: sku.id,
       name: sku.name,
       so_luong: 1,
-      don_gia: sku.price || 0
+      don_gia: sku.price || 0,
+      loai: sku.loai || 'Vật tư',
+      anh_cu: null,
+      anh_moi: null
     }])
   }
 
@@ -142,6 +150,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
           trang_thai_phieu: 'Chờ duyệt',
           loai_phieu: loaiPhieu,
           loai_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (loaiSuaNgoai || null) : null,
+          don_vi_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (donViSuaNgoai || null) : null,
           ghi_chu_ngoai: loaiPhieu === 'Bên ngoài' ? (ghiChuNgoai || null) : null,
           tong_vat_tu: totalVatTu,
           tien_cong: laborCost,
@@ -158,7 +167,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
         id_sku: item.id_sku,
         so_luong: item.so_luong,
         don_gia: item.don_gia,
-        thanh_tien: item.so_luong * item.don_gia
+        thanh_tien: item.so_luong * item.don_gia,
+        anh_vat_tu_cu_url: item.anh_cu || null,
+        anh_vat_tu_moi_url: item.anh_moi || null
       }))
 
       const { error: ctError } = await supabase
@@ -184,6 +195,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       setLaborCost(0)
       setLoaiPhieu('Nội bộ')
       setLoaiSuaNgoai('')
+      setDonViSuaNgoai('')
       setGhiChuNgoai('')
     } catch (error: any) {
       console.error('Submit Error:', error)
@@ -294,26 +306,37 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
 
               {loaiPhieu === 'Bên ngoài' && (
                 <div className="space-y-3 bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 animate-in fade-in-0 slide-in-from-top-2 duration-300">
-                  <div className="space-y-2">
-                    <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Loại sửa chữa</Label>
-                    <Select value={loaiSuaNgoai} onValueChange={(val: any) => setLoaiSuaNgoai(val)}>
-                      <SelectTrigger className="bg-slate-800 border-amber-500/30 text-slate-100">
-                        <SelectValue placeholder="Chọn loại sửa chữa..." />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                        <SelectItem value="Vá vỏ">🔧 Vá vỏ</SelectItem>
-                        <SelectItem value="Thay vỏ">🛞 Thay vỏ</SelectItem>
-                        <SelectItem value="Bảo trì lớn">🏗️ Bảo trì lớn</SelectItem>
-                        <SelectItem value="Khác">📋 Khác</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Tên đơn vị sửa (Tiệm/Gara ngoài)</Label>
+                      <Input
+                        value={donViSuaNgoai}
+                        onChange={(e) => setDonViSuaNgoai(e.target.value)}
+                        placeholder="VD: Vá vỏ lưu động ABC..."
+                        className="bg-slate-800 border-amber-500/30 text-slate-100"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Loại sửa chữa</Label>
+                      <Select value={loaiSuaNgoai} onValueChange={(val: any) => setLoaiSuaNgoai(val)}>
+                        <SelectTrigger className="bg-slate-800 border-amber-500/30 text-slate-100">
+                          <SelectValue placeholder="Chọn loại..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                          <SelectItem value="Vá vỏ">🔧 Vá vỏ</SelectItem>
+                          <SelectItem value="Thay vỏ">🛞 Thay vỏ</SelectItem>
+                          <SelectItem value="Bảo trì lớn">🏗️ Bảo trì lớn</SelectItem>
+                          <SelectItem value="Khác">📋 Khác</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Ghi chú (Tên tiệm, địa chỉ, mô tả sự cố)</Label>
+                    <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Mô tả sự cố & Ghi chú</Label>
                     <textarea
                       value={ghiChuNgoai}
                       onChange={(e) => setGhiChuNgoai(e.target.value)}
-                      placeholder="VD: Vá vỏ tại tiệm ABC - Đường Nguyễn Văn Linh, Q.7. Vỏ trước bên phải bị đinh..."
+                      placeholder="VD: Vỏ trước bên phải bị đinh, lòi bố..."
                       className="w-full min-h-[80px] bg-slate-800 border border-amber-500/30 rounded-lg p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
                     />
                   </div>
@@ -324,16 +347,21 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
             <div className="space-y-4 border-t border-slate-800 pt-6">
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2 text-primary font-bold">
-                  <Package className="w-4 h-4" /> Danh mục vật tư
+                  <Package className="w-4 h-4" /> Danh mục Vật tư & Dịch vụ
                 </Label>
                 <div className="flex items-center gap-2">
                   <Select onValueChange={(val: any) => addItem(val)}>
-                    <SelectTrigger className="w-[200px] h-8 bg-primary/10 border-primary/20 text-primary text-xs">
-                      <SelectValue placeholder="+ Thêm vật tư" />
+                    <SelectTrigger className="w-[250px] h-8 bg-primary/10 border-primary/20 text-primary text-xs">
+                      <SelectValue placeholder="+ Thêm Vật tư / Dịch vụ" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                      {skus.map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      <div className="px-2 py-1 text-[10px] text-slate-500 font-bold uppercase">Vật tư</div>
+                      {skus.filter(s => s.loai !== 'Dịch vụ').map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.unit})</SelectItem>
+                      ))}
+                      <div className="px-2 py-1 mt-2 text-[10px] text-slate-500 font-bold uppercase border-t border-slate-800">Dịch vụ</div>
+                      {skus.filter(s => s.loai === 'Dịch vụ').map(s => (
+                        <SelectItem key={s.id} value={s.id}>🛠️ {s.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -353,37 +381,54 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
               <div className="space-y-3">
                 {selectedItems.length > 0 ? (
                   selectedItems.map((item) => (
-                    <div key={item.id_sku} className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{item.name}</p>
-                        <p className="text-[10px] text-slate-500 font-mono">#{item.id_sku.slice(0,8)}</p>
+                    <div key={item.id_sku} className="bg-slate-800/50 rounded-lg border border-slate-700 overflow-hidden">
+                      <div className="flex items-center gap-3 p-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${item.loai === 'Dịch vụ' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700 text-slate-400'}`}>
+                              {item.loai === 'Dịch vụ' ? 'Dịch vụ' : 'Vật tư'}
+                            </span>
+                            <p className="text-sm font-medium truncate">{item.name}</p>
+                          </div>
+                          <p className="text-[10px] text-slate-500 font-mono">#{item.id_sku.slice(0,8)}</p>
+                        </div>
+                        <div className="w-20">
+                          <Input 
+                            type="number" 
+                            value={item.so_luong} 
+                            onChange={(e) => updateItem(item.id_sku, 'so_luong', Number(e.target.value))}
+                            className="h-8 bg-slate-900 border-slate-700 text-center"
+                            min={1}
+                          />
+                        </div>
+                        <div className="w-28 text-right font-mono text-sm">
+                          {item.don_gia.toLocaleString()} đ
+                        </div>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-slate-500 hover:text-red-400"
+                          onClick={() => removeItem(item.id_sku)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                      <div className="w-20">
-                        <Input 
-                          type="number" 
-                          value={item.so_luong} 
-                          onChange={(e) => updateItem(item.id_sku, 'so_luong', Number(e.target.value))}
-                          className="h-8 bg-slate-900 border-slate-700 text-center"
-                          min={1}
+                      
+                      {/* Ảnh minh chứng cho từng hạng mục */}
+                      <div className="px-3 pb-3 pt-1 border-t border-slate-700/50 bg-slate-900/20">
+                        <PhotoUploader 
+                          onPhotosChange={(photos) => {
+                            updateItem(item.id_sku, 'anh_cu', photos.oldPartBase64)
+                            updateItem(item.id_sku, 'anh_moi', photos.newPartBase64)
+                          }}
                         />
                       </div>
-                      <div className="w-28 text-right font-mono text-sm">
-                        {item.don_gia.toLocaleString()} đ
-                      </div>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-slate-500 hover:text-red-400"
-                        onClick={() => removeItem(item.id_sku)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
                     </div>
                   ))
                 ) : (
                   <div className="h-20 border-2 border-dashed border-slate-800 rounded-lg flex items-center justify-center text-slate-600 text-sm">
-                    Chưa có vật tư nào được chọn.
+                    Chưa có hạng mục nào được chọn.
                   </div>
                 )}
               </div>

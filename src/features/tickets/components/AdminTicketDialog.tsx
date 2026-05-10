@@ -123,7 +123,7 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
 
         {/* Thông tin sửa chữa bên ngoài */}
         {ticket.loai_phieu === 'Bên ngoài' && (
-          <div className="bg-amber-500/5 border border-amber-500/20 p-4 rounded-xl space-y-3">
+          <div className="bg-amber-500/5 border border-amber-500/20 p-4 rounded-xl space-y-4">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-amber-500/10 rounded-lg">
                 <MapPin className="w-4 h-4 text-amber-500" />
@@ -135,11 +135,17 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
                 </span>
               )}
             </div>
-            {ticket.ghi_chu_ngoai && (
-              <p className="text-sm text-slate-300 bg-slate-900/50 rounded-lg p-3 border border-slate-800">
-                {ticket.ghi_chu_ngoai}
-              </p>
-            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Đơn vị sửa chữa</p>
+                <p className="text-sm font-medium text-slate-200">{ticket.don_vi_sua_ngoai || 'Chưa xác định'}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Mô tả sự cố / Ghi chú</p>
+                <p className="text-sm text-slate-300 italic">"{ticket.ghi_chu_ngoai || 'Không có mô tả'}"</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -149,11 +155,11 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
             <Table>
               <TableHeader className="bg-slate-900">
                 <TableRow className="border-slate-800">
-                  <TableHead>Vật tư / SKU</TableHead>
+                  <TableHead>Hạng mục (Vật tư/Dịch vụ)</TableHead>
                   <TableHead className="text-center">Số lượng</TableHead>
                   <TableHead className="text-right">Đơn giá</TableHead>
                   <TableHead className="text-right">Thành tiền</TableHead>
-                  <TableHead className="text-center">Ảnh chứng minh</TableHead>
+                  <TableHead className="text-center w-[120px]">Minh chứng</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -166,14 +172,33 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
                 ) : details.length > 0 ? (
                   details.map((item) => (
                     <TableRow key={item.id} className="border-slate-800">
-                      <TableCell className="font-medium text-slate-200">{item.id_sku}</TableCell>
+                      <TableCell className="font-medium text-slate-200">
+                        <p className="text-sm">{item.id_sku}</p>
+                        {item.id_sku?.toLowerCase().includes('công') || item.id_sku?.toLowerCase().includes('dịch vụ') ? (
+                          <Badge variant="outline" className="text-[9px] h-4 bg-blue-500/10 text-blue-400 border-blue-500/20">Dịch vụ</Badge>
+                        ) : null}
+                      </TableCell>
                       <TableCell className="text-center">{item.so_luong}</TableCell>
                       <TableCell className="text-right font-mono text-xs">{item.don_gia.toLocaleString()} đ</TableCell>
                       <TableCell className="text-right font-mono font-bold text-primary">{item.thanh_tien.toLocaleString()} đ</TableCell>
                       <TableCell className="text-center">
-                        <div className="flex justify-center gap-1">
-                          {item.anh_vat_tu_cu_url && <span title="Ảnh cũ"><ImageIcon className="w-4 h-4 text-blue-400" /></span>}
-                          {item.anh_vat_tu_moi_url && <span title="Ảnh mới"><ImageIcon className="w-4 h-4 text-green-400" /></span>}
+                        <div className="flex justify-center gap-3">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-[8px] text-slate-500 uppercase">Trước</span>
+                            {item.anh_vat_tu_cu_url ? (
+                              <img src={item.anh_vat_tu_cu_url} alt="Cũ" className="w-10 h-10 object-cover rounded border border-slate-700 cursor-pointer hover:scale-150 transition-transform" />
+                            ) : (
+                              <div className="w-10 h-10 bg-slate-800 rounded border border-slate-700 flex items-center justify-center"><ImageIcon className="w-4 h-4 text-slate-600" /></div>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-[8px] text-slate-500 uppercase">Sau</span>
+                            {item.anh_vat_tu_moi_url ? (
+                              <img src={item.anh_vat_tu_moi_url} alt="Mới" className="w-10 h-10 object-cover rounded border border-slate-700 cursor-pointer hover:scale-150 transition-transform" />
+                            ) : (
+                              <div className="w-10 h-10 bg-slate-800 rounded border border-slate-700 flex items-center justify-center"><ImageIcon className="w-4 h-4 text-slate-600" /></div>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
                     </TableRow>

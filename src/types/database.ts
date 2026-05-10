@@ -17,11 +17,14 @@ export interface Gara {
   created_at: string;
 }
 
+export type SKUCategory = 'Vật tư' | 'Dịch vụ';
+
 export interface VatTuSKU {
   id: string;
   name: string;
   unit: string | null;
   price: number | null;
+  loai: SKUCategory;
   created_at: string;
 }
 
@@ -62,6 +65,7 @@ export interface PhieuBaoTri {
   trang_thai_phieu: TrangThaiPhieu;
   loai_phieu: LoaiPhieu;
   loai_sua_ngoai: LoaiSuaNgoai | null;
+  don_vi_sua_ngoai: string | null;
   ghi_chu_ngoai: string | null;
   tong_vat_tu: number;
   tien_cong: number;
@@ -80,7 +84,7 @@ export interface ChiTietVatTu {
   so_luong: number;
   don_gia: number;
   thanh_tien: number;
-  anh_vat_tu_cu_url: string;
-  anh_vat_tu_moi_url: string;
+  anh_vat_tu_cu_url: string | null;
+  anh_vat_tu_moi_url: string | null;
   created_at: string;
 }
