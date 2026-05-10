@@ -85,7 +85,10 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
               id_sku: newSku.id,
               name: newSku.name,
               so_luong: 1,
-              don_gia: newSku.price || 0
+              don_gia: newSku.price || 0,
+              loai: newSku.loai || 'Vật tư',
+              anh_cu: null,
+              anh_moi: null
             }])
           }
         }
