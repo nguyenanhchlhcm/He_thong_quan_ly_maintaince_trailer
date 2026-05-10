@@ -67,7 +67,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
     try {
       const [vRes, mRes, sRes] = await Promise.all([
         supabase.from('vehicles').select('*'),
-        supabase.from('profiles').select('*').in('role', ['MECHANIC', 'DRIVER', 'DISPATCHER']),
+        supabase.from('profiles').select('*'),
         supabase.from('skus').select('*')
       ])
       setVehicles(vRes.data || [])
@@ -262,8 +262,13 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
                       {mechanics.map(m => (
                         <SelectItem key={m.id} value={m.id}>
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${m.role === 'MECHANIC' ? 'bg-orange-500/20 text-orange-400' : m.role === 'DRIVER' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'}`}>
-                              {m.role === 'MECHANIC' ? 'Thợ' : m.role === 'DRIVER' ? 'Tài' : 'Đ.Độ'}
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                              m.role === 'ADMIN' ? 'bg-red-500/20 text-red-400' :
+                              m.role === 'MECHANIC' ? 'bg-orange-500/20 text-orange-400' : 
+                              m.role === 'DRIVER' ? 'bg-blue-500/20 text-blue-400' : 
+                              'bg-purple-500/20 text-purple-400'
+                            }`}>
+                              {m.role === 'ADMIN' ? 'Admin' : m.role === 'MECHANIC' ? 'Thợ' : m.role === 'DRIVER' ? 'Tài' : 'N.Sự'}
                             </span>
                             {m.full_name || m.email}
                           </div>
