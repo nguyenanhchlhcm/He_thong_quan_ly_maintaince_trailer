@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, Plus, Trash2, Package, Truck, User } from 'lucide-react'
-import { Xe, VatTuSKU, Profile } from '@/types/database'
+import { Loader2, Plus, Trash2, Package, Truck, User, Wrench, MapPin, FileText } from 'lucide-react'
+import { Xe, VatTuSKU, Profile, LoaiPhieu, LoaiSuaNgoai } from '@/types/database'
 import { logAction } from '@/lib/supabase/audit'
 import { useAuthStore } from '@/store/authStore'
 import { VehicleDialog } from '@/features/master-data/components/VehicleDialog'
@@ -45,6 +45,11 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
   const [showAddVehicle, setShowAddVehicle] = useState(false)
   const [showAddMechanic, setShowAddMechanic] = useState(false)
   const [showAddPart, setShowAddPart] = useState(false)
+
+  // External repair fields
+  const [loaiPhieu, setLoaiPhieu] = useState<LoaiPhieu>('Nội bộ')
+  const [loaiSuaNgoai, setLoaiSuaNgoai] = useState<LoaiSuaNgoai | ''>('')
+  const [ghiChuNgoai, setGhiChuNgoai] = useState('')
 
   useEffect(() => {
     if (open) {
@@ -135,6 +140,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
           id_xe: selectedVehicle,
           id_tho_may: selectedMechanic || null,
           trang_thai_phieu: 'Chờ duyệt',
+          loai_phieu: loaiPhieu,
+          loai_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (loaiSuaNgoai || null) : null,
+          ghi_chu_ngoai: loaiPhieu === 'Bên ngoài' ? (ghiChuNgoai || null) : null,
           tong_vat_tu: totalVatTu,
           tien_cong: laborCost,
           tong_chi_phi: totalVatTu + laborCost
@@ -174,6 +182,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       // Reset form
       setSelectedItems([])
       setLaborCost(0)
+      setLoaiPhieu('Nội bộ')
+      setLoaiSuaNgoai('')
+      setGhiChuNgoai('')
     } catch (error: any) {
       console.error('Submit Error:', error)
       toast.error('Lỗi khi lập phiếu: ' + error.message)
@@ -247,6 +258,67 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
                   </Button>
                 </div>
               </div>
+            </div>
+
+            {/* Loại phiếu */}
+            <div className="space-y-4 border-t border-slate-800 pt-6">
+              <Label className="flex items-center gap-2 text-primary font-bold">
+                <FileText className="w-4 h-4" /> Loại phiếu bảo trì
+              </Label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all duration-200 ${
+                    loaiPhieu === 'Nội bộ'
+                      ? 'border-primary bg-primary/10 text-primary shadow-lg shadow-primary/10'
+                      : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                  }`}
+                  onClick={() => setLoaiPhieu('Nội bộ')}
+                >
+                  <Wrench className="w-5 h-5 mx-auto mb-1" />
+                  Nội bộ (Gara)
+                </button>
+                <button
+                  type="button"
+                  className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all duration-200 ${
+                    loaiPhieu === 'Bên ngoài'
+                      ? 'border-amber-500 bg-amber-500/10 text-amber-400 shadow-lg shadow-amber-500/10'
+                      : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                  }`}
+                  onClick={() => setLoaiPhieu('Bên ngoài')}
+                >
+                  <MapPin className="w-5 h-5 mx-auto mb-1" />
+                  Bên ngoài
+                </button>
+              </div>
+
+              {loaiPhieu === 'Bên ngoài' && (
+                <div className="space-y-3 bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 animate-in fade-in-0 slide-in-from-top-2 duration-300">
+                  <div className="space-y-2">
+                    <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Loại sửa chữa</Label>
+                    <Select value={loaiSuaNgoai} onValueChange={(val: any) => setLoaiSuaNgoai(val)}>
+                      <SelectTrigger className="bg-slate-800 border-amber-500/30 text-slate-100">
+                        <SelectValue placeholder="Chọn loại sửa chữa..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                        <SelectItem value="Vá vỏ">🔧 Vá vỏ</SelectItem>
+                        <SelectItem value="Thay vỏ">🛞 Thay vỏ</SelectItem>
+                        <SelectItem value="Bảo trì lớn">🏗️ Bảo trì lớn</SelectItem>
+                        <SelectItem value="Khác">📋 Khác</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Ghi chú (Tên tiệm, địa chỉ, mô tả sự cố)</Label>
+                    <textarea
+                      value={ghiChuNgoai}
+                      onChange={(e) => setGhiChuNgoai(e.target.value)}
+                      placeholder="VD: Vá vỏ tại tiệm ABC - Đường Nguyễn Văn Linh, Q.7. Vỏ trước bên phải bị đinh..."
+                      className="w-full min-h-[80px] bg-slate-800 border border-amber-500/30 rounded-lg p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-4 border-t border-slate-800 pt-6">

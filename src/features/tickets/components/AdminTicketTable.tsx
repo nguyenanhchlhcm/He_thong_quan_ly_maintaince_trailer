@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Search, Eye, AlertCircle, Clock, CheckCircle2, Hammer, FileText } from 'lucide-react'
+import { Search, Eye, AlertCircle, Clock, CheckCircle2, Hammer, FileText, Wrench, MapPin } from 'lucide-react'
 import { PhieuBaoTri } from '@/types/database'
 
 interface AdminTicketTableProps {
@@ -56,6 +56,7 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
               <TableHead className="text-slate-400">Mã Phiếu</TableHead>
               <TableHead className="text-slate-400">Biển số Xe</TableHead>
               <TableHead className="text-slate-400">Trạng thái</TableHead>
+              <TableHead className="text-slate-400">Loại</TableHead>
               <TableHead className="text-slate-400 text-right">Tổng chi phí</TableHead>
               <TableHead className="text-slate-400">GPS</TableHead>
               <TableHead className="text-slate-400 text-right">Thao tác</TableHead>
@@ -70,6 +71,22 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                   </TableCell>
                   <TableCell className="font-bold text-primary">{ticket.id_xe || 'N/A'}</TableCell>
                   <TableCell>{getStatusBadge(ticket.trang_thai_phieu)}</TableCell>
+                  <TableCell>
+                    {ticket.loai_phieu === 'Bên ngoài' ? (
+                      <div className="flex flex-col gap-0.5">
+                        <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 gap-1 w-fit">
+                          <MapPin className="w-3 h-3" /> Bên ngoài
+                        </Badge>
+                        {ticket.loai_sua_ngoai && (
+                          <span className="text-[10px] text-amber-400/60 pl-1">{ticket.loai_sua_ngoai}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <Badge variant="outline" className="bg-blue-500/5 text-blue-400/70 border-blue-500/10 gap-1">
+                        <Wrench className="w-3 h-3" /> Nội bộ
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right font-mono font-bold text-slate-200">
                     {ticket.tong_chi_phi.toLocaleString()} đ
                   </TableCell>
@@ -97,7 +114,7 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-slate-500 italic">
+                <TableCell colSpan={7} className="h-32 text-center text-slate-500 italic">
                   Không tìm thấy phiếu bảo trì nào.
                 </TableCell>
               </TableRow>

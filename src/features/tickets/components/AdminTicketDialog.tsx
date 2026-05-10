@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, Truck, User, Calendar, CheckCircle2, XCircle, AlertTriangle, Image as ImageIcon, FileText } from 'lucide-react'
+import { Loader2, Truck, User, Calendar, CheckCircle2, XCircle, AlertTriangle, Image as ImageIcon, FileText, MapPin, Wrench } from 'lucide-react'
 import { PhieuBaoTri, ChiTietVatTu } from '@/types/database'
 import { logAction } from '@/lib/supabase/audit'
 import { useAuthStore } from '@/store/authStore'
@@ -118,6 +118,28 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
               <p className="text-sm font-bold text-red-500">Cảnh báo vị trí (GPS Fraud Check)</p>
               <p className="text-xs text-red-400/80">Vị trí thợ máy lập phiếu lệch quá 1km so với tọa độ GPS của xe.</p>
             </div>
+          </div>
+        )}
+
+        {/* Thông tin sửa chữa bên ngoài */}
+        {ticket.loai_phieu === 'Bên ngoài' && (
+          <div className="bg-amber-500/5 border border-amber-500/20 p-4 rounded-xl space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                <MapPin className="w-4 h-4 text-amber-500" />
+              </div>
+              <p className="text-sm font-bold text-amber-400">Sửa chữa bên ngoài</p>
+              {ticket.loai_sua_ngoai && (
+                <span className="ml-auto px-2.5 py-0.5 bg-amber-500/10 text-amber-400 text-xs font-bold rounded-full border border-amber-500/20">
+                  {ticket.loai_sua_ngoai}
+                </span>
+              )}
+            </div>
+            {ticket.ghi_chu_ngoai && (
+              <p className="text-sm text-slate-300 bg-slate-900/50 rounded-lg p-3 border border-slate-800">
+                {ticket.ghi_chu_ngoai}
+              </p>
+            )}
           </div>
         )}
 

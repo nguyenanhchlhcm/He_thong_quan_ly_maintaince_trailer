@@ -47,6 +47,10 @@ export interface QuanLyVoXe {
 
 export type TrangThaiPhieu = 'Báo giá' | 'Chờ duyệt' | 'Đang sửa' | 'Đã xong';
 
+export type LoaiPhieu = 'Nội bộ' | 'Bên ngoài';
+
+export type LoaiSuaNgoai = 'Vá vỏ' | 'Thay vỏ' | 'Bảo trì lớn' | 'Khác';
+
 export interface PhieuBaoTri {
   id: string;
   ma_phieu: string | null;
@@ -56,6 +60,9 @@ export interface PhieuBaoTri {
   toa_do_app_lng: number | null;
   canh_bao_gps: boolean;
   trang_thai_phieu: TrangThaiPhieu;
+  loai_phieu: LoaiPhieu;
+  loai_sua_ngoai: LoaiSuaNgoai | null;
+  ghi_chu_ngoai: string | null;
   tong_vat_tu: number;
   tien_cong: number;
   tong_chi_phi: number;
