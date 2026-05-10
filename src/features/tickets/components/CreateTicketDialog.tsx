@@ -256,7 +256,11 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
                 <div className="flex gap-2">
                   <Select value={selectedMechanic} onValueChange={(val: any) => setSelectedMechanic(val)}>
                     <SelectTrigger className="bg-slate-800 border-slate-700">
-                      <SelectValue placeholder="Chọn người thực hiện..." />
+                      <SelectValue>
+                        {selectedMechanic 
+                          ? (mechanics.find(m => m.id === selectedMechanic)?.full_name || mechanics.find(m => m.id === selectedMechanic)?.email || "Đang tải tên...") 
+                          : "Chọn người thực hiện..."}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
                       {mechanics.map(m => (
