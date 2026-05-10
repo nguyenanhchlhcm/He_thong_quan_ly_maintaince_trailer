@@ -75,6 +75,10 @@ export interface PhieuBaoTri {
   checkin_photos_url?: string[] | null;
   last_updated: string;
   created_at: string;
+  profiles?: {
+    full_name: string | null;
+    email: string | null;
+  };
 }
 
 export interface ChiTietVatTu {
@@ -87,4 +91,7 @@ export interface ChiTietVatTu {
   anh_vat_tu_cu_url: string | null;
   anh_vat_tu_moi_url: string | null;
   created_at: string;
+  skus?: {
+    name: string | null;
+  };
 }

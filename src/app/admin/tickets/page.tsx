@@ -22,7 +22,13 @@ export default function AdminTicketsPage() {
     try {
       const { data, error } = await supabase
         .from('phieu_bao_tri')
-        .select('*')
+        .select(`
+          *,
+          profiles (
+            full_name,
+            email
+          )
+        `)
         .order('created_at', { ascending: false })
       
       if (error) throw error

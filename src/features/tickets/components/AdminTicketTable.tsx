@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Search, Eye, AlertCircle, Clock, CheckCircle2, Hammer, FileText, Wrench, MapPin } from 'lucide-react'
+import { Search, Eye, AlertCircle, Clock, CheckCircle2, Hammer, FileText, Wrench, MapPin, User } from 'lucide-react'
 import { PhieuBaoTri } from '@/types/database'
 
 interface AdminTicketTableProps {
@@ -58,6 +58,7 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
               <TableHead className="text-slate-400">Trạng thái</TableHead>
               <TableHead className="text-slate-400">Loại</TableHead>
               <TableHead className="text-slate-400 text-right">Tổng chi phí</TableHead>
+              <TableHead className="text-slate-400">Người phụ trách</TableHead>
               <TableHead className="text-slate-400">GPS</TableHead>
               <TableHead className="text-slate-400 text-right">Thao tác</TableHead>
             </TableRow>
@@ -89,6 +90,14 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                   </TableCell>
                   <TableCell className="text-right font-mono font-bold text-slate-200">
                     {ticket.tong_chi_phi.toLocaleString()} đ
+                  </TableCell>
+                  <TableCell className="text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] text-primary border border-primary/20">
+                        <User className="w-3 h-3" />
+                      </div>
+                      <span className="text-xs">{ticket.profiles?.full_name || ticket.profiles?.email || 'Chưa gán'}</span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     {ticket.canh_bao_gps ? (
