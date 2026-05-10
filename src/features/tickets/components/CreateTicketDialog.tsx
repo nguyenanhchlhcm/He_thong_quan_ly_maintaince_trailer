@@ -138,7 +138,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedVehicle) return toast.error('Vui lòng chọn xe')
-    if (selectedItems.length === 0) return toast.error('Vui lòng thêm ít nhất 1 vật tư')
+    if (selectedItems.length === 0) {
+      return toast.error('Vui lòng thêm ít nhất 1 hạng mục (Vật tư hoặc Dịch vụ)')
+    }
 
     setIsSubmitting(true)
     const totalVatTu = calculateTotalVatTu()

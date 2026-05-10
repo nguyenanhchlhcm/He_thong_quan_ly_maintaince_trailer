@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
@@ -21,6 +22,7 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
   const [name, setName] = useState('')
   const [unit, setUnit] = useState('')
   const [price, setPrice] = useState('')
+  const [loai, setLoai] = useState<'Vật tư' | 'Dịch vụ'>('Vật tư')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -28,16 +30,18 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
       setName(initialData.name)
       setUnit(initialData.unit || '')
       setPrice(initialData.price?.toString() || '')
+      setLoai(initialData.loai || 'Vật tư')
     } else {
       setName('')
       setUnit('')
       setPrice('')
+      setLoai('Vật tư')
     }
   }, [initialData, open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name) return toast.error('Vui lòng nhập tên vật tư')
+    if (!name) return toast.error('Vui lòng nhập tên vật tư/dịch vụ')
 
     setIsSubmitting(true)
 
@@ -45,7 +49,8 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
       const payload = { 
         name, 
         unit: unit || null, 
-        price: price ? parseFloat(price) : 0 
+        price: price ? parseFloat(price) : 0,
+        loai
       }
 
       if (initialData) {
@@ -90,12 +95,24 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="part-name">Tên vật tư / SKU <span className="text-red-500">*</span></Label>
+              <Label>Loại hạng mục</Label>
+              <Select value={loai} onValueChange={(val: any) => setLoai(val)}>
+                <SelectTrigger className="bg-slate-800 border-slate-700">
+                  <SelectValue placeholder="Chọn loại..." />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-700">
+                  <SelectItem value="Vật tư">📦 Vật tư (Phụ tùng)</SelectItem>
+                  <SelectItem value="Dịch vụ">🛠️ Dịch vụ (Tiền công)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="part-name">Tên {loai.toLowerCase()} <span className="text-red-500">*</span></Label>
               <Input
                 id="part-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="VD: Nhớt động cơ Castrol 20L"
+                placeholder={loai === 'Vật tư' ? "VD: Nhớt Castrol 20L" : "VD: Công thay nhớt / Vá vỏ"}
                 className="bg-slate-800 border-slate-700 focus:ring-primary"
                 required
               />

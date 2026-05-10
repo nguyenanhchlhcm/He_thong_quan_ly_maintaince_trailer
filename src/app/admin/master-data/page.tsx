@@ -1,7 +1,7 @@
 'use client'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Truck, Users, Warehouse, Package, Loader2, History, RefreshCcw } from 'lucide-react'
+import { Truck, Users, Warehouse, Package, Loader2, History, RefreshCcw, Wrench } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -118,9 +118,13 @@ function MasterDataContent() {
             <Truck className="w-4 h-4" />
             Đội xe
           </TabsTrigger>
-          <TabsTrigger value="parts" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger value="materials" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Package className="w-4 h-4" />
-            Vật tư/Phụ tùng
+            Vật tư
+          </TabsTrigger>
+          <TabsTrigger value="services" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Wrench className="w-4 h-4" />
+            Dịch vụ
           </TabsTrigger>
           <TabsTrigger value="garages" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Warehouse className="w-4 h-4" />
@@ -155,15 +159,32 @@ function MasterDataContent() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="parts" className="outline-none">
+        <TabsContent value="materials" className="outline-none">
           <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm shadow-2xl">
             <CardHeader>
               <CardTitle>Danh mục Vật tư & SKU</CardTitle>
-              <CardDescription>Danh sách phụ tùng và vật tư tiêu hao.</CardDescription>
+              <CardDescription>Quản lý danh sách phụ tùng và vật tư tiêu hao.</CardDescription>
             </CardHeader>
             <CardContent>
               <PartTable 
-                data={parts} 
+                data={parts.filter(p => p.loai !== 'Dịch vụ')} 
+                onEdit={(part) => { setSelectedPart(part); setIsPartDialogOpen(true); }} 
+                onDelete={handleDeletePart} 
+                onAdd={() => { setSelectedPart(null); setIsPartDialogOpen(true); }}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="services" className="outline-none">
+          <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm shadow-2xl">
+            <CardHeader>
+              <CardTitle>Danh mục Dịch vụ & Tiền công</CardTitle>
+              <CardDescription>Quản lý bảng giá các loại dịch vụ sửa chữa (Vá vỏ, Thay nhớt...).</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PartTable 
+                data={parts.filter(p => p.loai === 'Dịch vụ')} 
                 onEdit={(part) => { setSelectedPart(part); setIsPartDialogOpen(true); }} 
                 onDelete={handleDeletePart} 
                 onAdd={() => { setSelectedPart(null); setIsPartDialogOpen(true); }}

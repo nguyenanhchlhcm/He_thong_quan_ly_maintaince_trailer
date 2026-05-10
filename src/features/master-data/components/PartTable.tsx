@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { Search, Plus, Edit, Trash2 } from 'lucide-react'
 import { VatTuSKU } from '@/types/database'
 
@@ -27,7 +28,7 @@ export function PartTable({ data, onEdit, onDelete, onAdd }: PartTableProps) {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <Input 
-            placeholder="Tìm vật tư/phụ tùng..." 
+            placeholder="Tìm kiếm..." 
             className="pl-9 bg-slate-800/50 border-slate-700"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -35,7 +36,7 @@ export function PartTable({ data, onEdit, onDelete, onAdd }: PartTableProps) {
         </div>
         <Button className="gap-2" onClick={onAdd}>
           <Plus className="w-4 h-4" />
-          Thêm vật tư
+          Thêm mới
         </Button>
       </div>
 
@@ -43,7 +44,8 @@ export function PartTable({ data, onEdit, onDelete, onAdd }: PartTableProps) {
         <Table>
           <TableHeader className="bg-slate-900/80">
             <TableRow className="border-slate-800 hover:bg-transparent">
-              <TableHead className="text-slate-400">Tên vật tư / SKU</TableHead>
+              <TableHead className="text-slate-400">Tên hạng mục / SKU</TableHead>
+              <TableHead className="text-slate-400">Loại</TableHead>
               <TableHead className="text-slate-400">Đơn vị</TableHead>
               <TableHead className="text-slate-400 text-right">Đơn giá định mức</TableHead>
               <TableHead className="text-slate-400 text-right">Thao tác</TableHead>
@@ -54,6 +56,11 @@ export function PartTable({ data, onEdit, onDelete, onAdd }: PartTableProps) {
               filteredData.map((part) => (
                 <TableRow key={part.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
                   <TableCell className="font-medium">{part.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={part.loai === 'Dịch vụ' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-slate-700/50 text-slate-400 border-slate-700'}>
+                      {part.loai || 'Vật tư'}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{part.unit || '-'}</TableCell>
                   <TableCell className="text-right font-mono text-primary">
                     {part.price ? part.price.toLocaleString() : '0'} đ
@@ -82,8 +89,8 @@ export function PartTable({ data, onEdit, onDelete, onAdd }: PartTableProps) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-32 text-center text-slate-500 italic">
-                  Không tìm thấy vật tư nào.
+                <TableCell colSpan={5} className="h-32 text-center text-slate-500 italic">
+                  Không tìm thấy hạng mục nào.
                 </TableCell>
               </TableRow>
             )}
