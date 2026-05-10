@@ -21,6 +21,8 @@ export async function POST(request: Request) {
     )
 
     // 1. Create user in Supabase Auth
+    let userId: string | undefined
+    
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -31,14 +33,29 @@ export async function POST(request: Request) {
       }
     })
 
-    if (authError) throw authError
+    if (authError) {
+      // If user already exists, try to get their existing ID
+      if (authError.message.includes('already been registered')) {
+        const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+        const existingUser = existingUsers?.users.find(u => u.email === email)
+        if (existingUser) {
+          userId = existingUser.id
+        } else {
+          throw authError // Should not happen if registered, but safety check
+        }
+      } else {
+        throw authError
+      }
+    } else {
+      userId = authUser.user.id
+    }
 
     // 2. The user profile is usually created via a database trigger in our schema.
-    // If not, we can manually insert here. Let's manually insert to be sure.
+    // We manually upsert here to ensure profile is in sync even if it existed before.
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .upsert({
-        id: authUser.user.id,
+        id: userId,
         email,
         full_name: fullName,
         role: role
@@ -51,7 +68,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       message: 'Tạo tài khoản thành công',
-      userId: authUser.user.id 
+      userId: userId 
     })
 
   } catch (error: any) {
