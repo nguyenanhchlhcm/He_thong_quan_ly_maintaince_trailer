@@ -52,6 +52,8 @@ export interface QuanLyVoXe {
   vi_tri_lap: string | null;
   tinh_trang_gai: number | null;
   trang_thai_vo: 'Đang chạy' | 'Chờ đắp' | 'Thanh lý' | null;
+  serial_photo_url?: string | null;
+  tread_condition_photo_url?: string | null;
   created_at: string;
 }
 
