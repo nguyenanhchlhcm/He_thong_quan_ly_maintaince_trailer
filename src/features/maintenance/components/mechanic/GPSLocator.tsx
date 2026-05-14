@@ -7,13 +7,17 @@ import { Button } from '@/components/ui/button'
 
 interface GPSLocatorProps {
   onLocationFound: (location: { lat: number; lng: number } | null) => void
+  targetLocation?: { lat: number; lng: number } | null
 }
+
+import { calculateDistance } from '@/lib/utils/haversine'
 
 export function GPSLocator({ onLocationFound }: GPSLocatorProps) {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMsg, setErrorMsg] = useState('')
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [retryCount, setRetryCount] = useState(0)
+  const [distance, setDistance] = useState<number | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -36,9 +40,18 @@ export function GPSLocator({ onLocationFound }: GPSLocatorProps) {
     const success = (pos: GeolocationPosition) => {
       if (!isMounted) return
       const crd = pos.coords
-      setCoords({ lat: crd.latitude, lng: crd.longitude })
+      const currentCoords = { lat: crd.latitude, lng: crd.longitude }
+      setCoords(currentCoords)
+      
+      if (targetLocation) {
+        const d = calculateDistance(currentCoords.lat, currentCoords.lng, targetLocation.lat, targetLocation.lng)
+        setDistance(d)
+      } else {
+        setDistance(null)
+      }
+
       setStatus('success')
-      onLocationFound({ lat: crd.latitude, lng: crd.longitude })
+      onLocationFound(currentCoords)
     }
 
     const error = (err: GeolocationPositionError) => {
@@ -55,7 +68,7 @@ export function GPSLocator({ onLocationFound }: GPSLocatorProps) {
     navigator.geolocation.getCurrentPosition(success, error, options)
     
     return () => { isMounted = false }
-  }, [onLocationFound, retryCount])
+  }, [onLocationFound, retryCount, targetLocation])
 
   if (status === 'loading') {
     return (
@@ -91,21 +104,33 @@ export function GPSLocator({ onLocationFound }: GPSLocatorProps) {
     )
   }
 
+  const isTooFar = distance !== null && distance > 1
+
   return (
-    <Alert className="bg-green-500/10 border-green-500/20 text-green-400 py-3 flex items-center">
-      <MapPin className="h-4 w-4" />
-      <AlertDescription className="ml-2 text-xs font-medium flex-1">
-        Đã xác nhận vị trí ({coords?.lat.toFixed(4)}, {coords?.lng.toFixed(4)})
-      </AlertDescription>
-      <Button 
-        type="button"
-        variant="ghost" 
-        size="sm" 
-        onClick={() => setRetryCount(prev => prev + 1)}
-        className="h-7 text-green-400 hover:bg-green-500/10"
-      >
-        Làm mới
-      </Button>
-    </Alert>
+    <div className="space-y-2">
+      <Alert className={`${isTooFar ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-green-500/10 border-green-500/20 text-green-400'} py-3 flex items-center`}>
+        <MapPin className="h-4 w-4" />
+        <AlertDescription className="ml-2 text-xs font-medium flex-1">
+          {isTooFar 
+            ? `CẢNH BÁO: Bạn đang cách Gara ${distance.toFixed(2)}km (Quá xa!)`
+            : `Đã xác nhận vị trí (${coords?.lat.toFixed(4)}, {coords?.lng.toFixed(4)})`
+          }
+        </AlertDescription>
+        <Button 
+          type="button"
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setRetryCount(prev => prev + 1)}
+          className={`h-7 ${isTooFar ? 'text-amber-500 hover:bg-amber-500/10' : 'text-green-400 hover:bg-green-500/10'}`}
+        >
+          Làm mới
+        </Button>
+      </Alert>
+      {isTooFar && (
+        <p className="text-[10px] text-amber-600 font-bold px-2 italic">
+          * Hệ thống sẽ đánh dấu phiếu này là "Cần xác minh GPS" (GPS Warning flag).
+        </p>
+      )}
+    </div>
   )
 }

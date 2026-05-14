@@ -1,6 +1,6 @@
 'use client'
 
-import { TicketForm } from '@/features/mechanic/components/TicketForm'
+import { TicketForm } from '@/features/maintenance/components/mechanic/TicketForm'
 import { ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'

@@ -1,36 +1,31 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Truck, Plus, Trash2, Save, Wrench, AlertCircle, Warehouse, WifiOff, Fingerprint } from 'lucide-react'
+import { Truck, Plus, Trash2, Save, Wrench, AlertCircle, Warehouse, WifiOff, Fingerprint, Loader2 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { PhotoUploader } from './PhotoUploader'
 import { SinglePhotoUploader } from './SinglePhotoUploader'
 import { GPSLocator } from './GPSLocator'
 import { calculateDistance } from '@/lib/utils/haversine'
 import { useTicketStore } from '@/store/ticketStore'
-import { useEffect } from 'react'
+import { supabase } from '@/lib/supabase/client'
+import { uploadBase64Image } from '@/lib/supabase/storage'
+import { toast } from 'sonner'
 
-// Giả lập danh sách vật tư để chọn
-const MOCK_SKUS = [
-  { id: '1', name: 'Nhớt động cơ Castrol 20L', unit: 'Can', price: 1500000 },
-  { id: '2', name: 'Lốp xe Michelin 11R22.5', unit: 'Cái', price: 6500000 },
-  { id: '3', name: 'Bố thắng sau', unit: 'Bộ', price: 850000 },
-]
-
-const MOCK_GARAGES = [
-  { id: '1', name: 'Gara T2M - Quận 9', lat: 10.844, lng: 106.791 },
-  { id: '2', name: 'Gara Hợp Tác - Bình Dương', lat: 10.921, lng: 106.711 },
-]
+// Types for master data fetched from Supabase
+type SkuItem = { id: string; ten_vat_tu: string; don_vi_tinh: string | null; gia_tham_khao: number; loai: string | null }
+type GaraItem = { id: string; ten_gara: string; toa_do_lat: number | null; toa_do_lng: number | null }
 
 type TicketFormValues = {
   id_xe: string
   id_gara: string
+  so_km_luc_sua: number
   tien_cong: number
   odometer_photo_base64: string | null
   receipt_photo_base64: string | null
@@ -47,16 +42,40 @@ type TicketFormValues = {
 }
 
 export function TicketForm() {
+  const isMounted = useRef(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [deviceLocation, setDeviceLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [isDebugMode, setIsDebugMode] = useState(false)
+  const [skuList, setSkuList] = useState<SkuItem[]>([])
+  const [garaList, setGaraList] = useState<GaraItem[]>([])
+  const [isLoadingMaster, setIsLoadingMaster] = useState(true)
   
   const { draftTicket, saveDraft, clearDraft, addToSyncQueue } = useTicketStore()
+
+  // Fetch master data (SKU + Gara) from Supabase on mount
+  useEffect(() => {
+    const fetchMaster = async () => {
+      try {
+        const [skuRes, garaRes] = await Promise.all([
+          supabase.from('danh_muc_vat_tu_sku').select('id, ten_vat_tu, don_vi_tinh, gia_tham_khao, loai'),
+          supabase.from('danh_muc_gara').select('id, ten_gara, toa_do_lat, toa_do_lng')
+        ])
+        setSkuList(skuRes.data || [])
+        setGaraList(garaRes.data || [])
+      } catch {
+        toast.error('Không tải được danh mục')
+      } finally {
+        setIsLoadingMaster(false)
+      }
+    }
+    fetchMaster()
+  }, [])
 
   const { register, control, handleSubmit, watch, setValue, reset } = useForm<TicketFormValues>({
     defaultValues: {
       id_xe: '',
       id_gara: '',
+      so_km_luc_sua: 0,
       tien_cong: 0,
       odometer_photo_base64: null,
       receipt_photo_base64: null,
@@ -65,21 +84,22 @@ export function TicketForm() {
     }
   })
 
-  // Restore draft on mount only
+  // Restore draft on mount only - FIXED: Use ref to prevent loop
   useEffect(() => {
-    if (draftTicket) {
+    if (draftTicket && !isMounted.current) {
       reset({
         id_xe: draftTicket.id_xe,
         id_gara: draftTicket.id_gara,
+        so_km_luc_sua: draftTicket.so_km_luc_sua || 0,
         tien_cong: draftTicket.tien_cong,
         odometer_photo_base64: draftTicket.odometer_photo_base64 || null,
         receipt_photo_base64: draftTicket.receipt_photo_base64 || null,
         checkin_photos_base64: draftTicket.checkin_photos_base64 || [null, null, null, null],
         parts: draftTicket.parts,
       })
+      isMounted.current = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reset]) // Only run once on mount or when reset changes
+  }, [draftTicket, reset])
 
   // Auto-save draft on changes
   const formValues = watch()
@@ -121,18 +141,26 @@ export function TicketForm() {
       return
     }
 
-    const selectedGara = MOCK_GARAGES.find(g => g.id === data.id_gara)
-    if (selectedGara && !isDebugMode) {
-      const distance = calculateDistance(deviceLocation.lat, deviceLocation.lng, selectedGara.lat, selectedGara.lng)
-      console.log(`Khoảng cách đến Gara: ${distance.toFixed(2)} km`)
-      
-      if (distance > 1) { // Lệch quá 1km
-        alert(`CẢNH BÁO: Bạn đang ở cách xa Gara ${distance.toFixed(2)}km. Phiếu sẽ bị gắn cờ gian lận (GPS Warning)!`)
-        // Ở thực tế, mình vẫn cho submit nhưng gắn flag canh_bao_gps = true
-      }
-    } else if (isDebugMode) {
-      console.log('Skipping GPS verification in Debug Mode.')
+    const selectedGara = garaList.find(g => g.id === data.id_gara)
+    const distance = (selectedGara?.toa_do_lat && selectedGara?.toa_do_lng && deviceLocation)
+      ? calculateDistance(deviceLocation.lat, deviceLocation.lng, selectedGara.toa_do_lat, selectedGara.toa_do_lng)
+      : 0
+    
+    const hasGPSWarning = distance > 1 && !isDebugMode
+
+    // Validation Rule 3: Odometer Poka-yoke
+    if (!data.so_km_luc_sua || data.so_km_luc_sua <= 0) {
+      alert('Vui lòng nhập số Km hiện tại của xe.')
+      return
     }
+
+    // Ở thực tế sẽ check với DB, ở đây giả lập check với xe đang chọn (nếu tìm thấy)
+    // Giả sử có list xe thật từ useVehicles hook
+    // const currentXe = vehicles.find(x => x.id_xe === data.id_xe);
+    // if (currentXe && data.so_km_luc_sua < currentXe.so_km_hien_tai) {
+    //   alert(`LỖI: Số Km nhập (${data.so_km_luc_sua}) thấp hơn số Km hiện tại của xe (${currentXe.so_km_hien_tai}).`);
+    //   return;
+    // }
 
     // Validation Rule 1: Visual Proof
     if (!data.odometer_photo_base64) {
@@ -160,33 +188,97 @@ export function TicketForm() {
 
     setIsSubmitting(true)
     
-    // Check network status
+    // Offline flow: queue to IndexedDB
     if (!navigator.onLine) {
-      // Offline Flow
-      console.log('User is offline, adding to sync queue...')
       addToSyncQueue({ ...data, createdAt: Date.now() } as any)
       clearDraft()
-      alert('Đã lưu Phiếu vào bộ nhớ tạm. Hệ thống sẽ tự động đồng bộ khi có mạng!')
+      toast.info('Đã lưu Phếu vào bộ nhớ tạm. Hệ thống sẽ tự động đồng bộ khi có mạng!')
       setIsSubmitting(false)
       reset()
       return
     }
 
-    // Online Flow (Mock)
-    console.log('Submitting ticket online...', data)
-    setTimeout(() => {
-      setIsSubmitting(false)
+    // Online flow: upload images + insert to Supabase
+    try {
+      const ticketRef = `ticket_${Date.now()}`
+
+      // 1. Upload ODO photo (required)
+      const odoUrl = await uploadBase64Image(
+        't2m-evidence',
+        `odometer/${ticketRef}_odo.webp`,
+        data.odometer_photo_base64!
+      )
+
+      // 2. Upload receipt photo (optional)
+      let receiptUrl: string | null = null
+      if (data.receipt_photo_base64) {
+        receiptUrl = await uploadBase64Image(
+          't2m-evidence',
+          `receipts/${ticketRef}_receipt.webp`,
+          data.receipt_photo_base64
+        )
+      }
+
+      // 3. Create main ticket record
+      const totalVatTu = data.parts.reduce((sum, p) => sum + (p.so_luong * p.don_gia), 0)
+      const { data: phieu, error: phieuError } = await supabase
+        .from('phieu_bao_tri')
+        .insert([{
+          id_xe: data.id_xe,
+          so_km_luc_sua: data.so_km_luc_sua,
+          toa_do_app_lat: deviceLocation?.lat ?? null,
+          toa_do_app_lng: deviceLocation?.lng ?? null,
+          canh_bao_gps: hasGPSWarning,
+          trang_thai_phieu: 'Chờ duyệt',
+          tong_vat_tu: totalVatTu,
+          tien_cong: data.tien_cong || 0,
+          tong_chi_phi: totalVatTu + (data.tien_cong || 0),
+        }])
+        .select()
+        .single()
+
+      if (phieuError) throw phieuError
+
+      // 4. Upload part photos and create detail records
+      const chiTietData = await Promise.all(
+        data.parts.map(async (part, i) => {
+          const [anhCuUrl, anhMoiUrl] = await Promise.all([
+            uploadBase64Image('t2m-evidence', `parts/${ticketRef}_part${i}_old.webp`, part.photos.oldPartBase64!),
+            uploadBase64Image('t2m-evidence', `parts/${ticketRef}_part${i}_new.webp`, part.photos.newPartBase64!)
+          ])
+          return {
+            id_phieu: phieu.id,
+            id_sku: part.id_sku,
+            so_luong: part.so_luong,
+            don_gia: part.don_gia,
+            thanh_tien: part.so_luong * part.don_gia,
+            anh_vat_tu_cu_url: anhCuUrl,
+            anh_vat_tu_moi_url: anhMoiUrl,
+          }
+        })
+      )
+
+      const { error: ctError } = await supabase
+        .from('chi_tiet_vat_tu_su_dung')
+        .insert(chiTietData)
+
+      if (ctError) throw ctError
+
+      toast.success('Gửi phiếu bảo trì thành công!')
       clearDraft()
       reset()
-      alert('Tạo phiếu thành công! (Đã nén và upload ảnh giả lập)')
-    }, 1500)
+    } catch (err: any) {
+      toast.error('Lỗi khi gửi phiếu: ' + err.message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleSelectSKU = (index: number, skuId: string) => {
-    const sku = MOCK_SKUS.find(s => s.id === skuId)
+    const sku = skuList.find(s => s.id === skuId)
     if (sku) {
       setValue(`parts.${index}.id_sku`, skuId)
-      setValue(`parts.${index}.don_gia`, sku.price)
+      setValue(`parts.${index}.don_gia`, sku.gia_tham_khao)
       if (!watchParts[index]?.so_luong) {
         setValue(`parts.${index}.so_luong`, 1)
       }
@@ -196,7 +288,7 @@ export function TicketForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-24">
       {/* Thông tin chung */}
-      <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
+      <Card className="glass-card">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg flex items-center gap-2">
             <Truck className="w-5 h-5 text-primary" />
@@ -221,7 +313,13 @@ export function TicketForm() {
 
           <div className="space-y-2">
             <Label>Định vị GPS (Anti-Fraud)</Label>
-            <GPSLocator onLocationFound={setDeviceLocation} />
+            <GPSLocator 
+              onLocationFound={setDeviceLocation} 
+              targetLocation={(() => {
+                const g = garaList.find(g => g.id === watch('id_gara'))
+                return (g?.toa_do_lat && g?.toa_do_lng) ? { lat: g.toa_do_lat, lng: g.toa_do_lng } : null
+              })()}
+            />
           </div>
 
           <div className="space-y-2">
@@ -285,11 +383,15 @@ export function TicketForm() {
                 <SelectValue placeholder="Chọn Gara..." />
               </SelectTrigger>
               <SelectContent className="bg-slate-900 border-slate-700">
-                {MOCK_GARAGES.map(gara => (
+                {isLoadingMaster ? (
+                  <div className="flex items-center gap-2 p-3 text-slate-500 text-sm">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Đang tải...
+                  </div>
+                ) : garaList.map(gara => (
                   <SelectItem key={gara.id} value={gara.id}>
                     <div className="flex items-center gap-2">
                       <Warehouse className="w-4 h-4 text-slate-500" />
-                      {gara.name}
+                      {gara.ten_gara}
                     </div>
                   </SelectItem>
                 ))}
@@ -301,10 +403,25 @@ export function TicketForm() {
             <Label htmlFor="id_xe">Biển số xe / Mã xe</Label>
             <Input 
               id="id_xe" 
-              placeholder="VD: 51C-123.45" 
+              placeholder="VD: XE-001" 
               className="bg-slate-800/50 border-slate-700 h-12 text-lg uppercase"
               {...register('id_xe', { required: true })}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="so_km_luc_sua">Số Km lúc sửa (Odometer) <span className="text-red-500">*</span></Label>
+            <div className="relative">
+              <Input 
+                id="so_km_luc_sua" 
+                type="number"
+                placeholder="Nhập số Km trên đồng hồ..." 
+                className="bg-slate-800/50 border-slate-700 h-12 text-lg font-mono text-primary"
+                {...register('so_km_luc_sua', { required: true, valueAsNumber: true })}
+                onFocus={(e) => e.target.select()}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-bold">KM</div>
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="tien_cong">Tiền công thợ ngoài / Mua ngoài (VNĐ)</Label>
@@ -314,6 +431,7 @@ export function TicketForm() {
               placeholder="0" 
               className="bg-slate-800/50 border-slate-700 h-12 text-lg font-mono text-amber-400"
               {...register('tien_cong', { valueAsNumber: true })}
+              onFocus={(e) => e.target.select()}
             />
           </div>
           
@@ -366,9 +484,13 @@ export function TicketForm() {
                           <SelectValue placeholder="Chọn từ danh mục..." />
                         </SelectTrigger>
                         <SelectContent className="bg-slate-900 border-slate-700">
-                          {MOCK_SKUS.map(sku => (
+                          {isLoadingMaster ? (
+                            <div className="flex items-center gap-2 p-3 text-slate-500 text-sm">
+                              <Loader2 className="w-4 h-4 animate-spin" /> Đang tải...
+                            </div>
+                          ) : skuList.map(sku => (
                             <SelectItem key={sku.id} value={sku.id} className="py-3">
-                              {sku.name} <span className="text-slate-500 text-xs">({sku.unit})</span>
+                              {sku.ten_vat_tu} <span className="text-slate-500 text-xs">({sku.don_vi_tinh})</span>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -400,7 +522,8 @@ export function TicketForm() {
                       <Input 
                         type="number" 
                         className="bg-slate-900 border-slate-700 h-12 font-mono text-right text-lg"
-                        {...register(`parts.${index}.don_gia` as const)}
+                        {...register(`parts.${index}.don_gia` as const, { valueAsNumber: true })}
+                        onFocus={(e) => e.target.select()}
                       />
                     </div>
                   </div>
@@ -447,12 +570,11 @@ export function TicketForm() {
           </div>
           <Button 
             type="submit" 
-            size="lg" 
             disabled={isSubmitting}
-            className="h-12 px-8 rounded-full shadow-lg shadow-primary/20 gap-2 font-semibold"
+            className="big-button flex-1 premium-gradient text-white border-none"
           >
-            <Save className="w-5 h-5" />
-            {isSubmitting ? 'Đang lưu...' : 'Lưu Phiếu'}
+            <Save className="w-6 h-6" />
+            {isSubmitting ? 'Đang lưu...' : 'GỬI PHIẾU BẢO TRÌ'}
           </Button>
         </div>
       </div>

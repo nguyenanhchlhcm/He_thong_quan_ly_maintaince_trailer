@@ -3,8 +3,7 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Camera, X, Loader2 } from 'lucide-react'
-import { compressImage } from '@/lib/utils/image-compression'
-import { fileToBase64 } from '@/lib/utils/file-helpers'
+import { compressImage, fileToBase64 } from '@/lib/utils/media-utils'
 import Image from 'next/image'
 
 interface SinglePhotoUploaderProps {

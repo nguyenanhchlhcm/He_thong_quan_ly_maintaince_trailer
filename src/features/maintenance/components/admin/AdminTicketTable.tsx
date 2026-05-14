@@ -16,10 +16,12 @@ interface AdminTicketTableProps {
 export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
 
-  const filteredData = data.filter(ticket => 
-    ticket.id_xe?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ticket.id.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredData = data.filter(ticket => {
+    const bienSo = ticket.danh_sach_xe?.bien_so || ticket.id_xe || ''
+    const maPhieu = ticket.ma_phieu || ticket.id.slice(0, 8)
+    const term = searchTerm.toLowerCase()
+    return bienSo.toLowerCase().includes(term) || maPhieu.toLowerCase().includes(term)
+  })
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -70,7 +72,14 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                   <TableCell className="font-mono text-xs font-bold text-slate-400">
                     {ticket.ma_phieu || ticket.id.slice(0, 8)}
                   </TableCell>
-                  <TableCell className="font-bold text-primary">{ticket.id_xe || 'N/A'}</TableCell>
+                  <TableCell className="font-bold text-primary">
+                    <div>
+                      <p>{ticket.danh_sach_xe?.bien_so || ticket.id_xe || 'N/A'}</p>
+                      {ticket.danh_sach_xe?.loai_xe && (
+                        <p className="text-[10px] text-slate-500 font-normal">{ticket.danh_sach_xe.loai_xe}</p>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{getStatusBadge(ticket.trang_thai_phieu)}</TableCell>
                   <TableCell>
                     {ticket.loai_phieu === 'Bên ngoài' ? (

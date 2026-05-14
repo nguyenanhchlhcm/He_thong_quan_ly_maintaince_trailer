@@ -15,7 +15,7 @@ import { useAuthStore } from '@/store/authStore'
 import { VehicleDialog } from '@/features/master-data/components/VehicleDialog'
 import { UserRoleDialog } from '@/features/master-data/components/UserRoleDialog'
 import { PartDialog } from '@/features/master-data/components/PartDialog'
-import { PhotoUploader } from '@/features/mechanic/components/PhotoUploader'
+import { PhotoUploader } from '@/features/maintenance/components/mechanic/PhotoUploader'
 
 interface CreateTicketDialogProps {
   open: boolean
@@ -66,9 +66,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
     setIsLoading(true)
     try {
       const [vRes, mRes, sRes] = await Promise.all([
-        supabase.from('vehicles').select('*'),
+        supabase.from('danh_sach_xe').select('*'),
         supabase.from('profiles').select('*'),
-        supabase.from('skus').select('*')
+        supabase.from('danh_muc_vat_tu_sku').select('*')
       ])
       setVehicles(vRes.data || [])
       setMechanics(mRes.data || [])
@@ -78,14 +78,13 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
         if (type === 'vehicle') setSelectedVehicle(autoSelectId)
         if (type === 'mechanic') setSelectedMechanic(autoSelectId)
         if (type === 'sku') {
-          // Auto-add the newly created SKU to selected items
           const newSku = (sRes.data || []).find((s: VatTuSKU) => s.id === autoSelectId)
           if (newSku && !selectedItems.find(item => item.id_sku === autoSelectId)) {
             setSelectedItems(prev => [...prev, {
               id_sku: newSku.id,
-              name: newSku.name,
+              name: newSku.ten_vat_tu,
               so_luong: 1,
-              don_gia: newSku.price || 0,
+              don_gia: newSku.gia_tham_khao || 0,
               loai: newSku.loai || 'Vật tư',
               anh_cu: null,
               anh_moi: null
@@ -110,9 +109,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
 
     setSelectedItems([...selectedItems, {
       id_sku: sku.id,
-      name: sku.name,
+      name: sku.ten_vat_tu,
       so_luong: 1,
-      don_gia: sku.price || 0,
+      don_gia: sku.gia_tham_khao || 0,
       loai: sku.loai || 'Vật tư',
       anh_cu: null,
       anh_moi: null
@@ -178,7 +177,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       }))
 
       const { error: ctError } = await supabase
-        .from('chi_tiet_phieu_bao_tri')
+        .from('chi_tiet_vat_tu_su_dung')
         .insert(chiTietData)
 
       if (ctError) throw ctError
@@ -236,7 +235,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
                       {vehicles.map(v => (
-                        <SelectItem key={v.id} value={v.id}>{v.id} - {v.model}</SelectItem>
+                        <SelectItem key={v.id_xe} value={v.id_xe}>{v.bien_so}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -378,11 +377,11 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
                     <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
                       <div className="px-2 py-1 text-[10px] text-slate-500 font-bold uppercase">Vật tư</div>
                       {skus.filter(s => s.loai !== 'Dịch vụ').map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.unit})</SelectItem>
+                        <SelectItem key={s.id} value={s.id}>{s.ten_vat_tu} ({s.don_vi_tinh})</SelectItem>
                       ))}
                       <div className="px-2 py-1 mt-2 text-[10px] text-slate-500 font-bold uppercase border-t border-slate-800">Dịch vụ</div>
                       {skus.filter(s => s.loai === 'Dịch vụ').map(s => (
-                        <SelectItem key={s.id} value={s.id}>🛠️ {s.name}</SelectItem>
+                        <SelectItem key={s.id} value={s.id}>🛠️ {s.ten_vat_tu}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -420,10 +419,17 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
                             onChange={(e) => updateItem(item.id_sku, 'so_luong', Number(e.target.value))}
                             className="h-8 bg-slate-900 border-slate-700 text-center"
                             min={1}
+                            onFocus={(e) => e.target.select()}
                           />
                         </div>
-                        <div className="w-28 text-right font-mono text-sm">
-                          {item.don_gia.toLocaleString()} đ
+                        <div className="w-28">
+                          <Input 
+                            type="number" 
+                            value={item.don_gia} 
+                            onChange={(e) => updateItem(item.id_sku, 'don_gia', Number(e.target.value))}
+                            className="h-8 bg-slate-900 border-slate-700 text-right font-mono"
+                            onFocus={(e) => e.target.select()}
+                          />
                         </div>
                         <Button 
                           type="button" 
@@ -463,6 +469,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
                   value={laborCost} 
                   onChange={(e) => setLaborCost(Number(e.target.value))}
                   className="bg-slate-800 border-slate-700 font-mono"
+                  onFocus={(e) => e.target.select()}
                 />
               </div>
               <div className="flex flex-col items-end justify-center">

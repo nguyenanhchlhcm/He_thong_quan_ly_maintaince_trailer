@@ -19,50 +19,50 @@ interface PartDialogProps {
 }
 
 export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartDialogProps) {
-  const [name, setName] = useState('')
-  const [unit, setUnit] = useState('')
-  const [price, setPrice] = useState('')
-  const [loai, setLoai] = useState<'Vật tư' | 'Dịch vụ'>('Vật tư')
+  const [tenVatTu, setTenVatTu] = useState('')
+  const [donViTinh, setDonViTinh] = useState<'Cái' | 'Bộ' | 'Can' | 'Lít' | 'Gói'>('Cái')
+  const [giaThamKhao, setGiaThamKhao] = useState('')
+  const [nhomVatTu, setNhomVatTu] = useState<'Động cơ' | 'Gầm' | 'Điện' | 'Lốp' | 'Máy lạnh'>('Động cơ')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (initialData) {
-      setName(initialData.name)
-      setUnit(initialData.unit || '')
-      setPrice(initialData.price?.toString() || '')
-      setLoai(initialData.loai || 'Vật tư')
+      setTenVatTu(initialData.ten_vat_tu)
+      setDonViTinh(initialData.don_vi_tinh || 'Cái')
+      setGiaThamKhao(initialData.gia_tham_khao?.toString() || '0')
+      setNhomVatTu(initialData.nhom_vat_tu || 'Động cơ')
     } else {
-      setName('')
-      setUnit('')
-      setPrice('')
-      setLoai('Vật tư')
+      setTenVatTu('')
+      setDonViTinh('Cái')
+      setGiaThamKhao('0')
+      setNhomVatTu('Động cơ')
     }
   }, [initialData, open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name) return toast.error('Vui lòng nhập tên vật tư/dịch vụ')
+    if (!tenVatTu) return toast.error('Vui lòng nhập tên vật tư')
 
     setIsSubmitting(true)
 
     try {
       const payload = { 
-        name, 
-        unit: unit || null, 
-        price: price ? parseFloat(price) : 0,
-        loai
+        ten_vat_tu: tenVatTu, 
+        don_vi_tinh: donViTinh, 
+        gia_tham_khao: giaThamKhao ? parseFloat(giaThamKhao) : 0,
+        nhom_vat_tu: nhomVatTu
       }
 
       if (initialData) {
         const { error } = await supabase
-          .from('skus')
+          .from('danh_muc_vat_tu_sku')
           .update(payload)
           .eq('id', initialData.id)
         if (error) throw error
         toast.success('Cập nhật vật tư thành công!')
       } else {
         const { data: newSku, error } = await supabase
-          .from('skus')
+          .from('danh_muc_vat_tu_sku')
           .insert([payload])
           .select()
           .single()
@@ -95,45 +95,53 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Loại hạng mục</Label>
-              <Select value={loai} onValueChange={(val: any) => setLoai(val)}>
+              <Label>Nhóm vật tư</Label>
+              <Select value={nhomVatTu} onValueChange={(val: any) => setNhomVatTu(val)}>
                 <SelectTrigger className="bg-slate-800 border-slate-700">
-                  <SelectValue placeholder="Chọn loại..." />
+                  <SelectValue placeholder="Chọn nhóm..." />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-700">
-                  <SelectItem value="Vật tư">📦 Vật tư (Phụ tùng)</SelectItem>
-                  <SelectItem value="Dịch vụ">🛠️ Dịch vụ (Tiền công)</SelectItem>
+                  <SelectItem value="Động cơ">⚙️ Động cơ</SelectItem>
+                  <SelectItem value="Gầm">🏗️ Gầm</SelectItem>
+                  <SelectItem value="Điện">⚡ Điện</SelectItem>
+                  <SelectItem value="Lốp">🛞 Lốp</SelectItem>
+                  <SelectItem value="Máy lạnh">❄️ Máy lạnh</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="part-name">Tên {loai.toLowerCase()} <span className="text-red-500">*</span></Label>
+              <Label htmlFor="part-name">Tên vật tư <span className="text-red-500">*</span></Label>
               <Input
                 id="part-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={loai === 'Vật tư' ? "VD: Nhớt Castrol 20L" : "VD: Công thay nhớt / Vá vỏ"}
+                value={tenVatTu}
+                onChange={(e) => setTenVatTu(e.target.value)}
+                placeholder="VD: Nhớt Castrol 20L"
                 className="bg-slate-800 border-slate-700 focus:ring-primary"
                 required
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="unit">Đơn vị tính</Label>
-              <Input
-                id="unit"
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-                placeholder="VD: Can, Cái, Bộ..."
-                className="bg-slate-800 border-slate-700 focus:ring-primary"
-              />
+              <Select value={donViTinh} onValueChange={(val: any) => setDonViTinh(val)}>
+                <SelectTrigger className="bg-slate-800 border-slate-700">
+                  <SelectValue placeholder="Chọn đơn vị..." />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-700">
+                  <SelectItem value="Cái">Cái</SelectItem>
+                  <SelectItem value="Bộ">Bộ</SelectItem>
+                  <SelectItem value="Can">Can</SelectItem>
+                  <SelectItem value="Lít">Lít</SelectItem>
+                  <SelectItem value="Gói">Gói</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="price">Đơn giá định mức (VNĐ)</Label>
+              <Label htmlFor="price">Giá nhập tham khảo (VNĐ)</Label>
               <Input
                 id="price"
                 type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
+                value={giaThamKhao}
+                onChange={(e) => setGiaThamKhao(e.target.value)}
                 placeholder="VD: 1500000"
                 className="bg-slate-800 border-slate-700 focus:ring-primary"
               />

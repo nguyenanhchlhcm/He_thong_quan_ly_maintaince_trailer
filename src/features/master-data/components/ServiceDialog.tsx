@@ -7,87 +7,71 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, MapPin } from 'lucide-react'
-import { Gara } from '@/types/database'
+import { Loader2 } from 'lucide-react'
+import { DichVu } from '@/types/database'
 
-interface GarageDialogProps {
+interface ServiceDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess: () => void
-  initialData?: Gara | null
+  onSuccess: (id?: string) => void
+  initialData?: DichVu | null
 }
 
-export function GarageDialog({ open, onOpenChange, onSuccess, initialData }: GarageDialogProps) {
-  const [name, setName] = useState('')
-  const [address, setAddress] = useState('')
-  const [coords, setCoords] = useState('') 
+export function ServiceDialog({ open, onOpenChange, onSuccess, initialData }: ServiceDialogProps) {
+  const [tenDichVu, setTenDichVu] = useState('')
+  const [donGiaChuan, setDonGiaChuan] = useState('')
+  const [slaDuKien, setSlaDuKien] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (initialData) {
-      setName(initialData.ten_gara)
-      setAddress(initialData.dia_chi || '')
-      if (initialData.toa_do_lat && initialData.toa_do_lng) {
-        setCoords(`${initialData.toa_do_lat}, ${initialData.toa_do_lng}`)
-      } else {
-        setCoords('')
-      }
+      setTenDichVu(initialData.ten_dich_vu)
+      setDonGiaChuan(initialData.don_gia_chuan?.toString() || '0')
+      setSlaDuKien(initialData.sla_du_kien || '')
     } else {
-      setName('')
-      setAddress('')
-      setCoords('')
+      setTenDichVu('')
+      setDonGiaChuan('0')
+      setSlaDuKien('')
     }
   }, [initialData, open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name) return toast.error('Vui lòng nhập tên Gara')
+    if (!tenDichVu) return toast.error('Vui lòng nhập tên dịch vụ')
 
     setIsSubmitting(true)
 
-    let lat: number | null = null
-    let lng: number | null = null
-
-    if (coords.trim()) {
-      const parts = coords.split(/[,/\s]+/).map(p => p.trim())
-      if (parts.length >= 2) {
-        lat = parseFloat(parts[0])
-        lng = parseFloat(parts[1])
-      }
-      
-      if (isNaN(lat as number) || isNaN(lng as number)) {
-        setIsSubmitting(false)
-        return toast.error('Định dạng tọa độ không hợp lệ.')
-      }
-    }
-
     try {
       const payload = { 
-        ten_gara: name, 
-        dia_chi: address || null,
-        toa_do_lat: lat,
-        toa_do_lng: lng
+        ten_dich_vu: tenDichVu, 
+        don_gia_chuan: donGiaChuan ? parseFloat(donGiaChuan) : 0,
+        sla_du_kien: slaDuKien || null
       }
 
       if (initialData) {
         const { error } = await supabase
-          .from('danh_muc_gara')
+          .from('danh_muc_dich_vu')
           .update(payload)
           .eq('id', initialData.id)
         if (error) throw error
-        toast.success('Cập nhật Gara thành công!')
+        toast.success('Cập nhật dịch vụ thành công!')
       } else {
-        const { error } = await supabase
-          .from('danh_muc_gara')
+        const { data: newService, error } = await supabase
+          .from('danh_muc_dich_vu')
           .insert([payload])
+          .select()
+          .single()
         if (error) throw error
-        toast.success('Thêm Gara mới thành công!')
+        toast.success('Thêm dịch vụ mới thành công!')
+        onOpenChange(false)
+        onSuccess(newService?.id)
+        return
       }
 
       onOpenChange(false)
       onSuccess()
     } catch (error: any) {
-      console.error('Error saving garage:', error)
+      console.error('Error saving service:', error)
       toast.error('Lỗi: ' + error.message)
     } finally {
       setIsSubmitting(false)
@@ -99,43 +83,41 @@ export function GarageDialog({ open, onOpenChange, onSuccess, initialData }: Gar
       <DialogContent className="bg-slate-900 border-slate-800 text-slate-100 sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{initialData ? 'Sửa thông tin Gara' : 'Thêm Gara mới'}</DialogTitle>
+            <DialogTitle>{initialData ? 'Sửa thông tin dịch vụ' : 'Thêm dịch vụ mới'}</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Đăng ký trạm bảo trì nội bộ hoặc đối tác sửa chữa.
+              Quản lý bảng giá các loại dịch vụ sửa chữa và bảo trì.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="garage-name">Tên Gara <span className="text-red-500">*</span></Label>
+              <Label htmlFor="service-name">Tên dịch vụ <span className="text-red-500">*</span></Label>
               <Input
-                id="garage-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="VD: Gara T2M - Quận 9"
+                id="service-name"
+                value={tenDichVu}
+                onChange={(e) => setTenDichVu(e.target.value)}
+                placeholder="VD: Vá vỏ lưu động"
                 className="bg-slate-800 border-slate-700 focus:ring-primary"
                 required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="address">Địa chỉ</Label>
+              <Label htmlFor="price">Đơn giá chuẩn (VNĐ)</Label>
               <Input
-                id="address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Số đường, phường, quận..."
+                id="price"
+                type="number"
+                value={donGiaChuan}
+                onChange={(e) => setDonGiaChuan(e.target.value)}
+                placeholder="VD: 500000"
                 className="bg-slate-800 border-slate-700 focus:ring-primary"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="coords" className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-primary" />
-                Tọa độ GPS (Lat, Lng)
-              </Label>
+              <Label htmlFor="sla">SLA dự kiến (Thời gian xử lý)</Label>
               <Input
-                id="coords"
-                value={coords}
-                onChange={(e) => setCoords(e.target.value)}
-                placeholder="VD: 10.729, 106.737"
+                id="sla"
+                value={slaDuKien}
+                onChange={(e) => setSlaDuKien(e.target.value)}
+                placeholder="VD: 30 phút, 2 giờ..."
                 className="bg-slate-800 border-slate-700 focus:ring-primary"
               />
             </div>

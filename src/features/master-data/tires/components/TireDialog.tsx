@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Loader2, Camera } from 'lucide-react'
 import { QuanLyVoXe } from '@/types/database'
-import { SinglePhotoUploader } from '@/features/mechanic/components/SinglePhotoUploader'
+import { SinglePhotoUploader } from '@/features/maintenance/components/mechanic/SinglePhotoUploader'
 import { uploadBase64Image } from '@/lib/supabase/storage'
 
 interface TireDialogProps {

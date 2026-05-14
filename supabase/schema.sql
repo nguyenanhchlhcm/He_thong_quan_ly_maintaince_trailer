@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS public.danh_muc_vat_tu_sku (
     ten_vat_tu TEXT NOT NULL,
     nhom_vat_tu TEXT CHECK (nhom_vat_tu IN ('Động cơ', 'Gầm', 'Điện', 'Lốp', 'Máy lạnh')),
     don_vi_tinh TEXT CHECK (don_vi_tinh IN ('Cái', 'Bộ', 'Can', 'Lít', 'Gói')),
+    gia_tham_khao NUMERIC DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -42,7 +43,7 @@ CREATE TABLE IF NOT EXISTS public.danh_sach_xe (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 5. Asset: Quản lý lốp xe (Rule 5: Serial Number uniqueness)
+-- 5. Asset: Quản lý lốp xe
 CREATE TABLE IF NOT EXISTS public.quan_ly_vo_xe (
     id_vo TEXT PRIMARY KEY, -- Physical Serial Number
     id_xe TEXT REFERENCES public.danh_sach_xe(id_xe) ON DELETE SET NULL,
@@ -57,6 +58,7 @@ CREATE TABLE IF NOT EXISTS public.phieu_bao_tri (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     id_xe TEXT REFERENCES public.danh_sach_xe(id_xe),
     id_tho_may UUID REFERENCES auth.users(id),
+    so_km_luc_sua NUMERIC, 
     toa_do_app_lat FLOAT,
     toa_do_app_lng FLOAT,
     canh_bao_gps BOOLEAN DEFAULT FALSE,
@@ -68,7 +70,7 @@ CREATE TABLE IF NOT EXISTS public.phieu_bao_tri (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 7. Workflow: Chi tiết vật tư sử dụng (Rule 1: Visual Proof)
+-- 7. Workflow: Chi tiết vật tư sử dụng
 CREATE TABLE IF NOT EXISTS public.chi_tiet_vat_tu_su_dung (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     id_phieu UUID REFERENCES public.phieu_bao_tri(id) ON DELETE CASCADE,
@@ -76,8 +78,48 @@ CREATE TABLE IF NOT EXISTS public.chi_tiet_vat_tu_su_dung (
     so_luong NUMERIC DEFAULT 1,
     don_gia NUMERIC DEFAULT 0,
     thanh_tien NUMERIC DEFAULT 0,
-    anh_vat_tu_cu_url TEXT NOT NULL, -- Rule 1
-    anh_vat_tu_moi_url TEXT NOT NULL, -- Rule 1
+    anh_vat_tu_cu_url TEXT NOT NULL, 
+    anh_vat_tu_moi_url TEXT NOT NULL, 
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 8. Master Data: Khách hàng
+CREATE TABLE IF NOT EXISTS public.danh_muc_khach_hang (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ten_khach_hang TEXT NOT NULL,
+    sdt TEXT,
+    ma_so_thue TEXT,
+    hang_khach TEXT DEFAULT 'Standard',
+    cong_no NUMERIC DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 9. Master Data: Nhà cung cấp
+CREATE TABLE IF NOT EXISTS public.danh_muc_nha_cung_cap (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ten_ncc TEXT NOT NULL,
+    nhom_cung_cap TEXT,
+    lien_he TEXT,
+    rating NUMERIC DEFAULT 5,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 10. Master Data: Danh mục dịch vụ/tiền công
+CREATE TABLE IF NOT EXISTS public.danh_muc_dich_vu (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ten_dich_vu TEXT NOT NULL,
+    don_gia_chuan NUMERIC DEFAULT 0,
+    sla_du_kien TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 11. Workflow: Nhật ký bảo trì định kỳ (Preventive Logs)
+CREATE TABLE IF NOT EXISTS public.preventive_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_xe TEXT REFERENCES public.danh_sach_xe(id_xe),
+    noi_dung_bao_tri TEXT,
+    so_km_thuc_hien NUMERIC,
+    ngay_thuc_hien DATE DEFAULT CURRENT_DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -89,59 +131,95 @@ ALTER TABLE public.danh_sach_xe ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.quan_ly_vo_xe ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.phieu_bao_tri ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chi_tiet_vat_tu_su_dung ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.danh_muc_khach_hang ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.danh_muc_nha_cung_cap ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.danh_muc_dich_vu ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.preventive_logs ENABLE ROW LEVEL SECURITY;
 
 -- POLICIES
 
--- Profiles: Anyone can view their own, Admin can view all
-CREATE POLICY "Users can view their own profile" ON public.profiles
-    FOR SELECT USING (auth.uid() = id);
+-- Profiles
+CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
 
--- Master Data: Everyone can view
+-- Master Data: Public Read
 CREATE POLICY "Public read for gara" ON public.danh_muc_gara FOR SELECT USING (true);
 CREATE POLICY "Public read for sku" ON public.danh_muc_vat_tu_sku FOR SELECT USING (true);
 CREATE POLICY "Public read for xe" ON public.danh_sach_xe FOR SELECT USING (true);
 CREATE POLICY "Public read for vo_xe" ON public.quan_ly_vo_xe FOR SELECT USING (true);
+CREATE POLICY "Public read for customers" ON public.danh_muc_khach_hang FOR SELECT USING (true);
+CREATE POLICY "Public read for suppliers" ON public.danh_muc_nha_cung_cap FOR SELECT USING (true);
+CREATE POLICY "Public read for services" ON public.danh_muc_dich_vu FOR SELECT USING (true);
+CREATE POLICY "Public read for preventive_logs" ON public.preventive_logs FOR SELECT USING (true);
 
--- Maintenance Tickets:
--- Mechanics can see their own
-CREATE POLICY "Mechanics can see own tickets" ON public.phieu_bao_tri
-    FOR SELECT USING (auth.uid() = id_tho_may);
+-- Maintenance Tickets
+CREATE POLICY "Mechanics can see own tickets" ON public.phieu_bao_tri FOR SELECT USING (auth.uid() = id_tho_may);
+CREATE POLICY "Mechanics can create tickets" ON public.phieu_bao_tri FOR INSERT WITH CHECK (auth.uid() = id_tho_may);
+CREATE POLICY "Managers can see all tickets" ON public.phieu_bao_tri FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('MANAGER', 'ADMIN')));
+CREATE POLICY "Managers can update ticket status" ON public.phieu_bao_tri FOR UPDATE USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('MANAGER', 'ADMIN')));
 
--- Mechanics can insert tickets
-CREATE POLICY "Mechanics can create tickets" ON public.phieu_bao_tri
-    FOR INSERT WITH CHECK (auth.uid() = id_tho_may);
-
--- Managers can see all
-CREATE POLICY "Managers can see all tickets" ON public.phieu_bao_tri
-    FOR SELECT USING (
-        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('MANAGER', 'ADMIN'))
-    );
-
--- Managers can update status
-CREATE POLICY "Managers can update ticket status" ON public.phieu_bao_tri
-    FOR UPDATE USING (
-        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('MANAGER', 'ADMIN'))
-    );
-
--- Chi tiết vật tư: Similar policies
-CREATE POLICY "Mechanics can see own ticket details" ON public.chi_tiet_vat_tu_su_dung
-    FOR SELECT USING (
-        EXISTS (SELECT 1 FROM public.phieu_bao_tri WHERE id = id_phieu AND id_tho_may = auth.uid())
-    );
-
-CREATE POLICY "Mechanics can insert ticket details" ON public.chi_tiet_vat_tu_su_dung
-    FOR INSERT WITH CHECK (
-        EXISTS (SELECT 1 FROM public.phieu_bao_tri WHERE id = id_phieu AND id_tho_may = auth.uid())
-    );
-
-CREATE POLICY "Managers can see all ticket details" ON public.chi_tiet_vat_tu_su_dung
-    FOR SELECT USING (
-        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('MANAGER', 'ADMIN'))
-    );
+-- Ticket Details
+CREATE POLICY "Mechanics can see own ticket details" ON public.chi_tiet_vat_tu_su_dung FOR SELECT USING (EXISTS (SELECT 1 FROM public.phieu_bao_tri WHERE id = id_phieu AND id_tho_may = auth.uid()));
+CREATE POLICY "Mechanics can insert ticket details" ON public.chi_tiet_vat_tu_su_dung FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.phieu_bao_tri WHERE id = id_phieu AND id_tho_may = auth.uid()));
+CREATE POLICY "Managers can see all ticket details" ON public.chi_tiet_vat_tu_su_dung FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('MANAGER', 'ADMIN')));
 
 -- =====================================================================================
--- Auth Trigger: Auto-create Profile on Signup
+-- BUSINESS LOGIC TRIGGERS
 -- =====================================================================================
+
+-- 1. Cost Integrity: Update total price on ticket
+CREATE OR REPLACE FUNCTION public.update_ticket_totals()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.phieu_bao_tri
+    SET 
+        tong_vat_tu = (SELECT COALESCE(SUM(thanh_tien), 0) FROM public.chi_tiet_vat_tu_su_dung WHERE id_phieu = COALESCE(NEW.id_phieu, OLD.id_phieu)),
+        tong_chi_phi = (SELECT COALESCE(SUM(thanh_tien), 0) FROM public.chi_tiet_vat_tu_su_dung WHERE id_phieu = COALESCE(NEW.id_phieu, OLD.id_phieu)) + tien_cong,
+        last_updated = NOW()
+    WHERE id = COALESCE(NEW.id_phieu, OLD.id_phieu);
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS on_ticket_detail_change ON public.chi_tiet_vat_tu_su_dung;
+CREATE TRIGGER on_ticket_detail_change
+AFTER INSERT OR UPDATE OR DELETE ON public.chi_tiet_vat_tu_su_dung
+FOR EACH ROW EXECUTE FUNCTION public.update_ticket_totals();
+
+-- 2. Approval Integrity: Reset to 'Báo giá' if items change
+CREATE OR REPLACE FUNCTION public.reset_ticket_status()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.phieu_bao_tri
+    SET trang_thai_phieu = 'Báo giá'
+    WHERE id = NEW.id_phieu AND trang_thai_phieu NOT IN ('Báo giá', 'Đã xong');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS on_ticket_detail_modified_reset_status ON public.chi_tiet_vat_tu_su_dung;
+CREATE TRIGGER on_ticket_detail_modified_reset_status
+AFTER UPDATE ON public.chi_tiet_vat_tu_su_dung
+FOR EACH ROW EXECUTE FUNCTION public.reset_ticket_status();
+
+-- 3. Odometer Sync: Update Vehicle KM when ticket is completed
+CREATE OR REPLACE FUNCTION public.sync_vehicle_odometer()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NEW.trang_thai_phieu = 'Đã xong' AND OLD.trang_thai_phieu <> 'Đã xong') THEN
+        UPDATE public.danh_sach_xe
+        SET so_km_hien_tai = NEW.so_km_luc_sua
+        WHERE id_xe = NEW.id_xe;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS on_ticket_completed_sync_km ON public.phieu_bao_tri;
+CREATE TRIGGER on_ticket_completed_sync_km
+AFTER UPDATE ON public.phieu_bao_tri
+FOR EACH ROW EXECUTE FUNCTION public.sync_vehicle_odometer();
+
+-- 4. Auth Trigger: Auto-create Profile on Signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN

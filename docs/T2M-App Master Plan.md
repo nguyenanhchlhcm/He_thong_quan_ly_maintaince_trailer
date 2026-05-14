@@ -12,19 +12,17 @@ Tài liệu này chia nhỏ quá trình xây dựng T2M-App thành 17 Phase (Gia
   * Khởi tạo Project Supabase, kết nối biến môi trường (.env).  
 * **Đầu ra (DoD):** Source code base có thể chạy npm run dev không lỗi, deploy thử nghiệm thành công lên Vercel.
 
-### **Phase 2: Thiết kế Lược đồ Dữ liệu & Bảo mật (Database & RLS)**
-
 * **Mục tiêu:** Xây dựng khung xương lưu trữ dữ liệu.  
 * **Công việc:** \* Tạo các bảng trên Supabase PostgreSQL (Xe, Gara, Vật tư, Phiếu bảo trì, Lốp xe...).  
   * Viết policies Row Level Security (RLS) cho 3 Roles: ADMIN, MANAGER, MECHANIC.  
-* **Đầu ra (DoD):** Database schema hoàn chỉnh, test RLS đảm bảo Mechanic không thể xem phiếu của người khác.
+* **Đầu ra (DoD):** [DONE] Database schema hoàn chỉnh, test RLS đảm bảo Mechanic không thể xem phiếu của người khác.
 
-### **Phase 3: Lập trình Database Triggers (Bảo vệ Toàn vẹn Dữ liệu)**
+### **Phase 3: Lập trình Database Triggers (Bảo vệ Toàn vẹn Dữ liệu)** [DONE]
 
 * **Mục tiêu:** Thực thi Rule 3 (Cost Integrity) và Rule 4 (Approval Workflow).  
 * **Công việc:** \* Viết Trigger Auto\_Calculate\_Totals tính tổng tiền dựa trên Chi tiết vật tư.  
   * Viết Trigger Reset\_Status\_On\_Cost\_Change tự động lùi trạng thái về "Báo giá" nếu bill thay đổi.  
-* **Đầu ra (DoD):** Sửa data trực tiếp trong DB cũng tự động tính lại tổng tiền, chặn triệt để việc submit giá giả từ Frontend.
+* **Đầu ra (DoD):** [DONE] Sửa data trực tiếp trong DB cũng tự động tính lại tổng tiền, chặn triệt để việc submit giá giả từ Frontend.
 
 ## **PHẦN II: XÁC THỰC & QUẢN LÝ DANH MỤC (ADMIN & MASTER DATA)**
 
@@ -35,19 +33,19 @@ Tài liệu này chia nhỏ quá trình xây dựng T2M-App thành 17 Phase (Gia
   * Xây dựng middleware trong Next.js để bảo vệ các routes dựa trên Role.  
 * **Đầu ra (DoD):** Người dùng đăng nhập thành công và bị điều hướng về đúng Dashboard tương ứng (Thợ máy vs Quản lý).
 
-### **Phase 5: Module Quản lý Danh mục (Master Data)**
+### **Phase 5: Module Quản lý Danh mục (Master Data)** [DONE]
 
 * **Mục tiêu:** Xây dựng công cụ cho ADMIN nhập liệu ban đầu.  
 * **Công việc:** \* Giao diện CRUD (Thêm/Sửa/Xóa) cho: Danh sách Xe, Danh mục Vật tư/Phụ tùng, Danh sách Gara, Danh sách Nhân viên.  
-* **Đầu ra (DoD):** Có sẵn data mẫu (Seed data) để các module sau hoạt động.
+* **Đầu ra (DoD):** [DONE] Có sẵn data mẫu (Seed data) để các module sau hoạt động. Thêm bảng Khách hàng, NCC, Dịch vụ.
 
 ## **PHẦN III: GIAO DIỆN & NGHIỆP VỤ THỢ MÁY (MECHANIC WORKFLOW)**
 
-### **Phase 6: Thiết kế UI/UX Thợ máy (Mobile-First)**
+### **Phase 6: Thiết kế UI/UX Thợ máy (Mobile-First)** [DONE - PREMIUM UPGRADE]
 
 * **Mục tiêu:** Tối ưu hóa thao tác trên màn hình điện thoại, phù hợp với môi trường Gara.  
 * **Công việc:** \* Xây dựng Layout tối giản, nút bấm to, form nhập liệu dễ nhìn ngoài trời sáng.  
-* **Đầu ra (DoD):** UI responsive 100% trên thiết bị di động, điểm Lighthouse (Mobile) \> 90\.
+* **Đầu ra (DoD):** [DONE] UI responsive 100% trên thiết bị di động, điểm Lighthouse (Mobile) \> 90\. Theme Navy Blue & Glassmorphism.
 
 ### **Phase 7: Nghiệp vụ Phiếu Bảo Trì (Core CRUD)**
 
@@ -56,20 +54,20 @@ Tài liệu này chia nhỏ quá trình xây dựng T2M-App thành 17 Phase (Gia
   * Giao diện thêm/bớt CHI\_TIET\_VAT\_TU\_SU\_DUNG vào phiếu.  
 * **Đầu ra (DoD):** Thợ máy tạo thành công phiếu, DB lưu đúng thông tin.
 
-### **Phase 8: Nén ảnh Client-side & Upload (Anti-Fraud 1\)**
+### **Phase 8: Nén ảnh Client-side & Upload (Anti-Fraud 1\)** [DONE]
 
 * **Mục tiêu:** Thực thi Rule 1 (Visual Proof) & Rule 7 (Data Bloat).  
 * **Công việc:** \* Tích hợp browser-image-compression, nén ảnh \< 800x800px chuẩn WebP.  
   * Bắt buộc upload 2 ảnh (CŨ/MỚI) trước khi submit vật tư lên Supabase Storage.  
-* **Đầu ra (DoD):** Upload ảnh nhanh, dung lượng mỗi ảnh \< 100KB, form báo lỗi nếu thiếu ảnh.
+* **Đầu ra (DoD):** [DONE] Upload ảnh nhanh, dung lượng mỗi ảnh \< 100KB, form báo lỗi nếu thiếu ảnh.
 
-### **Phase 9: Định vị GPS & Cảnh báo (Anti-Fraud 2\)**
+### **Phase 9: Định vị GPS & Cảnh báo (Anti-Fraud 2\)** [DONE]
 
 * **Mục tiêu:** Thực thi Rule 2 (GPS Verification).  
 * **Công việc:** \* Lấy tọa độ từ HTML5 Geolocation API khi ấn "Bắt đầu sửa chữa".  
   * Tính toán công thức Haversine tại client/server.  
   * Bật cờ canh\_bao\_gps nếu lệch \> 1km.  
-* **Đầu ra (DoD):** Chặn các trường hợp mang phụ tùng ra ngoài Gara để báo cáo ảo.
+* **Đầu ra (DoD):** [DONE] Chặn các trường hợp mang phụ tùng ra ngoài Gara để báo cáo ảo. Hiển thị khoảng cách thực tế.
 
 ## **PHẦN IV: OFFLINE-FIRST & ĐỒNG BỘ DỮ LIỆU (RESILIENCE)**
 

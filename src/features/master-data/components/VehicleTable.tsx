@@ -19,8 +19,8 @@ export function VehicleTable({ data, onEdit, onDelete, onAdd }: VehicleTableProp
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredData = data.filter(xe => 
-    xe.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (xe.model && xe.model.toLowerCase().includes(searchTerm.toLowerCase()))
+    xe.id_xe.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    xe.bien_so.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -45,9 +45,10 @@ export function VehicleTable({ data, onEdit, onDelete, onAdd }: VehicleTableProp
         <Table>
           <TableHeader className="bg-slate-900/80">
             <TableRow className="border-slate-800 hover:bg-transparent">
-              <TableHead className="text-slate-400">Biển số / ID</TableHead>
-              <TableHead className="text-slate-400">Model/Ghi chú</TableHead>
-              <TableHead className="text-slate-400">Ngày tạo</TableHead>
+              <TableHead className="text-slate-400">ID Xe</TableHead>
+              <TableHead className="text-slate-400">Biển số</TableHead>
+              <TableHead className="text-slate-400">Loại xe</TableHead>
+              <TableHead className="text-slate-400 text-right">Số KM hiện tại</TableHead>
               <TableHead className="text-slate-400 text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
@@ -57,13 +58,12 @@ export function VehicleTable({ data, onEdit, onDelete, onAdd }: VehicleTableProp
                 <TableRow key={xe.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
                   <TableCell>
                     <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-bold">
-                      {xe.id}
+                      {xe.id_xe}
                     </Badge>
                   </TableCell>
-                  <TableCell>{xe.model || '-'}</TableCell>
-                  <TableCell className="text-xs text-slate-500">
-                    {new Date(xe.created_at).toLocaleDateString('vi-VN')}
-                  </TableCell>
+                  <TableCell className="font-mono">{xe.bien_so}</TableCell>
+                  <TableCell>{xe.loai_xe}</TableCell>
+                  <TableCell className="font-mono text-right pr-12">{xe.so_km_hien_tai?.toLocaleString()} km</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button 
@@ -78,7 +78,7 @@ export function VehicleTable({ data, onEdit, onDelete, onAdd }: VehicleTableProp
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-400/10"
-                        onClick={() => onDelete(xe.id)}
+                        onClick={() => onDelete(xe.id_xe)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

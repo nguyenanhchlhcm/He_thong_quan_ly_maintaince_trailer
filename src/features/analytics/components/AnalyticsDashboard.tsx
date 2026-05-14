@@ -29,7 +29,8 @@ export function AnalyticsDashboard() {
     totalAllTime: 0,
     activeTickets: 0,
     totalVehicles: 0,
-    averageCostPerTicket: 0
+    averageCostPerTicket: 0,
+    avgCpKm: 0
   })
 
   useEffect(() => {
@@ -49,17 +50,20 @@ export function AnalyticsDashboard() {
       setMonthlyCosts(costData || [])
 
       // 2. Fetch summary stats
-      const { data: tickets } = await supabase.from('phieu_bao_tri').select('tong_chi_phi, trang_thai_phieu')
-      const { count: vehicleCount } = await supabase.from('vehicles').select('*', { count: 'exact', head: true })
-
       const doneTickets = tickets?.filter(t => t.trang_thai_phieu === 'Đã xong') || []
       const total = doneTickets.reduce((sum, t) => sum + (t.tong_chi_phi || 0), 0)
       
+      // Tính CP/KM trung bình (chỉ những phiếu có nhập số km > 0)
+      const ticketsWithKm = doneTickets.filter(t => (t.so_km_luc_sua || 0) > 0)
+      const totalCpKm = ticketsWithKm.reduce((sum, t) => sum + (t.tong_chi_phi / (t.so_km_luc_sua || 1)), 0)
+      const avgCpKm = ticketsWithKm.length > 0 ? totalCpKm / ticketsWithKm.length : 0
+
       setStats({
         totalAllTime: total,
         activeTickets: tickets?.filter(t => t.trang_thai_phieu !== 'Đã xong').length || 0,
         totalVehicles: vehicleCount || 0,
-        averageCostPerTicket: doneTickets.length > 0 ? total / doneTickets.length : 0
+        averageCostPerTicket: doneTickets.length > 0 ? total / doneTickets.length : 0,
+        avgCpKm: avgCpKm
       })
     } catch (error: any) {
       console.error('Error fetching analytics:', error)
@@ -107,7 +111,7 @@ export function AnalyticsDashboard() {
 
       {/* KPI Cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-primary/50 transition-all">
+        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-primary/50 transition-all animate-slide-up" style={{ animationDelay: '0.05s' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Tổng chi phí (Đã xong)</CardTitle>
@@ -126,7 +130,7 @@ export function AnalyticsDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-amber-500/50 transition-all">
+        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-amber-500/50 transition-all animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Phiếu đang xử lý</CardTitle>
@@ -140,7 +144,7 @@ export function AnalyticsDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-indigo-500/50 transition-all">
+        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-indigo-500/50 transition-all animate-slide-up" style={{ animationDelay: '0.15s' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Đội xe quản lý</CardTitle>
@@ -154,7 +158,7 @@ export function AnalyticsDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-purple-500/50 transition-all">
+        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-purple-500/50 transition-all animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Trung bình/Phiếu</CardTitle>
@@ -167,6 +171,22 @@ export function AnalyticsDashboard() {
               {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.averageCostPerTicket)}
             </div>
             <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-tight font-medium">Chi phí/Lượt bảo trì</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-900/40 border-slate-800/50 backdrop-blur-md relative overflow-hidden group hover:border-emerald-500/50 transition-all animate-slide-up" style={{ animationDelay: '0.25s' }}>
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">Hiệu suất CP/KM</CardTitle>
+            <div className="p-2 bg-emerald-500/10 rounded-lg">
+              <TrendingUp className="h-4 w-4 text-emerald-400" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-slate-100 font-mono">
+              {stats.avgCpKm.toLocaleString('vi-VN')} <span className="text-xs text-slate-500">đ/km</span>
+            </div>
+            <p className="text-[10px] text-emerald-400 mt-1 uppercase tracking-tight font-medium">Chi phí trên mỗi Kilomet</p>
           </CardContent>
         </Card>
       </div>

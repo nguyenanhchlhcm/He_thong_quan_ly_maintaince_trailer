@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Xe, VatTuSKU, Gara, Profile } from '@/types/database'
+import { Xe, VatTuSKU, Gara, Profile, DichVu, KhachHang, NhaCungCap } from '@/types/database'
 
 export const MASTER_DATA_KEYS = {
   all: ['master-data'] as const,
@@ -12,6 +12,9 @@ export const MASTER_DATA_KEYS = {
   garages: ['master-data', 'garages'] as const,
   users: ['master-data', 'users'] as const,
   logs: ['master-data', 'logs'] as const,
+  services: ['master-data', 'services'] as const,
+  customers: ['master-data', 'customers'] as const,
+  suppliers: ['master-data', 'suppliers'] as const,
 }
 
 export function useVehicles() {
@@ -19,7 +22,7 @@ export function useVehicles() {
     queryKey: MASTER_DATA_KEYS.vehicles,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vehicles')
+        .from('danh_sach_xe')
         .select('*')
         .order('created_at', { ascending: false })
       if (error) throw error
@@ -33,7 +36,7 @@ export function useParts() {
     queryKey: MASTER_DATA_KEYS.parts,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('skus')
+        .from('danh_muc_vat_tu_sku')
         .select('*')
         .order('created_at', { ascending: false })
       if (error) throw error
@@ -47,7 +50,7 @@ export function useGarages() {
     queryKey: MASTER_DATA_KEYS.garages,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('garages')
+        .from('danh_muc_gara')
         .select('*')
         .order('created_at', { ascending: false })
       if (error) throw error
@@ -66,6 +69,48 @@ export function useUsers() {
         .order('created_at', { ascending: false })
       if (error) throw error
       return data as Profile[]
+    }
+  })
+}
+
+export function useServices() {
+  return useQuery({
+    queryKey: MASTER_DATA_KEYS.services,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('danh_muc_dich_vu')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as DichVu[]
+    }
+  })
+}
+
+export function useCustomers() {
+  return useQuery({
+    queryKey: MASTER_DATA_KEYS.customers,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('danh_muc_khach_hang')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as KhachHang[]
+    }
+  })
+}
+
+export function useSuppliers() {
+  return useQuery({
+    queryKey: MASTER_DATA_KEYS.suppliers,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('danh_muc_nha_cung_cap')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as NhaCungCap[]
     }
   })
 }
@@ -90,7 +135,7 @@ export function useDeleteVehicle() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('vehicles').delete().eq('id', id)
+      const { error } = await supabase.from('danh_sach_xe').delete().eq('id_xe', id)
       if (error) throw error
     },
     onSuccess: () => {
@@ -107,7 +152,7 @@ export function useDeletePart() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('skus').delete().eq('id', id)
+      const { error } = await supabase.from('danh_muc_vat_tu_sku').delete().eq('id', id)
       if (error) throw error
     },
     onSuccess: () => {
@@ -124,7 +169,7 @@ export function useDeleteGarage() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('garages').delete().eq('id', id)
+      const { error } = await supabase.from('danh_muc_gara').delete().eq('id', id)
       if (error) throw error
     },
     onSuccess: () => {
@@ -154,3 +199,53 @@ export function useDeleteUser() {
   })
 }
 
+export function useDeleteService() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('danh_muc_dich_vu').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.services })
+      toast.success('Đã xóa dịch vụ thành công')
+    },
+    onError: (error: any) => {
+      toast.error('Lỗi khi xóa dịch vụ: ' + error.message)
+    }
+  })
+}
+
+export function useDeleteCustomer() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('danh_muc_khach_hang').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.customers })
+      toast.success('Đã xóa khách hàng thành công')
+    },
+    onError: (error: any) => {
+      toast.error('Lỗi khi xóa khách hàng: ' + error.message)
+    }
+  })
+}
+
+export function useDeleteSupplier() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('danh_muc_nha_cung_cap').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.suppliers })
+      toast.success('Đã xóa nhà cung cấp thành công')
+    },
+    onError: (error: any) => {
+      toast.error('Lỗi khi xóa nhà cung cấp: ' + error.message)
+    }
+  })
+}

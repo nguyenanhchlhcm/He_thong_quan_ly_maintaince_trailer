@@ -21,45 +21,25 @@ interface AdminTicketDialogProps {
 
 export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: AdminTicketDialogProps) {
   const [details, setDetails] = useState<any[]>([])
-  const [performerName, setPerformerName] = useState<string>('Đang tải...')
   const [isLoading, setIsLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     if (open && ticket) {
       fetchDetails()
-      fetchPerformerName()
     }
   }, [open, ticket])
-
-  const fetchPerformerName = async () => {
-    if (!ticket?.id_tho_may) {
-      setPerformerName('Chưa gán')
-      return
-    }
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name, email')
-        .eq('id', ticket.id_tho_may)
-        .single()
-      if (error) throw error
-      setPerformerName(data?.full_name || data?.email || 'N/A')
-    } catch (err) {
-      setPerformerName('Lỗi tải tên')
-    }
-  }
 
   const fetchDetails = async () => {
     if (!ticket) return
     setIsLoading(true)
     try {
       const { data, error } = await supabase
-        .from('chi_tiet_phieu_bao_tri')
+        .from('chi_tiet_vat_tu_su_dung')
         .select(`
           *,
-          skus (
-            name
+          danh_muc_vat_tu_sku (
+            ten_vat_tu
           )
         `)
         .eq('id_phieu', ticket.id)
@@ -124,11 +104,18 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-1">
             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Phương tiện</p>
-            <p className="text-lg font-bold text-primary">{ticket.id_xe}</p>
+            <p className="text-lg font-bold text-primary">
+              {ticket.danh_sach_xe?.bien_so || ticket.id_xe || 'N/A'}
+            </p>
+            {ticket.danh_sach_xe?.loai_xe && (
+              <p className="text-xs text-slate-500">{ticket.danh_sach_xe.loai_xe}</p>
+            )}
           </div>
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-1">
             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Người thực hiện / Chịu trách nhiệm</p>
-            <p className="text-sm font-medium text-slate-200">{performerName}</p>
+            <p className="text-sm font-medium text-slate-200">
+              {ticket.profiles?.full_name || ticket.profiles?.email || 'Chưa gán'}
+            </p>
           </div>
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-1">
             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Ngày lập</p>
@@ -198,11 +185,10 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
                   details.map((item) => (
                     <TableRow key={item.id} className="border-slate-800">
                       <TableCell className="font-medium text-slate-200">
-                        <p className="text-sm font-bold text-slate-100">{item.skus?.name || item.id_sku}</p>
-                        <p className="text-[10px] text-slate-500">{item.id_sku}</p>
-                        {item.id_sku?.toLowerCase().includes('công') || item.id_sku?.toLowerCase().includes('dịch vụ') ? (
-                          <Badge variant="outline" className="text-[9px] h-4 bg-blue-500/10 text-blue-400 border-blue-500/20">Dịch vụ</Badge>
-                        ) : null}
+                        <p className="text-sm font-bold text-slate-100">
+                          {item.danh_muc_vat_tu_sku?.ten_vat_tu || 'Không rõ'}
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-mono">{item.id_sku?.slice(0, 8)}</p>
                       </TableCell>
                       <TableCell className="text-center">{item.so_luong}</TableCell>
                       <TableCell className="text-right font-mono text-xs">{item.don_gia.toLocaleString()} đ</TableCell>

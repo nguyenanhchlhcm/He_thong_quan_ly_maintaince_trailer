@@ -14,10 +14,16 @@ import { VehicleDialog } from '@/features/master-data/components/VehicleDialog'
 import { PartDialog } from '@/features/master-data/components/PartDialog'
 import { GarageDialog } from '@/features/master-data/components/GarageDialog'
 import { UserRoleDialog } from '@/features/master-data/components/UserRoleDialog'
-import { Xe, VatTuSKU, Gara, Profile } from '@/types/database'
+import { ServiceTable } from '@/features/master-data/components/ServiceTable'
+import { ServiceDialog } from '@/features/master-data/components/ServiceDialog'
+import { CustomerTable } from '@/features/master-data/components/CustomerTable'
+import { CustomerDialog } from '@/features/master-data/components/CustomerDialog'
+import { SupplierTable } from '@/features/master-data/components/SupplierTable'
+import { SupplierDialog } from '@/features/master-data/components/SupplierDialog'
+import { Xe, VatTuSKU, Gara, Profile, DichVu, KhachHang, NhaCungCap } from '@/types/database'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useState, useEffect } from 'react'
-import { useVehicles, useParts, useGarages, useUsers, useAuditLogs, useDeleteVehicle, useDeletePart, useDeleteGarage, useDeleteUser, MASTER_DATA_KEYS } from '@/hooks/useMasterData'
+import { useVehicles, useParts, useGarages, useUsers, useAuditLogs, useServices, useCustomers, useSuppliers, useDeleteVehicle, useDeletePart, useDeleteGarage, useDeleteUser, useDeleteService, useDeleteCustomer, useDeleteSupplier, MASTER_DATA_KEYS } from '@/hooks/useMasterData'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/authStore'
@@ -36,22 +42,34 @@ function MasterDataContent() {
   const { data: garages = [], isLoading: isLoadingGarages } = useGarages()
   const { data: users = [], isLoading: isLoadingUsers } = useUsers()
   const { data: logs = [], isLoading: isLoadingLogs } = useAuditLogs()
+  const { data: services = [], isLoading: isLoadingServices } = useServices()
+  const { data: customers = [], isLoading: isLoadingCustomers } = useCustomers()
+  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useSuppliers()
 
   // Mutation Hooks
   const deleteVehicle = useDeleteVehicle()
   const deletePart = useDeletePart()
   const deleteGarage = useDeleteGarage()
   const deleteUser = useDeleteUser()
+  const deleteService = useDeleteService()
+  const deleteCustomer = useDeleteCustomer()
+  const deleteSupplier = useDeleteSupplier()
   
   const [selectedVehicle, setSelectedVehicle] = useState<Xe | null>(null)
   const [selectedPart, setSelectedPart] = useState<VatTuSKU | null>(null)
   const [selectedGarage, setSelectedGarage] = useState<Gara | null>(null)
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null)
+  const [selectedService, setSelectedService] = useState<DichVu | null>(null)
+  const [selectedCustomer, setSelectedCustomer] = useState<KhachHang | null>(null)
+  const [selectedSupplier, setSelectedSupplier] = useState<NhaCungCap | null>(null)
 
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false)
   const [isPartDialogOpen, setIsPartDialogOpen] = useState(false)
   const [isGarageDialogOpen, setIsGarageDialogOpen] = useState(false)
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false)
+  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false)
+  const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false)
+  const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false)
 
   useEffect(() => {
     const tab = searchParams.get('tab')
@@ -78,7 +96,22 @@ function MasterDataContent() {
     deleteUser.mutate(id)
   }
 
-  const isLoading = isLoadingVehicles || isLoadingParts || isLoadingGarages || isLoadingUsers || isLoadingLogs
+  const handleDeleteService = (id: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa dịch vụ này không?`)) return
+    deleteService.mutate(id)
+  }
+
+  const handleDeleteCustomer = (id: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa khách hàng này không?`)) return
+    deleteCustomer.mutate(id)
+  }
+
+  const handleDeleteSupplier = (id: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa nhà cung cấp này không?`)) return
+    deleteSupplier.mutate(id)
+  }
+
+  const isLoading = isLoadingVehicles || isLoadingParts || isLoadingGarages || isLoadingUsers || isLoadingLogs || isLoadingServices || isLoadingCustomers || isLoadingSuppliers
 
   if (isLoading) {
     return (
@@ -130,6 +163,14 @@ function MasterDataContent() {
             <Warehouse className="w-4 h-4" />
             Gara
           </TabsTrigger>
+          <TabsTrigger value="customers" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Users className="w-4 h-4" />
+            Khách hàng
+          </TabsTrigger>
+          <TabsTrigger value="suppliers" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Truck className="w-4 h-4" />
+            Nhà cung cấp
+          </TabsTrigger>
           {isAdmin && (
             <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Users className="w-4 h-4" />
@@ -167,7 +208,7 @@ function MasterDataContent() {
             </CardHeader>
             <CardContent>
               <PartTable 
-                data={parts.filter(p => p.loai !== 'Dịch vụ')} 
+                data={parts} 
                 onEdit={(part) => { setSelectedPart(part); setIsPartDialogOpen(true); }} 
                 onDelete={handleDeletePart} 
                 onAdd={() => { setSelectedPart(null); setIsPartDialogOpen(true); }}
@@ -183,11 +224,11 @@ function MasterDataContent() {
               <CardDescription>Quản lý bảng giá các loại dịch vụ sửa chữa (Vá vỏ, Thay nhớt...).</CardDescription>
             </CardHeader>
             <CardContent>
-              <PartTable 
-                data={parts.filter(p => p.loai === 'Dịch vụ')} 
-                onEdit={(part) => { setSelectedPart(part); setIsPartDialogOpen(true); }} 
-                onDelete={handleDeletePart} 
-                onAdd={() => { setSelectedPart(null); setIsPartDialogOpen(true); }}
+              <ServiceTable 
+                data={services} 
+                onEdit={(service) => { setSelectedService(service); setIsServiceDialogOpen(true); }} 
+                onDelete={handleDeleteService} 
+                onAdd={() => { setSelectedService(null); setIsServiceDialogOpen(true); }}
               />
             </CardContent>
           </Card>
@@ -205,6 +246,40 @@ function MasterDataContent() {
                 onEdit={(gara) => { setSelectedGarage(gara); setIsGarageDialogOpen(true); }} 
                 onDelete={handleDeleteGarage} 
                 onAdd={() => { setSelectedGarage(null); setIsGarageDialogOpen(true); }}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="customers" className="outline-none">
+          <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm shadow-2xl">
+            <CardHeader>
+              <CardTitle>Danh sách Khách hàng</CardTitle>
+              <CardDescription>Quản lý thông tin đối tác thuê xe và khách hàng vận tải.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CustomerTable 
+                data={customers} 
+                onEdit={(customer) => { setSelectedCustomer(customer); setIsCustomerDialogOpen(true); }} 
+                onDelete={handleDeleteCustomer} 
+                onAdd={() => { setSelectedCustomer(null); setIsCustomerDialogOpen(true); }}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="suppliers" className="outline-none">
+          <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm shadow-2xl">
+            <CardHeader>
+              <CardTitle>Danh sách Nhà cung cấp</CardTitle>
+              <CardDescription>Quản lý các đơn vị cung cấp vật tư và phụ tùng.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SupplierTable 
+                data={suppliers} 
+                onEdit={(supplier) => { setSelectedSupplier(supplier); setIsSupplierDialogOpen(true); }} 
+                onDelete={handleDeleteSupplier} 
+                onAdd={() => { setSelectedSupplier(null); setIsSupplierDialogOpen(true); }}
               />
             </CardContent>
           </Card>
@@ -304,6 +379,27 @@ function MasterDataContent() {
         onOpenChange={(open) => { setIsUserDialogOpen(open); if (!open) setSelectedUser(null); }} 
         onSuccess={() => queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.users })}
         user={selectedUser}
+      />
+      <ServiceDialog 
+        key={selectedService ? `edit-${selectedService.id}` : 'add-service'}
+        open={isServiceDialogOpen} 
+        onOpenChange={(open) => { setIsServiceDialogOpen(open); if (!open) setSelectedService(null); }} 
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.services })}
+        initialData={selectedService}
+      />
+      <CustomerDialog 
+        key={selectedCustomer ? `edit-${selectedCustomer.id}` : 'add-customer'}
+        open={isCustomerDialogOpen} 
+        onOpenChange={(open) => { setIsCustomerDialogOpen(open); if (!open) setSelectedCustomer(null); }} 
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.customers })}
+        initialData={selectedCustomer}
+      />
+      <SupplierDialog 
+        key={selectedSupplier ? `edit-${selectedSupplier.id}` : 'add-supplier'}
+        open={isSupplierDialogOpen} 
+        onOpenChange={(open) => { setIsSupplierDialogOpen(open); if (!open) setSelectedSupplier(null); }} 
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.suppliers })}
+        initialData={selectedSupplier}
       />
     </div>
   )

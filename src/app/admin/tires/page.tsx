@@ -1,9 +1,9 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { TireTable } from '@/features/tires/components/TireTable'
-import { TireDialog } from '@/features/tires/components/TireDialog'
-import { AssignTireDialog } from '@/features/tires/components/AssignTireDialog'
+import { TireTable } from '@/features/master-data/tires/components/TireTable'
+import { TireDialog } from '@/features/master-data/tires/components/TireDialog'
+import { AssignTireDialog } from '@/features/master-data/tires/components/AssignTireDialog'
 import { QuanLyVoXe } from '@/types/database'
 import { Disc, AlertTriangle, Truck, RefreshCw, Loader2 } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'

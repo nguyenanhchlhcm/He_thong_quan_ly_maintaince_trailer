@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AdminTicketTable } from '@/features/tickets/components/AdminTicketTable'
-import { AdminTicketDialog } from '@/features/tickets/components/AdminTicketDialog'
-import { CreateTicketDialog } from '@/features/tickets/components/CreateTicketDialog'
+import { Button } from '@/components/ui/button'
+import { AdminTicketTable } from '@/features/maintenance/components/admin/AdminTicketTable'
+import { AdminTicketDialog } from '@/features/maintenance/components/admin/AdminTicketDialog'
+import { CreateTicketDialog } from '@/features/maintenance/components/admin/CreateTicketDialog'
 import { PhieuBaoTri } from '@/types/database'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -24,6 +25,10 @@ export default function AdminTicketsPage() {
         .from('phieu_bao_tri')
         .select(`
           *,
+          danh_sach_xe (
+            bien_so,
+            loai_xe
+          ),
           profiles (
             full_name,
             email
@@ -32,7 +37,7 @@ export default function AdminTicketsPage() {
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      setTickets(data || [])
+      setTickets((data || []) as PhieuBaoTri[])
     } catch (error: any) {
       toast.error('Lỗi tải danh sách phiếu: ' + error.message)
     } finally {
@@ -175,5 +180,3 @@ export default function AdminTicketsPage() {
     </div>
   )
 }
-
-import { Button } from '@/components/ui/button'
