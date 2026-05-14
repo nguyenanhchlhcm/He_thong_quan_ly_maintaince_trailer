@@ -35,7 +35,7 @@ export interface VatTuSKU {
 }
 
 export interface Xe {
-  id_xe: string;
+  id: string;
   bien_so: string;
   loai_xe: 'Đầu kéo' | 'Rơ-moóc' | 'Xe tải';
   so_km_hien_tai: number;
@@ -48,7 +48,7 @@ export interface Xe {
 
 export interface QuanLyVoXe {
   id_vo: string;
-  id_xe: string | null;
+  id_xe: string | null; // refers to vehicles.id
   vi_tri_lap: string | null;
   tinh_trang_gai: number | null;
   trang_thai_vo: 'Đang chạy' | 'Chờ đắp' | 'Thanh lý' | null;

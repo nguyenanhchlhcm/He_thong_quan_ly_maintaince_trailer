@@ -26,7 +26,7 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
 
   useEffect(() => {
     if (initialData) {
-      setIdXe(initialData.id_xe)
+      setIdXe(initialData.id)
       setBienSo(initialData.bien_so)
       setLoaiXe(initialData.loai_xe)
       setSoKm(initialData.so_km_hien_tai)
@@ -55,14 +55,14 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
         const { error } = await supabase
           .from('vehicles')
           .update(payload)
-          .eq('id_xe', initialData.id_xe)
+          .eq('id', initialData.id)
 
         if (error) throw error
         toast.success('Cập nhật thông tin xe thành công!')
       } else {
         const { error } = await supabase
           .from('vehicles')
-          .insert([{ ...payload, id_xe: idXe }])
+          .insert([{ ...payload, id: idXe }])
 
         if (error) throw error
         toast.success('Thêm xe mới thành công!')
@@ -85,14 +85,14 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
           <DialogHeader>
             <DialogTitle>{initialData ? 'Sửa thông tin xe' : 'Thêm xe mới vào đội'}</DialogTitle>
             <DialogDescription className="text-slate-400">
-              {initialData ? `Chỉnh sửa thông tin cho xe ${initialData.id_xe}` : 'Nhập biển số hoặc ID định danh cho xe mới.'}
+              {initialData ? `Chỉnh sửa thông tin cho xe ${initialData.id}` : 'Nhập biển số hoặc ID định danh cho xe mới.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="id_xe">ID Xe (Nội bộ) <span className="text-red-500">*</span></Label>
+              <Label htmlFor="id">ID Xe (Nội bộ) <span className="text-red-500">*</span></Label>
               <Input
-                id="id_xe"
+                id="id"
                 value={idXe}
                 onChange={(e) => setIdXe(e.target.value)}
                 placeholder="VD: XE-001"

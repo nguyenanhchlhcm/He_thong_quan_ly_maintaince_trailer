@@ -135,7 +135,7 @@ export function useDeleteVehicle() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('vehicles').delete().eq('id_xe', id)
+      const { error } = await supabase.from('vehicles').delete().eq('id', id)
       if (error) throw error
     },
     onSuccess: () => {

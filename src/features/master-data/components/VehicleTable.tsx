@@ -19,7 +19,7 @@ export function VehicleTable({ data, onEdit, onDelete, onAdd }: VehicleTableProp
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredData = data.filter(xe => 
-    xe.id_xe.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    xe.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     xe.bien_so.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
@@ -55,10 +55,10 @@ export function VehicleTable({ data, onEdit, onDelete, onAdd }: VehicleTableProp
           <TableBody>
             {filteredData.length > 0 ? (
               filteredData.map((xe) => (
-                <TableRow key={xe.id_xe} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
+                <TableRow key={xe.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
                   <TableCell>
                     <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-bold">
-                      {xe.id_xe}
+                      {xe.id}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-mono">{xe.bien_so}</TableCell>
@@ -78,7 +78,7 @@ export function VehicleTable({ data, onEdit, onDelete, onAdd }: VehicleTableProp
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-400/10"
-                        onClick={() => onDelete(xe.id_xe)}
+                        onClick={() => onDelete(xe.id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

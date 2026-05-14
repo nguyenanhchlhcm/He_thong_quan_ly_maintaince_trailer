@@ -235,7 +235,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
                       {vehicles.map(v => (
-                        <SelectItem key={v.id_xe} value={v.id_xe}>{v.bien_so}</SelectItem>
+                        <SelectItem key={v.id} value={v.id}>{v.bien_so}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
