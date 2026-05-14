@@ -79,7 +79,7 @@ export interface PhieuBaoTri {
   last_updated: string;
   created_at: string;
   // Joined relations
-  danh_sach_xe?: {
+  vehicles?: {
     bien_so: string;
     loai_xe: string | null;
   } | null;

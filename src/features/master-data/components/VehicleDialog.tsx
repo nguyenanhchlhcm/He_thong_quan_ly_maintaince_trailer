@@ -53,7 +53,7 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
 
       if (initialData) {
         const { error } = await supabase
-          .from('danh_sach_xe')
+          .from('vehicles')
           .update(payload)
           .eq('id_xe', initialData.id_xe)
 
@@ -61,7 +61,7 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
         toast.success('Cập nhật thông tin xe thành công!')
       } else {
         const { error } = await supabase
-          .from('danh_sach_xe')
+          .from('vehicles')
           .insert([{ ...payload, id_xe: idXe }])
 
         if (error) throw error

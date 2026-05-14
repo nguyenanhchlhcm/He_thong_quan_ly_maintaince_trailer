@@ -105,10 +105,10 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-1">
             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Phương tiện</p>
             <p className="text-lg font-bold text-primary">
-              {ticket.danh_sach_xe?.bien_so || ticket.id_xe || 'N/A'}
+              {ticket.vehicles?.bien_so || ticket.id_xe || 'N/A'}
             </p>
-            {ticket.danh_sach_xe?.loai_xe && (
-              <p className="text-xs text-slate-500">{ticket.danh_sach_xe.loai_xe}</p>
+            {ticket.vehicles?.loai_xe && (
+              <p className="text-xs text-slate-500">{ticket.vehicles.loai_xe}</p>
             )}
           </div>
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-1">

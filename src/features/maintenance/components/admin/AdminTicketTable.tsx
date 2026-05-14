@@ -17,7 +17,7 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredData = data.filter(ticket => {
-    const bienSo = ticket.danh_sach_xe?.bien_so || ticket.id_xe || ''
+    const bienSo = ticket.vehicles?.bien_so || ticket.id_xe || ''
     const maPhieu = ticket.ma_phieu || ticket.id.slice(0, 8)
     const term = searchTerm.toLowerCase()
     return bienSo.toLowerCase().includes(term) || maPhieu.toLowerCase().includes(term)
@@ -74,9 +74,9 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                   </TableCell>
                   <TableCell className="font-bold text-primary">
                     <div>
-                      <p>{ticket.danh_sach_xe?.bien_so || ticket.id_xe || 'N/A'}</p>
-                      {ticket.danh_sach_xe?.loai_xe && (
-                        <p className="text-[10px] text-slate-500 font-normal">{ticket.danh_sach_xe.loai_xe}</p>
+                      <p>{ticket.vehicles?.bien_so || ticket.id_xe || 'N/A'}</p>
+                      {ticket.vehicles?.loai_xe && (
+                        <p className="text-[10px] text-slate-500 font-normal">{ticket.vehicles.loai_xe}</p>
                       )}
                     </div>
                   </TableCell>

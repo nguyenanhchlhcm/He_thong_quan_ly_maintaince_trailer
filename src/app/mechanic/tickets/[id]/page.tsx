@@ -32,7 +32,7 @@ export default function TicketDetailPage() {
         .from('phieu_bao_tri')
         .select(`
           *,
-          xe:danh_sach_xe(bien_so)
+          xe:vehicles(bien_so)
         `)
         .eq('id', id)
         .single()

@@ -52,7 +52,7 @@ export function AnalyticsDashboard() {
       // 2. Fetch all tickets and vehicles for stats
       const [ticketsRes, vehiclesRes] = await Promise.all([
         supabase.from('phieu_bao_tri').select('*'),
-        supabase.from('danh_sach_xe').select('id_xe', { count: 'exact', head: true })
+        supabase.from('vehicles').select('id_xe', { count: 'exact', head: true })
       ])
       
       const tickets = ticketsRes.data || []

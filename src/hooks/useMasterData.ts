@@ -22,7 +22,7 @@ export function useVehicles() {
     queryKey: MASTER_DATA_KEYS.vehicles,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('danh_sach_xe')
+        .from('vehicles')
         .select('*')
         .order('created_at', { ascending: false })
       if (error) throw error
@@ -135,7 +135,7 @@ export function useDeleteVehicle() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('danh_sach_xe').delete().eq('id_xe', id)
+      const { error } = await supabase.from('vehicles').delete().eq('id_xe', id)
       if (error) throw error
     },
     onSuccess: () => {

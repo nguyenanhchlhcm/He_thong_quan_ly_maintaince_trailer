@@ -66,7 +66,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
     setIsLoading(true)
     try {
       const [vRes, mRes, sRes] = await Promise.all([
-        supabase.from('danh_sach_xe').select('*'),
+        supabase.from('vehicles').select('*'),
         supabase.from('profiles').select('*'),
         supabase.from('danh_muc_vat_tu_sku').select('*')
       ])

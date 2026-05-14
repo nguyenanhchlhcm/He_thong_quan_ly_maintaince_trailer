@@ -25,7 +25,7 @@ export default function AdminTicketsPage() {
         .from('phieu_bao_tri')
         .select(`
           *,
-          danh_sach_xe (
+          vehicles (
             bien_so,
             loai_xe
           ),
