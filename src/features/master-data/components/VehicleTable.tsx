@@ -55,7 +55,7 @@ export function VehicleTable({ data, onEdit, onDelete, onAdd }: VehicleTableProp
           <TableBody>
             {filteredData.length > 0 ? (
               filteredData.map((xe) => (
-                <TableRow key={xe.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
+                <TableRow key={xe.id_xe} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
                   <TableCell>
                     <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-bold">
                       {xe.id_xe}

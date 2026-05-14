@@ -353,7 +353,7 @@ function MasterDataContent() {
 
       {/* Cửa sổ nhập liệu (Dialogs) - Có Key để đảm bảo làm mới dữ liệu */}
       <VehicleDialog 
-        key={selectedVehicle ? `edit-${selectedVehicle.id}` : 'add-vehicle'}
+        key={selectedVehicle ? `edit-${selectedVehicle.id_xe}` : 'add-vehicle'}
         open={isVehicleDialogOpen} 
         onOpenChange={(open) => { setIsVehicleDialogOpen(open); if (!open) setSelectedVehicle(null); }} 
         onSuccess={() => queryClient.invalidateQueries({ queryKey: MASTER_DATA_KEYS.vehicles })}

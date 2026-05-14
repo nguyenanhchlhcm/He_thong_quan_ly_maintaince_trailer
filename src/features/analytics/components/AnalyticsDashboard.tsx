@@ -49,8 +49,16 @@ export function AnalyticsDashboard() {
       if (costError) throw costError
       setMonthlyCosts(costData || [])
 
-      // 2. Fetch summary stats
-      const doneTickets = tickets?.filter(t => t.trang_thai_phieu === 'Đã xong') || []
+      // 2. Fetch all tickets and vehicles for stats
+      const [ticketsRes, vehiclesRes] = await Promise.all([
+        supabase.from('phieu_bao_tri').select('*'),
+        supabase.from('danh_sach_xe').select('id_xe', { count: 'exact', head: true })
+      ])
+      
+      const tickets = ticketsRes.data || []
+      const vehicleCount = vehiclesRes.count || 0
+
+      const doneTickets = tickets.filter(t => t.trang_thai_phieu === 'Đã xong')
       const total = doneTickets.reduce((sum, t) => sum + (t.tong_chi_phi || 0), 0)
       
       // Tính CP/KM trung bình (chỉ những phiếu có nhập số km > 0)

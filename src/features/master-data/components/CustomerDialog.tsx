@@ -129,7 +129,7 @@ export function CustomerDialog({ open, onOpenChange, onSuccess, initialData }: C
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Hạng khách hàng</Label>
-                <Select value={rank} onValueChange={setRank}>
+                <Select value={rank} onValueChange={(val) => setRank(val || 'Standard')}>
                   <SelectTrigger className="bg-slate-800 border-slate-700">
                     <SelectValue />
                   </SelectTrigger>

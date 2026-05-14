@@ -19,6 +19,7 @@ const idbStorage: StateStorage = {
 export type OfflineTicket = {
   id_xe: string
   id_gara: string
+  so_km_luc_sua?: number
   tien_cong: number
   odometer_photo_base64?: string | null
   receipt_photo_base64?: string | null

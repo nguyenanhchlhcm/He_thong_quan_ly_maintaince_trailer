@@ -12,7 +12,7 @@ interface GPSLocatorProps {
 
 import { calculateDistance } from '@/lib/utils/haversine'
 
-export function GPSLocator({ onLocationFound }: GPSLocatorProps) {
+export function GPSLocator({ onLocationFound, targetLocation }: GPSLocatorProps) {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMsg, setErrorMsg] = useState('')
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)

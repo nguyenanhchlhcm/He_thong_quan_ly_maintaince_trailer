@@ -85,7 +85,7 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
           <DialogHeader>
             <DialogTitle>{initialData ? 'Sửa thông tin xe' : 'Thêm xe mới vào đội'}</DialogTitle>
             <DialogDescription className="text-slate-400">
-              {initialData ? `Chỉnh sửa thông tin cho xe ${initialData.id}` : 'Nhập biển số hoặc ID định danh cho xe mới.'}
+              {initialData ? `Chỉnh sửa thông tin cho xe ${initialData.id_xe}` : 'Nhập biển số hoặc ID định danh cho xe mới.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
