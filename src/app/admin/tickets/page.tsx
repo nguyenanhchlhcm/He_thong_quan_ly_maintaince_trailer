@@ -25,11 +25,11 @@ export default function AdminTicketsPage() {
         .from('phieu_bao_tri')
         .select(`
           *,
-          vehicles:id_xe (
+          vehicles!id_xe (
             bien_so,
             loai_xe
           ),
-          profiles:id_tho_may (
+          profiles!id_tho_may (
             full_name,
             email
           )
