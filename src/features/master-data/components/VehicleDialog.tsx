@@ -27,9 +27,9 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
   useEffect(() => {
     if (initialData) {
       setIdXe(initialData.id)
-      setBienSo(initialData.bien_so)
-      setLoaiXe(initialData.loai_xe)
-      setSoKm(initialData.so_km_hien_tai)
+      setBienSo(initialData.bien_so || initialData.id)
+      setLoaiXe((initialData.loai_xe || initialData.model || 'Đầu kéo') as 'Đầu kéo' | 'Rơ-moóc' | 'Xe tải')
+      setSoKm(initialData.so_km_hien_tai || initialData.odometer || 0)
     } else {
       setIdXe('')
       setBienSo('')
