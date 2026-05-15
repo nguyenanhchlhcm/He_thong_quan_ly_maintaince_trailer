@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { Loader2, Plus, Trash2, Package, Truck, User, Wrench, MapPin, FileText } from 'lucide-react'
 import { Xe, VatTuSKU, Profile, LoaiPhieu, LoaiSuaNgoai } from '@/types/database'
 import { logAction } from '@/lib/supabase/audit'
+import { uploadBase64Image } from '@/lib/supabase/storage'
 import { useAuthStore } from '@/store/authStore'
 import { VehicleDialog } from '@/features/master-data/components/VehicleDialog'
 import { UserRoleDialog } from '@/features/master-data/components/UserRoleDialog'
@@ -145,6 +146,8 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
     const totalVatTu = calculateTotalVatTu()
 
     try {
+      const ticketRef = `admin_ticket_${Date.now()}`
+
       // 1. Tạo Phiếu chính
       const { data: phieu, error: phieuError } = await supabase
         .from('phieu_bao_tri')
@@ -165,15 +168,28 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
 
       if (phieuError) throw phieuError
 
-      // 2. Tạo các Chi tiết phiếu
-      const chiTietData = selectedItems.map(item => ({
-        id_phieu: phieu.id,
-        id_sku: item.id_sku,
-        so_luong: item.so_luong,
-        don_gia: item.don_gia,
-        thanh_tien: item.so_luong * item.don_gia,
-        anh_vat_tu_cu_url: item.anh_cu || null,
-        anh_vat_tu_moi_url: item.anh_moi || null
+      // 2. Upload ảnh và tạo các Chi tiết phiếu
+      const chiTietData = await Promise.all(selectedItems.map(async (item, index) => {
+        let anhCuUrl = item.anh_cu || null
+        let anhMoiUrl = item.anh_moi || null
+
+        // Chỉ upload nếu là base64 (mới chụp)
+        if (item.anh_cu?.startsWith('data:image')) {
+          anhCuUrl = await uploadBase64Image('t2m-evidence', `parts/${ticketRef}_part${index}_old.webp`, item.anh_cu)
+        }
+        if (item.anh_moi?.startsWith('data:image')) {
+          anhMoiUrl = await uploadBase64Image('t2m-evidence', `parts/${ticketRef}_part${index}_new.webp`, item.anh_moi)
+        }
+
+        return {
+          id_phieu: phieu.id,
+          id_sku: item.id_sku,
+          so_luong: item.so_luong,
+          don_gia: item.don_gia,
+          thanh_tien: item.so_luong * item.don_gia,
+          anh_vat_tu_cu_url: anhCuUrl,
+          anh_vat_tu_moi_url: anhMoiUrl
+        }
       }))
 
       const { error: ctError } = await supabase

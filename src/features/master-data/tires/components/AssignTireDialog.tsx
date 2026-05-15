@@ -120,7 +120,7 @@ export function AssignTireDialog({ open, onOpenChange, onSuccess, tire }: Assign
                     {vehicles.map(xe => (
                       <SelectItem key={xe.id} value={xe.id} className="focus:bg-primary/20">
                         <div className="flex flex-col">
-                          <span className="font-bold">{xe.id}</span>
+                          <span className="font-bold">{xe.bien_so}</span>
                           <span className="text-[10px] text-slate-500">{xe.loai_xe || 'Không rõ loại'}</span>
                         </div>
                       </SelectItem>

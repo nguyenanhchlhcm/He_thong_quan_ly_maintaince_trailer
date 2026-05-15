@@ -21,6 +21,7 @@ import { toast } from 'sonner'
 // Types for master data fetched from Supabase
 type SkuItem = { id: string; ten_vat_tu: string; don_vi_tinh: string | null; gia_tham_khao: number; loai: string | null }
 type GaraItem = { id: string; ten_gara: string; toa_do_lat: number | null; toa_do_lng: number | null }
+type VehicleItem = { id: string; bien_so: string; loai_xe: string | null }
 
 type TicketFormValues = {
   id_xe: string
@@ -48,6 +49,7 @@ export function TicketForm() {
   const [isDebugMode, setIsDebugMode] = useState(false)
   const [skuList, setSkuList] = useState<SkuItem[]>([])
   const [garaList, setGaraList] = useState<GaraItem[]>([])
+  const [vehicleList, setVehicleList] = useState<VehicleItem[]>([])
   const [isLoadingMaster, setIsLoadingMaster] = useState(true)
   
   const { draftTicket, saveDraft, clearDraft, addToSyncQueue } = useTicketStore()
@@ -56,12 +58,14 @@ export function TicketForm() {
   useEffect(() => {
     const fetchMaster = async () => {
       try {
-        const [skuRes, garaRes] = await Promise.all([
+        const [skuRes, garaRes, vehicleRes] = await Promise.all([
           supabase.from('danh_muc_vat_tu_sku').select('id, ten_vat_tu, don_vi_tinh, gia_tham_khao, loai'),
-          supabase.from('danh_muc_gara').select('id, ten_gara, toa_do_lat, toa_do_lng')
+          supabase.from('danh_muc_gara').select('id, ten_gara, toa_do_lat, toa_do_lng'),
+          supabase.from('vehicles').select('id, bien_so, loai_xe')
         ])
         setSkuList(skuRes.data || [])
         setGaraList(garaRes.data || [])
+        setVehicleList(vehicleRes.data || [])
       } catch {
         toast.error('Không tải được danh mục')
       } finally {
@@ -400,13 +404,26 @@ export function TicketForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="id_xe">Biển số xe / Mã xe</Label>
-            <Input 
-              id="id_xe" 
-              placeholder="VD: XE-001" 
-              className="bg-slate-800/50 border-slate-700 h-12 text-lg uppercase"
-              {...register('id_xe', { required: true })}
-            />
+            <Label htmlFor="id_xe">Biển số xe / Mã xe <span className="text-red-500">*</span></Label>
+            <Select onValueChange={(val: any) => setValue('id_xe', val)}>
+              <SelectTrigger className="bg-slate-800/50 border-slate-700 h-12 text-lg uppercase">
+                <SelectValue placeholder="Chọn xe..." />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-slate-700">
+                {isLoadingMaster ? (
+                  <div className="flex items-center gap-2 p-3 text-slate-500 text-sm">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Đang tải...
+                  </div>
+                ) : vehicleList.map(xe => (
+                  <SelectItem key={xe.id} value={xe.id}>
+                    <div className="flex flex-col">
+                      <span className="font-bold">{xe.bien_so}</span>
+                      <span className="text-[10px] text-slate-500">{xe.loai_xe}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
