@@ -50,7 +50,7 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
         name: tenVatTu, 
         unit: donViTinh, 
         price: giaThamKhao ? parseFloat(giaThamKhao) : 0,
-        nhom_vat_tu: nhomVatTu
+        loai: nhomVatTu
       }
 
       if (initialData) {
