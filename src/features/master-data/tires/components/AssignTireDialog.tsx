@@ -38,7 +38,7 @@ export function AssignTireDialog({ open, onOpenChange, onSuccess, tire }: Assign
   const fetchVehicles = async () => {
     setIsLoadingVehicles(true)
     const { data } = await supabase.from('vehicles').select('id, bien_so:id, loai_xe:model')
-    setVehicles(data || [])
+    setVehicles((data || []) as unknown as Xe[])
     setIsLoadingVehicles(false)
   }
 

@@ -65,7 +65,7 @@ export function TicketForm() {
         ])
         setSkuList(skuRes.data || [])
         setGaraList(garaRes.data || [])
-        setVehicleList(vehicleRes.data || [])
+        setVehicleList((vehicleRes.data || []) as VehicleItem[])
       } catch {
         toast.error('Không tải được danh mục')
       } finally {

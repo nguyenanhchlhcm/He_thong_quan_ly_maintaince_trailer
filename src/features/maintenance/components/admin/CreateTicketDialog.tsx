@@ -71,7 +71,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
         supabase.from('profiles').select('*'),
         supabase.from('danh_muc_vat_tu_sku').select('*')
       ])
-      setVehicles(vRes.data || [])
+      setVehicles((vRes.data || []) as unknown as Xe[])
       setMechanics(mRes.data || [])
       setSkus(sRes.data || [])
 

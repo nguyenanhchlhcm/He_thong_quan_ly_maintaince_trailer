@@ -61,10 +61,8 @@ export function AnalyticsDashboard() {
       const doneTickets = tickets.filter(t => t.trang_thai_phieu === 'Đã xong')
       const total = doneTickets.reduce((sum, t) => sum + (t.tong_chi_phi || 0), 0)
       
-      // Tính CP/KM trung bình (chỉ những phiếu có nhập số km > 0)
-      const ticketsWithKm = doneTickets.filter(t => (t.so_km_luc_sua || 0) > 0)
-      const totalCpKm = ticketsWithKm.reduce((sum, t) => sum + (t.tong_chi_phi / (t.so_km_luc_sua || 1)), 0)
-      const avgCpKm = ticketsWithKm.length > 0 ? totalCpKm / ticketsWithKm.length : 0
+      // Tính CP/KM: cột so_km_luc_sua không còn tồn tại trong DB mới
+      const avgCpKm = 0
 
       setStats({
         totalAllTime: total,
