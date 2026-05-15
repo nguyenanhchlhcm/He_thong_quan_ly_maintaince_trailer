@@ -158,6 +158,15 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
                 <p className="text-sm text-slate-300 italic">"{ticket.ghi_chu_ngoai || 'Không có mô tả'}"</p>
               </div>
             </div>
+            
+            {ticket.receipt_photo_url && (
+              <div className="pt-4 border-t border-amber-500/20">
+                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2">Ảnh Hóa Đơn / Phiếu Thu</p>
+                <a href={ticket.receipt_photo_url} target="_blank" rel="noreferrer" className="block w-32 h-32 overflow-hidden rounded-lg border border-amber-500/30 hover:border-amber-500 transition-colors">
+                  <img src={ticket.receipt_photo_url} alt="Hóa đơn" className="w-full h-full object-cover" />
+                </a>
+              </div>
+            )}
           </div>
         )}
 

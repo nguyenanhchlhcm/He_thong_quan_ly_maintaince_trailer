@@ -16,6 +16,7 @@ import { useAuthStore } from '@/store/authStore'
 import { VehicleDialog } from '@/features/master-data/components/VehicleDialog'
 import { UserRoleDialog } from '@/features/master-data/components/UserRoleDialog'
 import { PartDialog } from '@/features/master-data/components/PartDialog'
+import { SinglePhotoUploader } from '@/features/maintenance/components/mechanic/SinglePhotoUploader'
 import { PhotoUploader } from '@/features/maintenance/components/mechanic/PhotoUploader'
 
 interface CreateTicketDialogProps {
@@ -56,6 +57,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
   const [loaiSuaNgoai, setLoaiSuaNgoai] = useState<LoaiSuaNgoai | ''>('')
   const [donViSuaNgoai, setDonViSuaNgoai] = useState('')
   const [ghiChuNgoai, setGhiChuNgoai] = useState('')
+  const [receiptPhotoBase64, setReceiptPhotoBase64] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
@@ -148,6 +150,11 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
     try {
       const ticketRef = `admin_ticket_${Date.now()}`
 
+      let receiptPhotoUrl: string | null = null
+      if (loaiPhieu === 'Bên ngoài' && receiptPhotoBase64) {
+        receiptPhotoUrl = await uploadBase64Image(receiptPhotoBase64, 'maintenance', `admin_receipt_${Date.now()}`)
+      }
+
       // 1. Tạo Phiếu chính
       const { data: phieu, error: phieuError } = await supabase
         .from('phieu_bao_tri')
@@ -159,6 +166,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
           loai_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (loaiSuaNgoai || null) : null,
           don_vi_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (donViSuaNgoai || null) : null,
           ghi_chu_ngoai: loaiPhieu === 'Bên ngoài' ? (ghiChuNgoai || null) : null,
+          receipt_photo_url: receiptPhotoUrl,
           tong_vat_tu: totalVatTu,
           tien_cong: laborCost,
           tong_chi_phi: totalVatTu + laborCost
@@ -217,6 +225,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       setLoaiSuaNgoai('')
       setDonViSuaNgoai('')
       setGhiChuNgoai('')
+      setReceiptPhotoBase64(null)
     } catch (error: any) {
       console.error('Submit Error:', error)
       toast.error('Lỗi khi lập phiếu: ' + error.message)
@@ -374,6 +383,14 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
                       onChange={(e) => setGhiChuNgoai(e.target.value)}
                       placeholder="VD: Vỏ trước bên phải bị đinh, lòi bố..."
                       className="w-full min-h-[80px] bg-slate-800 border border-amber-500/30 rounded-lg p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                    />
+                  </div>
+                  <div className="pt-2 border-t border-amber-500/20">
+                    <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider mb-2 block">Ảnh Hóa Đơn / Phiếu Thu (Nếu có)</Label>
+                    <SinglePhotoUploader 
+                      title="Chụp/Tải lên hóa đơn" 
+                      required={false}
+                      onPhotoChange={setReceiptPhotoBase64}
                     />
                   </div>
                 </div>
