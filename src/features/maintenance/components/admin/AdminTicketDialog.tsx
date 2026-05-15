@@ -35,11 +35,11 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
     setIsLoading(true)
     try {
       const { data, error } = await supabase
-        .from('chi_tiet_vat_tu_su_dung')
+        .from('chi_tiet_phieu_bao_tri')
         .select(`
           *,
-          danh_muc_vat_tu_sku (
-            ten_vat_tu
+          danh_muc_vat_tu_sku:skus!id_sku (
+            ten_vat_tu:name
           )
         `)
         .eq('id_phieu', ticket.id)

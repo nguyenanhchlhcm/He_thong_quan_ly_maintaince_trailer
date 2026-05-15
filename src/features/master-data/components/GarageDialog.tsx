@@ -25,10 +25,12 @@ export function GarageDialog({ open, onOpenChange, onSuccess, initialData }: Gar
 
   useEffect(() => {
     if (initialData) {
-      setName(initialData.ten_gara)
-      setAddress(initialData.dia_chi || '')
-      if (initialData.toa_do_lat && initialData.toa_do_lng) {
-        setCoords(`${initialData.toa_do_lat}, ${initialData.toa_do_lng}`)
+      setName(initialData.name || initialData.ten_gara || '')
+      setAddress(initialData.address || initialData.dia_chi || '')
+      const currentLat = initialData.lat ?? initialData.toa_do_lat
+      const currentLng = initialData.lng ?? initialData.toa_do_lng
+      if (currentLat && currentLng) {
+        setCoords(`${currentLat}, ${currentLng}`)
       } else {
         setCoords('')
       }
@@ -63,22 +65,22 @@ export function GarageDialog({ open, onOpenChange, onSuccess, initialData }: Gar
 
     try {
       const payload = { 
-        ten_gara: name, 
-        dia_chi: address || null,
-        toa_do_lat: lat,
-        toa_do_lng: lng
+        name: name, 
+        address: address || null,
+        lat: lat,
+        lng: lng
       }
 
       if (initialData) {
         const { error } = await supabase
-          .from('danh_muc_gara')
+          .from('garages')
           .update(payload)
           .eq('id', initialData.id)
         if (error) throw error
         toast.success('Cập nhật Gara thành công!')
       } else {
         const { error } = await supabase
-          .from('danh_muc_gara')
+          .from('garages')
           .insert([payload])
         if (error) throw error
         toast.success('Thêm Gara mới thành công!')

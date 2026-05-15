@@ -69,24 +69,24 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       const [vRes, mRes, sRes] = await Promise.all([
         supabase.from('vehicles').select('id, bien_so:id, loai_xe:model'),
         supabase.from('profiles').select('*'),
-        supabase.from('danh_muc_vat_tu_sku').select('*')
+        supabase.from('skus').select('id, ten_vat_tu:name, don_vi_tinh:unit, gia_tham_khao:price, loai')
       ])
       setVehicles((vRes.data || []) as unknown as Xe[])
       setMechanics(mRes.data || [])
-      setSkus(sRes.data || [])
+      setSkus((sRes.data || []) as unknown as VatTuSKU[])
 
       if (autoSelectId) {
         if (type === 'vehicle') setSelectedVehicle(autoSelectId)
         if (type === 'mechanic') setSelectedMechanic(autoSelectId)
         if (type === 'sku') {
-          const newSku = (sRes.data || []).find((s: VatTuSKU) => s.id === autoSelectId)
+          const newSku = ((sRes.data || []) as unknown as VatTuSKU[]).find(s => s.id === autoSelectId)
           if (newSku && !selectedItems.find(item => item.id_sku === autoSelectId)) {
             setSelectedItems(prev => [...prev, {
               id_sku: newSku.id,
-              name: newSku.ten_vat_tu,
+              name: newSku.ten_vat_tu || '',
               so_luong: 1,
               don_gia: newSku.gia_tham_khao || 0,
-              loai: newSku.loai || 'Vật tư',
+              loai: (newSku.loai as any) || 'Vật tư',
               anh_cu: null,
               anh_moi: null
             }])
@@ -110,10 +110,10 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
 
     setSelectedItems([...selectedItems, {
       id_sku: sku.id,
-      name: sku.ten_vat_tu,
+      name: sku.ten_vat_tu || '',
       so_luong: 1,
       don_gia: sku.gia_tham_khao || 0,
-      loai: sku.loai || 'Vật tư',
+      loai: (sku.loai as any) || 'Vật tư',
       anh_cu: null,
       anh_moi: null
     }])
@@ -193,7 +193,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       }))
 
       const { error: ctError } = await supabase
-        .from('chi_tiet_vat_tu_su_dung')
+        .from('chi_tiet_phieu_bao_tri')
         .insert(chiTietData)
 
       if (ctError) throw ctError

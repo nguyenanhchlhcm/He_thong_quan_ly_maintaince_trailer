@@ -27,9 +27,9 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
 
   useEffect(() => {
     if (initialData) {
-      setTenVatTu(initialData.ten_vat_tu)
-      setDonViTinh(initialData.don_vi_tinh || 'Cái')
-      setGiaThamKhao(initialData.gia_tham_khao?.toString() || '0')
+      setTenVatTu(initialData.name || initialData.ten_vat_tu || '')
+      setDonViTinh((initialData.unit || initialData.don_vi_tinh || 'Cái') as any)
+      setGiaThamKhao((initialData.price || initialData.gia_tham_khao || 0).toString())
       setNhomVatTu(initialData.nhom_vat_tu || 'Động cơ')
     } else {
       setTenVatTu('')
@@ -47,22 +47,22 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
 
     try {
       const payload = { 
-        ten_vat_tu: tenVatTu, 
-        don_vi_tinh: donViTinh, 
-        gia_tham_khao: giaThamKhao ? parseFloat(giaThamKhao) : 0,
+        name: tenVatTu, 
+        unit: donViTinh, 
+        price: giaThamKhao ? parseFloat(giaThamKhao) : 0,
         nhom_vat_tu: nhomVatTu
       }
 
       if (initialData) {
         const { error } = await supabase
-          .from('danh_muc_vat_tu_sku')
+          .from('skus')
           .update(payload)
           .eq('id', initialData.id)
         if (error) throw error
         toast.success('Cập nhật vật tư thành công!')
       } else {
         const { data: newSku, error } = await supabase
-          .from('danh_muc_vat_tu_sku')
+          .from('skus')
           .insert([payload])
           .select()
           .single()

@@ -19,7 +19,7 @@ export function PartTable({ data, onEdit, onDelete, onAdd }: PartTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredData = data.filter(part => 
-    part.ten_vat_tu.toLowerCase().includes(searchTerm.toLowerCase())
+    (part.name || part.ten_vat_tu || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -55,15 +55,15 @@ export function PartTable({ data, onEdit, onDelete, onAdd }: PartTableProps) {
             {filteredData.length > 0 ? (
               filteredData.map((part) => (
                 <TableRow key={part.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
-                  <TableCell className="font-medium">{part.ten_vat_tu}</TableCell>
+                  <TableCell className="font-medium">{part.name || part.ten_vat_tu}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="bg-slate-700/50 text-slate-400 border-slate-700">
                       {part.nhom_vat_tu}
                     </Badge>
                   </TableCell>
-                  <TableCell>{part.don_vi_tinh || '-'}</TableCell>
+                  <TableCell>{part.unit || part.don_vi_tinh || '-'}</TableCell>
                   <TableCell className="text-right font-mono text-primary">
-                    {part.gia_tham_khao ? part.gia_tham_khao.toLocaleString() : '0'} đ
+                    {(part.price ?? part.gia_tham_khao ?? 0).toLocaleString()} đ
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

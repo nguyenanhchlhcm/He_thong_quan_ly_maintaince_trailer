@@ -12,26 +12,29 @@ export interface Profile {
 
 export interface Gara {
   id: string;
-  ten_gara: string;
-  dia_chi: string | null;
-  toa_do_lat: number | null;
-  toa_do_lng: number | null;
-  loai_gara: 'Nội bộ' | 'Hợp tác đối tác';
+  name: string;
+  ten_gara?: string; // Alias for name
+  address: string | null;
+  dia_chi?: string | null; // Alias for address
+  lat: number | null;
+  toa_do_lat?: number | null; // Alias for lat
+  lng: number | null;
+  toa_do_lng?: number | null; // Alias for lng
+  loai_gara?: 'Nội bộ' | 'Hợp tác đối tác';
   created_at: string;
 }
 
 export interface VatTuSKU {
   id: string;
-  ten_vat_tu: string;
+  name: string;
+  ten_vat_tu?: string; // Alias for name
   nhom_vat_tu: 'Động cơ' | 'Gầm' | 'Điện' | 'Lốp' | 'Máy lạnh' | null;
-  don_vi_tinh: 'Cái' | 'Bộ' | 'Can' | 'Lít' | 'Gói' | null;
-  gia_tham_khao: number;
+  unit: 'Cái' | 'Bộ' | 'Can' | 'Lít' | 'Gói' | null;
+  don_vi_tinh?: 'Cái' | 'Bộ' | 'Can' | 'Lít' | 'Gói' | null; // Alias for unit
+  price: number;
+  gia_tham_khao?: number; // Alias for price
   loai: 'Vật tư' | 'Dịch vụ' | null;
   created_at: string;
-  // Legacy aliases used by CreateTicketDialog
-  name?: string;
-  price?: number;
-  unit?: string;
 }
 
 export interface Xe {
@@ -102,8 +105,9 @@ export interface ChiTietVatTu {
   anh_vat_tu_cu_url: string | null;
   anh_vat_tu_moi_url: string | null;
   created_at: string;
-  danh_muc_vat_tu_sku?: {
-    ten_vat_tu: string | null;
+  skus?: {
+    name: string | null;
+    ten_vat_tu?: string | null;
   } | null;
 }
 

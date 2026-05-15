@@ -44,8 +44,19 @@ export function useParts() {
     queryKey: MASTER_DATA_KEYS.parts,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('danh_muc_vat_tu_sku')
-        .select('*')
+        .from('skus')
+        .select(`
+          id,
+          name,
+          ten_vat_tu:name,
+          nhom_vat_tu,
+          unit,
+          don_vi_tinh:unit,
+          price,
+          gia_tham_khao:price,
+          loai,
+          created_at
+        `)
         .order('created_at', { ascending: false })
       if (error) throw error
       return data as VatTuSKU[]
@@ -58,8 +69,19 @@ export function useGarages() {
     queryKey: MASTER_DATA_KEYS.garages,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('danh_muc_gara')
-        .select('*')
+        .from('garages')
+        .select(`
+          id,
+          name,
+          ten_gara:name,
+          address,
+          dia_chi:address,
+          lat,
+          toa_do_lat:lat,
+          lng,
+          toa_do_lng:lng,
+          created_at
+        `)
         .order('created_at', { ascending: false })
       if (error) throw error
       return data as Gara[]
@@ -85,12 +107,8 @@ export function useServices() {
   return useQuery({
     queryKey: MASTER_DATA_KEYS.services,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('danh_muc_dich_vu')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data as DichVu[]
+      // Bảng danh_muc_dich_vu chưa tồn tại trong DB mới
+      return [] as DichVu[]
     }
   })
 }
@@ -99,12 +117,8 @@ export function useCustomers() {
   return useQuery({
     queryKey: MASTER_DATA_KEYS.customers,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('danh_muc_khach_hang')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data as KhachHang[]
+      // Bảng danh_muc_khach_hang chưa tồn tại trong DB mới
+      return [] as KhachHang[]
     }
   })
 }
@@ -113,12 +127,8 @@ export function useSuppliers() {
   return useQuery({
     queryKey: MASTER_DATA_KEYS.suppliers,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('danh_muc_nha_cung_cap')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data as NhaCungCap[]
+      // Bảng danh_muc_nha_cung_cap chưa tồn tại trong DB mới
+      return [] as NhaCungCap[]
     }
   })
 }
@@ -127,13 +137,8 @@ export function useAuditLogs() {
   return useQuery({
     queryKey: MASTER_DATA_KEYS.logs,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50)
-      if (error) throw error
-      return data
+      // Bảng audit_logs chưa tồn tại trong DB mới
+      return [] as any[]
     }
   })
 }
@@ -160,7 +165,7 @@ export function useDeletePart() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('danh_muc_vat_tu_sku').delete().eq('id', id)
+      const { error } = await supabase.from('skus').delete().eq('id', id)
       if (error) throw error
     },
     onSuccess: () => {
@@ -177,7 +182,7 @@ export function useDeleteGarage() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('danh_muc_gara').delete().eq('id', id)
+      const { error } = await supabase.from('garages').delete().eq('id', id)
       if (error) throw error
     },
     onSuccess: () => {

@@ -15,11 +15,11 @@ export function GarageTable({ data, onEdit, onDelete, onAdd }: GarageTableProps)
   const columns: Column<Gara>[] = [
     {
       header: 'Tên Gara',
-      key: 'ten_gara',
+      key: 'name',
       render: (gara) => (
         <div className="flex items-center gap-2">
           <Warehouse className="w-4 h-4 text-slate-500" />
-          <span className="font-semibold">{gara.ten_gara}</span>
+          <span className="font-semibold">{gara.name || gara.ten_gara}</span>
         </div>
       )
     },
@@ -34,8 +34,12 @@ export function GarageTable({ data, onEdit, onDelete, onAdd }: GarageTableProps)
     },
     {
       header: 'Địa chỉ',
-      key: 'dia_chi',
-      className: 'max-w-[300px] truncate'
+      key: 'address',
+      render: (gara) => (
+        <div className="max-w-[300px] truncate">
+          {gara.address || gara.dia_chi || '-'}
+        </div>
+      )
     }
   ]
 
@@ -47,7 +51,7 @@ export function GarageTable({ data, onEdit, onDelete, onAdd }: GarageTableProps)
       onDelete={onDelete}
       onAdd={onAdd}
       searchPlaceholder="Tìm tên hoặc địa chỉ gara..."
-      searchKeys={['ten_gara', 'dia_chi']}
+      searchKeys={['name', 'ten_gara', 'address', 'dia_chi']}
     />
   )
 }

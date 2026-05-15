@@ -59,8 +59,8 @@ export function TicketForm() {
     const fetchMaster = async () => {
       try {
         const [skuRes, garaRes, vehicleRes] = await Promise.all([
-          supabase.from('danh_muc_vat_tu_sku').select('id, ten_vat_tu, don_vi_tinh, gia_tham_khao, loai'),
-          supabase.from('danh_muc_gara').select('id, ten_gara, toa_do_lat, toa_do_lng'),
+          supabase.from('skus').select('id, ten_vat_tu:name, don_vi_tinh:unit, gia_tham_khao:price, loai'),
+          supabase.from('garages').select('id, ten_gara:name, toa_do_lat:lat, toa_do_lng:lng'),
           supabase.from('vehicles').select('id, bien_so:id, loai_xe:model')
         ])
         setSkuList(skuRes.data || [])
