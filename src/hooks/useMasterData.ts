@@ -24,8 +24,13 @@ export function useVehicles() {
       const { data, error } = await supabase
         .from('vehicles')
         .select(`
-          *,
-          bien_so:id
+          id,
+          bien_so:id,
+          model,
+          loai_xe:model,
+          odometer,
+          so_km_hien_tai:odometer,
+          created_at
         `)
         .order('created_at', { ascending: false })
       if (error) throw error

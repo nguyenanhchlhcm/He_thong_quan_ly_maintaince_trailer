@@ -46,9 +46,8 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
 
     try {
       const payload = { 
-        bien_so: bienSo, 
-        loai_xe: loaiXe, 
-        so_km_hien_tai: soKm 
+        model: loaiXe, 
+        odometer: soKm 
       }
 
       if (initialData) {

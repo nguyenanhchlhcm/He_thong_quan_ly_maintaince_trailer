@@ -26,8 +26,9 @@ export default function AdminTicketsPage() {
         .select(`
           *,
           vehicles!id_xe (
+            id,
             bien_so:id,
-            loai_xe
+            loai_xe:model
           ),
           profiles!id_tho_may (*)
         `)

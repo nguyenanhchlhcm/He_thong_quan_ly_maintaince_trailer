@@ -35,14 +35,14 @@ export interface VatTuSKU {
 }
 
 export interface Xe {
-  id: string;
-  bien_so: string;
-  loai_xe: 'Đầu kéo' | 'Rơ-moóc' | 'Xe tải';
-  so_km_hien_tai: number;
-  so_gio_may: number;
-  toa_do_xe_gps_lat: number | null;
-  toa_do_xe_gps_lng: number | null;
-  qr_code_url: string | null;
+  id: string; // Biển số xe
+  bien_so: string; // Alias for id
+  model: string | null; // Loại xe
+  loai_xe?: string | null; // Alias for model
+  odometer: number; // Số KM hiện tại
+  so_km_hien_tai?: number; // Alias for odometer
+  last_oil_change_km: number;
+  next_maintenance_km: number;
   created_at: string;
 }
 
@@ -64,7 +64,6 @@ export interface PhieuBaoTri {
   ma_phieu: string | null;
   id_xe: string | null;
   id_tho_may: string | null;
-  so_km_luc_sua: number | null;
   toa_do_app_lat: number | null;
   toa_do_app_lng: number | null;
   canh_bao_gps: boolean;
@@ -73,6 +72,8 @@ export interface PhieuBaoTri {
   loai_sua_ngoai: LoaiSuaNgoai | null;
   don_vi_sua_ngoai: string | null;
   ghi_chu_ngoai: string | null;
+  odometer_photo_url?: string | null;
+  receipt_photo_url?: string | null;
   tong_vat_tu: number;
   tien_cong: number;
   tong_chi_phi: number;
@@ -80,8 +81,10 @@ export interface PhieuBaoTri {
   created_at: string;
   // Joined relations
   vehicles?: {
-    bien_so: string;
-    loai_xe: string | null;
+    id: string;
+    bien_so?: string;
+    model: string | null;
+    loai_xe?: string | null;
   } | null;
   profiles?: {
     full_name: string | null;

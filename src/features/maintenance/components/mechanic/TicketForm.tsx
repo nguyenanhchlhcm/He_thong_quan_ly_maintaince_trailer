@@ -61,7 +61,7 @@ export function TicketForm() {
         const [skuRes, garaRes, vehicleRes] = await Promise.all([
           supabase.from('danh_muc_vat_tu_sku').select('id, ten_vat_tu, don_vi_tinh, gia_tham_khao, loai'),
           supabase.from('danh_muc_gara').select('id, ten_gara, toa_do_lat, toa_do_lng'),
-          supabase.from('vehicles').select('id, bien_so, loai_xe')
+          supabase.from('vehicles').select('id, bien_so:id, loai_xe:model')
         ])
         setSkuList(skuRes.data || [])
         setGaraList(garaRes.data || [])
@@ -229,7 +229,6 @@ export function TicketForm() {
         .from('phieu_bao_tri')
         .insert([{
           id_xe: data.id_xe,
-          so_km_luc_sua: data.so_km_luc_sua,
           toa_do_app_lat: deviceLocation?.lat ?? null,
           toa_do_app_lng: deviceLocation?.lng ?? null,
           canh_bao_gps: hasGPSWarning,
@@ -237,6 +236,8 @@ export function TicketForm() {
           tong_vat_tu: totalVatTu,
           tien_cong: data.tien_cong || 0,
           tong_chi_phi: totalVatTu + (data.tien_cong || 0),
+          odometer_photo_url: odoUrl,
+          receipt_photo_url: receiptUrl
         }])
         .select()
         .single()
