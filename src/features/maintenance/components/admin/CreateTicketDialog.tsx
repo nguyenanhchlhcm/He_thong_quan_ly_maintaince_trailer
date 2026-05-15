@@ -152,7 +152,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
 
       let receiptPhotoUrl: string | null = null
       if (loaiPhieu === 'Bên ngoài' && receiptPhotoBase64) {
-        receiptPhotoUrl = await uploadBase64Image(receiptPhotoBase64, 'maintenance', `admin_receipt_${Date.now()}`)
+        receiptPhotoUrl = await uploadBase64Image('maintenance', `admin_receipt_${Date.now()}`, receiptPhotoBase64)
       }
 
       // 1. Tạo Phiếu chính
