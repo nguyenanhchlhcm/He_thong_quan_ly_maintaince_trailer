@@ -25,7 +25,10 @@ export default function AdminTicketsPage() {
         .from('phieu_bao_tri')
         .select(`
           *,
-          vehicles!id_xe (*),
+          vehicles!id_xe (
+            bien_so:id,
+            loai_xe
+          ),
           profiles!id_tho_may (*)
         `)
         .order('created_at', { ascending: false })

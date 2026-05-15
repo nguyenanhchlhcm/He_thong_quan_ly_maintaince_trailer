@@ -31,7 +31,7 @@ export default function MechanicTicketsPage() {
         .from('phieu_bao_tri')
         .select(`
           *,
-          xe:vehicles!id_xe(*)
+          xe:vehicles!id_xe(bien_so:id)
         `)
         .eq('id_tho_may', profile?.id)
         .order('created_at', { ascending: false })

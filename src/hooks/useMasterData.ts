@@ -23,7 +23,10 @@ export function useVehicles() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vehicles')
-        .select('*')
+        .select(`
+          *,
+          bien_so:id
+        `)
         .order('created_at', { ascending: false })
       if (error) throw error
       return data as Xe[]
