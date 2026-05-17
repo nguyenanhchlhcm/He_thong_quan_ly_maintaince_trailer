@@ -30,9 +30,9 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
 
   // Dynamic extract unique lists from the source data
   const uniqueVehicles = Array.from(new Set(data.map(t => t.vehicles?.bien_so || t.id_xe || 'N/A'))).filter(Boolean).sort()
-  const uniqueStatuses = Array.from(new Set(data.map(t => t.trang_thai_phieu))).filter(Boolean).sort()
-  const uniqueTypes = Array.from(new Set(data.map(t => t.loai_phieu))).filter(Boolean).sort()
-  const uniqueMechanics = Array.from(new Set(data.map(t => t.profiles?.full_name || t.profiles?.email || 'Chưa gán'))).filter(Boolean).sort()
+  const uniqueStatuses = Array.from(new Set(data.map(t => t.trang_thai_phieu))).filter(Boolean).sort() as string[]
+  const uniqueTypes = Array.from(new Set(data.map(t => t.loai_phieu || ''))).filter(Boolean).sort() as string[]
+  const uniqueMechanics = Array.from(new Set(data.map(t => t.profiles?.full_name || t.profiles?.email || 'Chưa gán'))).filter(Boolean).sort() as string[]
 
   const hasActiveFilters = selectedVehicles.length > 0 || 
                           selectedStatuses.length > 0 || 
@@ -73,7 +73,7 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
 
     // 4. Type Column Checklist Match
     if (selectedTypes.length > 0) {
-      if (!selectedTypes.includes(ticket.loai_phieu)) return false
+      if (!selectedTypes.includes(ticket.loai_phieu || '')) return false
     }
 
     // 5. Mechanic Column Checklist Match
@@ -200,10 +200,8 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                 <div className="flex items-center gap-1.5 justify-start">
                   <span>Ngày Tiếp Nhận</span>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${sortField === 'ngay_tiep_nhan' ? 'text-primary font-bold bg-primary/10' : 'text-slate-500'}`}>
-                        <ArrowUpDown className="w-3.5 h-3.5" />
-                      </Button>
+                    <DropdownMenuTrigger className={`w-6 h-6 p-0 hover:bg-slate-800 hover:text-primary transition-all rounded flex items-center justify-center border border-transparent bg-transparent cursor-pointer ${sortField === 'ngay_tiep_nhan' ? 'text-primary font-bold bg-primary/10' : 'text-slate-500'}`}>
+                      <ArrowUpDown className="w-3.5 h-3.5" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Sắp xếp Ngày tiếp nhận</DropdownMenuLabel>
@@ -237,10 +235,8 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                 <div className="flex items-center gap-1.5 justify-start">
                   <span>Ngày tạo</span>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${sortField === 'created_at' ? 'text-primary font-bold bg-primary/10' : 'text-slate-500'}`}>
-                        <ArrowUpDown className="w-3.5 h-3.5" />
-                      </Button>
+                    <DropdownMenuTrigger className={`w-6 h-6 p-0 hover:bg-slate-800 hover:text-primary transition-all rounded flex items-center justify-center border border-transparent bg-transparent cursor-pointer ${sortField === 'created_at' ? 'text-primary font-bold bg-primary/10' : 'text-slate-500'}`}>
+                      <ArrowUpDown className="w-3.5 h-3.5" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Sắp xếp Ngày lập phiếu</DropdownMenuLabel>
@@ -274,10 +270,8 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                 <div className="flex items-center gap-1.5 justify-start">
                   <span>Biển số Xe</span>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${selectedVehicles.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500'}`}>
-                        <Filter className="w-3 h-3" />
-                      </Button>
+                    <DropdownMenuTrigger className={`w-6 h-6 p-0 hover:bg-slate-800 hover:text-primary transition-all rounded flex items-center justify-center bg-transparent cursor-pointer ${selectedVehicles.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500 border border-transparent'}`}>
+                      <Filter className="w-3 h-3" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[180px] max-h-[300px] overflow-y-auto shadow-2xl">
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Biển xe</DropdownMenuLabel>
@@ -315,10 +309,8 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                 <div className="flex items-center gap-1.5 justify-start">
                   <span>Trạng thái</span>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${selectedStatuses.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500'}`}>
-                        <Filter className="w-3 h-3" />
-                      </Button>
+                    <DropdownMenuTrigger className={`w-6 h-6 p-0 hover:bg-slate-800 hover:text-primary transition-all rounded flex items-center justify-center bg-transparent cursor-pointer ${selectedStatuses.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500 border border-transparent'}`}>
+                      <Filter className="w-3 h-3" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[180px] shadow-2xl">
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Trạng thái</DropdownMenuLabel>
@@ -356,10 +348,8 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                 <div className="flex items-center gap-1.5 justify-start">
                   <span>Loại</span>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${selectedTypes.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500'}`}>
-                        <Filter className="w-3 h-3" />
-                      </Button>
+                    <DropdownMenuTrigger className={`w-6 h-6 p-0 hover:bg-slate-800 hover:text-primary transition-all rounded flex items-center justify-center bg-transparent cursor-pointer ${selectedTypes.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500 border border-transparent'}`}>
+                      <Filter className="w-3 h-3" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Loại phiếu</DropdownMenuLabel>
@@ -396,10 +386,8 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
               <TableHead className="text-slate-400 text-right">
                 <div className="flex items-center gap-1.5 justify-end">
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${sortField === 'tong_chi_phi' ? 'text-primary font-bold bg-primary/10' : 'text-slate-500'}`}>
-                        <ArrowUpDown className="w-3.5 h-3.5" />
-                      </Button>
+                    <DropdownMenuTrigger className={`w-6 h-6 p-0 hover:bg-slate-800 hover:text-primary transition-all rounded flex items-center justify-center border border-transparent bg-transparent cursor-pointer ${sortField === 'tong_chi_phi' ? 'text-primary font-bold bg-primary/10' : 'text-slate-500'}`}>
+                      <ArrowUpDown className="w-3.5 h-3.5" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Sắp xếp Chi phí</DropdownMenuLabel>
@@ -434,10 +422,8 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                 <div className="flex items-center gap-1.5 justify-start">
                   <span>Người phụ trách</span>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${selectedMechanics.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500'}`}>
-                        <Filter className="w-3 h-3" />
-                      </Button>
+                    <DropdownMenuTrigger className={`w-6 h-6 p-0 hover:bg-slate-800 hover:text-primary transition-all rounded flex items-center justify-center bg-transparent cursor-pointer ${selectedMechanics.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500 border border-transparent'}`}>
+                      <Filter className="w-3 h-3" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[180px] max-h-[300px] overflow-y-auto shadow-2xl">
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Người phụ trách</DropdownMenuLabel>
@@ -475,10 +461,8 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                 <div className="flex items-center gap-1.5 justify-start">
                   <span>GPS</span>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${selectedGps.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500'}`}>
-                        <Filter className="w-3 h-3" />
-                      </Button>
+                    <DropdownMenuTrigger className={`w-6 h-6 p-0 hover:bg-slate-800 hover:text-primary transition-all rounded flex items-center justify-center bg-transparent cursor-pointer ${selectedGps.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500 border border-transparent'}`}>
+                      <Filter className="w-3 h-3" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Tọa độ GPS</DropdownMenuLabel>
