@@ -432,6 +432,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                     type="date"
                     value={ngayTiepNhan}
                     onChange={(e) => setNgayTiepNhan(e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
                     className="bg-slate-800 border-slate-700 text-slate-100 w-full [color-scheme:dark]"
                   />
                 </div>

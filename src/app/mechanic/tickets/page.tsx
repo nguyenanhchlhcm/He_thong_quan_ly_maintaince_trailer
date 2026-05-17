@@ -27,8 +27,9 @@ export default function MechanicTicketsPage() {
   }, [profile?.id])
 
   const filteredTickets = tickets.filter(ticket => {
-    if (!ticket.created_at) return true
-    const ticketDate = new Date(ticket.created_at).toISOString().split('T')[0]
+    const targetDate = ticket.ngay_tiep_nhan || ticket.created_at
+    if (!targetDate) return true
+    const ticketDate = new Date(targetDate).toISOString().split('T')[0]
     
     if (startDate && ticketDate < startDate) return false
     if (endDate && ticketDate > endDate) return false
@@ -45,7 +46,7 @@ export default function MechanicTicketsPage() {
           xe:vehicles!id_xe(id, bien_so:id, loai_xe:model)
         `)
         .eq('id_tho_may', profile?.id)
-        .order('created_at', { ascending: false })
+        .order('ngay_tiep_nhan', { ascending: false })
 
       if (error) throw error
       setTickets(data || [])
@@ -179,9 +180,15 @@ export default function MechanicTicketsPage() {
                         {ticket.xe?.bien_so || 'N/A'}
                       </CardTitle>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <Clock className="w-3 h-3" />
-                      {formatDate(ticket.created_at)}
+                    <div className="flex flex-col gap-0.5 mt-1">
+                      <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-bold">
+                        <Clock className="w-3 h-3 text-emerald-500" />
+                        Tiếp nhận: {formatDate(ticket.ngay_tiep_nhan || ticket.created_at)}
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+                        <Clock className="w-3 h-3 text-slate-600" />
+                        Tạo lúc: {formatDate(ticket.created_at)}
+                      </div>
                     </div>
                   </div>
                   {getStatusBadge(ticket.trang_thai_phieu)}
