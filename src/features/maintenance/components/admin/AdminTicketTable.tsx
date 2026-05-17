@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,9 +12,10 @@ import { PhieuBaoTri } from '@/types/database'
 interface AdminTicketTableProps {
   data: PhieuBaoTri[]
   onViewDetails: (ticket: PhieuBaoTri) => void
+  onFilteredDataChange?: (filteredData: PhieuBaoTri[], hasActiveFilters: boolean) => void
 }
 
-export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps) {
+export function AdminTicketTable({ data, onViewDetails, onFilteredDataChange }: AdminTicketTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
   
   // Checklist Filter States (Excel-style)
@@ -114,6 +115,21 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
       ? (aVal as number) - (bVal as number) 
       : (bVal as number) - (aVal as number)
   })
+
+  // Synchronize filtered tickets back to parent for Excel exporting and stats computing
+  const hasActiveChecklistFilters = 
+    searchTerm.trim() !== '' ||
+    selectedVehicles.length > 0 ||
+    selectedStatuses.length > 0 ||
+    selectedTypes.length > 0 ||
+    selectedMechanics.length > 0 ||
+    selectedGps.length > 0
+
+  const serializedIds = sortedData.map(t => t.id).join(',')
+  
+  useEffect(() => {
+    onFilteredDataChange?.(sortedData, hasActiveChecklistFilters)
+  }, [serializedIds, hasActiveChecklistFilters, onFilteredDataChange])
 
   const getStatusBadge = (status: string) => {
     switch (status) {

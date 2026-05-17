@@ -22,6 +22,8 @@ export default function AdminTicketsPage() {
   const [editingTicket, setEditingTicket] = useState<PhieuBaoTri | null>(null)
   const [startDate, setStartDate] = useState<string>('')
   const [endDate, setEndDate] = useState<string>('')
+  const [currentFilteredTickets, setCurrentFilteredTickets] = useState<PhieuBaoTri[]>([])
+  const [hasTableFilters, setHasTableFilters] = useState(false)
 
   const fetchTickets = useCallback(async () => {
     setIsLoading(true)
@@ -53,10 +55,11 @@ export default function AdminTicketsPage() {
   }, [fetchTickets])
 
   const handleExportExcel = async () => {
-    let ticketsToExport = filteredTickets
+    const hasActiveFilters = startDate || endDate || hasTableFilters
+    let ticketsToExport = currentFilteredTickets
     let isDefaultYearRange = false
     
-    if (!startDate && !endDate) {
+    if (!hasActiveFilters) {
       isDefaultYearRange = true
       const currentYear = new Date().getFullYear()
       const startOfYear = new Date(`${currentYear}-01-01T00:00:00.000Z`)
@@ -157,12 +160,14 @@ export default function AdminTicketsPage() {
     return true
   })
 
-  // Stats calculation based on filtered list
+  // Stats calculation based on fully filtered list (date filters + checklist column filters)
+  const activeTicketsList = hasTableFilters || currentFilteredTickets.length > 0 ? currentFilteredTickets : filteredTickets
+
   const stats = {
-    total: filteredTickets.length,
-    pending: filteredTickets.filter(t => t.trang_thai_phieu === 'Chờ duyệt').length,
-    inProgress: filteredTickets.filter(t => t.trang_thai_phieu === 'Đang sửa').length,
-    completed: filteredTickets.filter(t => t.trang_thai_phieu === 'Đã xong').length
+    total: activeTicketsList.length,
+    pending: activeTicketsList.filter(t => t.trang_thai_phieu === 'Chờ duyệt').length,
+    inProgress: activeTicketsList.filter(t => t.trang_thai_phieu === 'Đang sửa').length,
+    completed: activeTicketsList.filter(t => t.trang_thai_phieu === 'Đã xong').length
   }
 
   if (isLoading) {
@@ -358,6 +363,10 @@ export default function AdminTicketsPage() {
               setSelectedTicket(ticket);
               setIsDialogOpen(true);
             }} 
+            onFilteredDataChange={(filteredData, hasActiveFilters) => {
+              setCurrentFilteredTickets(filteredData)
+              setHasTableFilters(hasActiveFilters)
+            }}
           />
         </CardContent>
       </Card>
