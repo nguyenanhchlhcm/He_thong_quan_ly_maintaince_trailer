@@ -37,6 +37,18 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
     }
   }
 
+  const formatDateTime = (isoString: string | null | undefined) => {
+    if (!isoString) return 'N/A'
+    const date = new Date(isoString)
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
@@ -56,6 +68,7 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
           <TableHeader className="bg-slate-900/80">
             <TableRow className="border-slate-800 hover:bg-transparent">
               <TableHead className="text-slate-400">Mã Phiếu</TableHead>
+              <TableHead className="text-slate-400">Ngày tạo</TableHead>
               <TableHead className="text-slate-400">Biển số Xe</TableHead>
               <TableHead className="text-slate-400">Trạng thái</TableHead>
               <TableHead className="text-slate-400">Loại</TableHead>
@@ -71,6 +84,9 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                 <TableRow key={ticket.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
                   <TableCell className="font-mono text-xs font-bold text-slate-400">
                     {ticket.ma_phieu || ticket.id.slice(0, 8)}
+                  </TableCell>
+                  <TableCell className="text-xs text-slate-400 font-medium">
+                    {formatDateTime(ticket.created_at)}
                   </TableCell>
                   <TableCell className="font-bold text-primary">
                     <div>
@@ -132,7 +148,7 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-slate-500 italic">
+                <TableCell colSpan={9} className="h-32 text-center text-slate-500 italic">
                   Không tìm thấy phiếu bảo trì nào.
                 </TableCell>
               </TableRow>
