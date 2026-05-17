@@ -318,6 +318,42 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
       )
 
       toast.success(editTicket ? 'Cập nhật phiếu bảo trì thành công!' : 'Lập phiếu bảo trì thành công!')
+      
+      // Trigger Telegram notification in the background
+      try {
+        const vehiclePlate = vehicles.find(v => v.id === selectedVehicle)?.bien_so || selectedVehicle
+        const mechanicProfile = mechanics.find(m => m.id === selectedMechanic)
+        const mechanicName = mechanicProfile ? (mechanicProfile.full_name || mechanicProfile.email) : 'Không chỉ định'
+        
+        let ticketCode = editTicket ? (editTicket.ma_phieu || '') : ''
+        if (!editTicket) {
+          const { data: newPhieu } = await supabase
+            .from('phieu_bao_tri')
+            .select('ma_phieu')
+            .eq('id', phieuId)
+            .single()
+          ticketCode = newPhieu?.ma_phieu || ''
+        }
+
+        fetch('/api/telegram-notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'new_ticket',
+            ticket: {
+              ma_phieu: ticketCode || 'N/A',
+              bien_so: vehiclePlate,
+              loai_phieu: loaiPhieu === 'Bên ngoài' ? `Sửa ngoài (${loaiSuaNgoai || 'Khác'})` : 'Phiếu bảo trì sửa chữa (Nội bộ)',
+              tho_may: loaiPhieu === 'Bên ngoài' ? `${donViSuaNgoai || 'N/A'} (Đơn vị sửa ngoài)` : mechanicName,
+              ngay_tiep_nhan: ngayTiepNhan ? new Date(ngayTiepNhan).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
+              tong_chi_phi: totalVatTu + laborCost
+            }
+          })
+        }).catch(err => console.error('Telegram notification error in Admin:', err))
+      } catch (tgErr) {
+        console.error('Failed to dispatch Telegram notification in Admin:', tgErr)
+      }
+
       onSuccess()
       onOpenChange(false)
       
