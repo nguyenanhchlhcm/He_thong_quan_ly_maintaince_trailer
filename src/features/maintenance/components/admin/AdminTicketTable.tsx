@@ -5,7 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Search, Eye, AlertCircle, Clock, CheckCircle2, Hammer, FileText, Wrench, MapPin, User } from 'lucide-react'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu'
+import { Search, Eye, AlertCircle, Clock, CheckCircle2, Hammer, FileText, Wrench, MapPin, User, Filter, ArrowUpDown } from 'lucide-react'
 import { PhieuBaoTri } from '@/types/database'
 
 interface AdminTicketTableProps {
@@ -15,12 +16,103 @@ interface AdminTicketTableProps {
 
 export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
+  
+  // Checklist Filter States (Excel-style)
+  const [selectedVehicles, setSelectedVehicles] = useState<string[]>([])
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([])
+  const [selectedMechanics, setSelectedMechanics] = useState<string[]>([])
+  const [selectedGps, setSelectedGps] = useState<string[]>([])
 
+  // Sorting States
+  const [sortField, setSortField] = useState<'tong_chi_phi' | 'ngay_tiep_nhan' | 'created_at' | null>(null)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+
+  // Dynamic extract unique lists from the source data
+  const uniqueVehicles = Array.from(new Set(data.map(t => t.vehicles?.bien_so || t.id_xe || 'N/A'))).filter(Boolean).sort()
+  const uniqueStatuses = Array.from(new Set(data.map(t => t.trang_thai_phieu))).filter(Boolean).sort()
+  const uniqueTypes = Array.from(new Set(data.map(t => t.loai_phieu))).filter(Boolean).sort()
+  const uniqueMechanics = Array.from(new Set(data.map(t => t.profiles?.full_name || t.profiles?.email || 'Chưa gán'))).filter(Boolean).sort()
+
+  const hasActiveFilters = selectedVehicles.length > 0 || 
+                          selectedStatuses.length > 0 || 
+                          selectedTypes.length > 0 || 
+                          selectedMechanics.length > 0 || 
+                          selectedGps.length > 0 ||
+                          searchTerm !== ''
+
+  const handleClearAllFilters = () => {
+    setSelectedVehicles([])
+    setSelectedStatuses([])
+    setSelectedTypes([])
+    setSelectedMechanics([])
+    setSelectedGps([])
+    setSearchTerm('')
+    setSortField(null)
+  }
+
+  // Filter Logic
   const filteredData = data.filter(ticket => {
+    // 1. Text Search Match
     const bienSo = ticket.vehicles?.bien_so || ticket.id_xe || ''
     const maPhieu = ticket.ma_phieu || ticket.id.slice(0, 8)
     const term = searchTerm.toLowerCase()
-    return bienSo.toLowerCase().includes(term) || maPhieu.toLowerCase().includes(term)
+    const matchesSearch = bienSo.toLowerCase().includes(term) || maPhieu.toLowerCase().includes(term)
+    if (!matchesSearch) return false
+
+    // 2. Vehicle Column Checklist Match
+    if (selectedVehicles.length > 0) {
+      const vVal = ticket.vehicles?.bien_so || ticket.id_xe || 'N/A'
+      if (!selectedVehicles.includes(vVal)) return false
+    }
+
+    // 3. Status Column Checklist Match
+    if (selectedStatuses.length > 0) {
+      if (!selectedStatuses.includes(ticket.trang_thai_phieu)) return false
+    }
+
+    // 4. Type Column Checklist Match
+    if (selectedTypes.length > 0) {
+      if (!selectedTypes.includes(ticket.loai_phieu)) return false
+    }
+
+    // 5. Mechanic Column Checklist Match
+    if (selectedMechanics.length > 0) {
+      const mVal = ticket.profiles?.full_name || ticket.profiles?.email || 'Chưa gán'
+      if (!selectedMechanics.includes(mVal)) return false
+    }
+
+    // 6. GPS Warning Checklist Match
+    if (selectedGps.length > 0) {
+      const gVal = ticket.canh_bao_gps ? 'Lệch vị trí' : 'Hợp lệ'
+      if (!selectedGps.includes(gVal)) return false
+    }
+
+    return true
+  })
+
+  // Sorting Logic
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (!sortField) return 0
+    let aVal = a[sortField]
+    let bVal = b[sortField]
+
+    if (sortField === 'ngay_tiep_nhan') {
+      aVal = a.ngay_tiep_nhan || a.created_at
+      bVal = b.ngay_tiep_nhan || b.created_at
+    }
+
+    if (aVal === bVal) return 0
+    if (aVal === null || aVal === undefined) return 1
+    if (bVal === null || bVal === undefined) return -1
+
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)
+    }
+
+    return sortOrder === 'asc' 
+      ? (aVal as number) - (bVal as number) 
+      : (bVal as number) - (aVal as number)
   })
 
   const getStatusBadge = (status: string) => {
@@ -71,27 +163,361 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        
+        {hasActiveFilters && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleClearAllFilters}
+            className="border-red-500/20 text-red-400 hover:bg-red-500/10 font-bold gap-1 bg-red-500/5 transition-colors"
+          >
+            <Clock className="w-3.5 h-3.5" />
+            Xóa bộ lọc Excel ({
+              (selectedVehicles.length > 0 ? 1 : 0) +
+              (selectedStatuses.length > 0 ? 1 : 0) +
+              (selectedTypes.length > 0 ? 1 : 0) +
+              (selectedMechanics.length > 0 ? 1 : 0) +
+              (selectedGps.length > 0 ? 1 : 0) +
+              (searchTerm !== '' ? 1 : 0)
+            })
+          </Button>
+        )}
       </div>
 
       <div className="border border-slate-800 rounded-lg overflow-hidden">
         <Table>
           <TableHeader className="bg-slate-900/80">
             <TableRow className="border-slate-800 hover:bg-transparent">
-              <TableHead className="text-slate-400">Mã Phiếu</TableHead>
-              <TableHead className="text-slate-400">Ngày Tiếp Nhận</TableHead>
-              <TableHead className="text-slate-400">Ngày tạo</TableHead>
-              <TableHead className="text-slate-400">Biển số Xe</TableHead>
-              <TableHead className="text-slate-400">Trạng thái</TableHead>
-              <TableHead className="text-slate-400">Loại</TableHead>
-              <TableHead className="text-slate-400 text-right">Tổng chi phí</TableHead>
-              <TableHead className="text-slate-400">Người phụ trách</TableHead>
-              <TableHead className="text-slate-400">GPS</TableHead>
+              {/* Mã Phiếu */}
+              <TableHead className="text-slate-400">
+                <div className="flex items-center gap-1.5 justify-start">
+                  <span>Mã Phiếu</span>
+                </div>
+              </TableHead>
+
+              {/* Ngày Tiếp Nhận */}
+              <TableHead className="text-slate-400">
+                <div className="flex items-center gap-1.5 justify-start">
+                  <span>Ngày Tiếp Nhận</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${sortField === 'ngay_tiep_nhan' ? 'text-primary font-bold bg-primary/10' : 'text-slate-500'}`}>
+                        <ArrowUpDown className="w-3.5 h-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
+                      <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Sắp xếp Ngày tiếp nhận</DropdownMenuLabel>
+                      <DropdownMenuCheckboxItem
+                        checked={sortField === 'ngay_tiep_nhan' && sortOrder === 'asc'}
+                        onCheckedChange={() => {
+                          setSortField('ngay_tiep_nhan')
+                          setSortOrder('asc')
+                        }}
+                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                      >
+                        Cũ nhất xếp trước
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={sortField === 'ngay_tiep_nhan' && sortOrder === 'desc'}
+                        onCheckedChange={() => {
+                          setSortField('ngay_tiep_nhan')
+                          setSortOrder('desc')
+                        }}
+                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                      >
+                        Mới nhất xếp trước
+                      </DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TableHead>
+
+              {/* Ngày tạo */}
+              <TableHead className="text-slate-400">
+                <div className="flex items-center gap-1.5 justify-start">
+                  <span>Ngày tạo</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${sortField === 'created_at' ? 'text-primary font-bold bg-primary/10' : 'text-slate-500'}`}>
+                        <ArrowUpDown className="w-3.5 h-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
+                      <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Sắp xếp Ngày lập phiếu</DropdownMenuLabel>
+                      <DropdownMenuCheckboxItem
+                        checked={sortField === 'created_at' && sortOrder === 'asc'}
+                        onCheckedChange={() => {
+                          setSortField('created_at')
+                          setSortOrder('asc')
+                        }}
+                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                      >
+                        Cũ nhất xếp trước
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={sortField === 'created_at' && sortOrder === 'desc'}
+                        onCheckedChange={() => {
+                          setSortField('created_at')
+                          setSortOrder('desc')
+                        }}
+                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                      >
+                        Mới nhất xếp trước
+                      </DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TableHead>
+
+              {/* Biển số Xe */}
+              <TableHead className="text-slate-400">
+                <div className="flex items-center gap-1.5 justify-start">
+                  <span>Biển số Xe</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${selectedVehicles.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500'}`}>
+                        <Filter className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[180px] max-h-[300px] overflow-y-auto shadow-2xl">
+                      <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Biển xe</DropdownMenuLabel>
+                      {selectedVehicles.length > 0 && (
+                        <>
+                          <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => setSelectedVehicles([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold">
+                            Xóa bộ lọc cột
+                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuSeparator className="bg-slate-800" />
+                        </>
+                      )}
+                      {uniqueVehicles.map(v => (
+                        <DropdownMenuCheckboxItem
+                          key={v}
+                          checked={selectedVehicles.includes(v)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedVehicles([...selectedVehicles, v])
+                            } else {
+                              setSelectedVehicles(selectedVehicles.filter(item => item !== v))
+                            }
+                          }}
+                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                        >
+                          {v}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TableHead>
+
+              {/* Trạng thái */}
+              <TableHead className="text-slate-400">
+                <div className="flex items-center gap-1.5 justify-start">
+                  <span>Trạng thái</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${selectedStatuses.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500'}`}>
+                        <Filter className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[180px] shadow-2xl">
+                      <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Trạng thái</DropdownMenuLabel>
+                      {selectedStatuses.length > 0 && (
+                        <>
+                          <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => setSelectedStatuses([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold">
+                            Xóa bộ lọc cột
+                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuSeparator className="bg-slate-800" />
+                        </>
+                      )}
+                      {uniqueStatuses.map(s => (
+                        <DropdownMenuCheckboxItem
+                          key={s}
+                          checked={selectedStatuses.includes(s)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedStatuses([...selectedStatuses, s])
+                            } else {
+                              setSelectedStatuses(selectedStatuses.filter(item => item !== s))
+                            }
+                          }}
+                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                        >
+                          {s}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TableHead>
+
+              {/* Loại phiếu */}
+              <TableHead className="text-slate-400">
+                <div className="flex items-center gap-1.5 justify-start">
+                  <span>Loại</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${selectedTypes.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500'}`}>
+                        <Filter className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
+                      <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Loại phiếu</DropdownMenuLabel>
+                      {selectedTypes.length > 0 && (
+                        <>
+                          <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => setSelectedTypes([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold">
+                            Xóa bộ lọc cột
+                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuSeparator className="bg-slate-800" />
+                        </>
+                      )}
+                      {uniqueTypes.map(t => (
+                        <DropdownMenuCheckboxItem
+                          key={t}
+                          checked={selectedTypes.includes(t)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedTypes([...selectedTypes, t])
+                            } else {
+                              setSelectedTypes(selectedTypes.filter(item => item !== t))
+                            }
+                          }}
+                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                        >
+                          {t}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TableHead>
+
+              {/* Tổng chi phí */}
+              <TableHead className="text-slate-400 text-right">
+                <div className="flex items-center gap-1.5 justify-end">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${sortField === 'tong_chi_phi' ? 'text-primary font-bold bg-primary/10' : 'text-slate-500'}`}>
+                        <ArrowUpDown className="w-3.5 h-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
+                      <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Sắp xếp Chi phí</DropdownMenuLabel>
+                      <DropdownMenuCheckboxItem
+                        checked={sortField === 'tong_chi_phi' && sortOrder === 'asc'}
+                        onCheckedChange={() => {
+                          setSortField('tong_chi_phi')
+                          setSortOrder('asc')
+                        }}
+                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                      >
+                        Thấp đến Cao
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={sortField === 'tong_chi_phi' && sortOrder === 'desc'}
+                        onCheckedChange={() => {
+                          setSortField('tong_chi_phi')
+                          setSortOrder('desc')
+                        }}
+                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                      >
+                        Cao đến Thấp
+                      </DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <span>Tổng chi phí</span>
+                </div>
+              </TableHead>
+
+              {/* Người phụ trách */}
+              <TableHead className="text-slate-400">
+                <div className="flex items-center gap-1.5 justify-start">
+                  <span>Người phụ trách</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${selectedMechanics.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500'}`}>
+                        <Filter className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[180px] max-h-[300px] overflow-y-auto shadow-2xl">
+                      <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Người phụ trách</DropdownMenuLabel>
+                      {selectedMechanics.length > 0 && (
+                        <>
+                          <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => setSelectedMechanics([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold">
+                            Xóa bộ lọc cột
+                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuSeparator className="bg-slate-800" />
+                        </>
+                      )}
+                      {uniqueMechanics.map(m => (
+                        <DropdownMenuCheckboxItem
+                          key={m}
+                          checked={selectedMechanics.includes(m)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedMechanics([...selectedMechanics, m])
+                            } else {
+                              setSelectedMechanics(selectedMechanics.filter(item => item !== m))
+                            }
+                          }}
+                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                        >
+                          {m}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TableHead>
+
+              {/* GPS warning */}
+              <TableHead className="text-slate-400">
+                <div className="flex items-center gap-1.5 justify-start">
+                  <span>GPS</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className={`w-6 h-6 p-0 hover:bg-slate-850 hover:text-primary transition-all rounded ${selectedGps.length > 0 ? 'text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20' : 'text-slate-500'}`}>
+                        <Filter className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
+                      <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Tọa độ GPS</DropdownMenuLabel>
+                      {selectedGps.length > 0 && (
+                        <>
+                          <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => setSelectedGps([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold">
+                            Xóa bộ lọc cột
+                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuSeparator className="bg-slate-800" />
+                        </>
+                      )}
+                      {['Hợp lệ', 'Lệch vị trí'].map(g => (
+                        <DropdownMenuCheckboxItem
+                          key={g}
+                          checked={selectedGps.includes(g)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedGps([...selectedGps, g])
+                            } else {
+                              setSelectedGps(selectedGps.filter(item => item !== g))
+                            }
+                          }}
+                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                        >
+                          {g}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TableHead>
+
+              {/* Thao tác */}
               <TableHead className="text-slate-400 text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.length > 0 ? (
-              filteredData.map((ticket) => (
+            {sortedData.length > 0 ? (
+              sortedData.map((ticket) => (
                 <TableRow key={ticket.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
                   <TableCell className="font-mono text-xs font-bold text-slate-400">
                     {ticket.ma_phieu || ticket.id.slice(0, 8)}
@@ -163,7 +589,7 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
             ) : (
               <TableRow>
                 <TableCell colSpan={10} className="h-32 text-center text-slate-500 italic">
-                  Không tìm thấy phiếu bảo trì nào.
+                  Không tìm thấy phiếu bảo trì nào khớp bộ lọc.
                 </TableCell>
               </TableRow>
             )}
