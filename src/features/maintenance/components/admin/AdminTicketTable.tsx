@@ -5,8 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu'
-import { Search, Eye, AlertCircle, Clock, CheckCircle2, Hammer, FileText, Wrench, MapPin, User, Filter, ArrowUpDown } from 'lucide-react'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu'
+import { Search, Eye, AlertCircle, Clock, CheckCircle2, Hammer, FileText, Wrench, MapPin, User, Filter, ArrowUpDown, Check } from 'lucide-react'
 import { PhieuBaoTri } from '@/types/database'
 
 interface AdminTicketTableProps {
@@ -205,26 +205,30 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Sắp xếp Ngày tiếp nhận</DropdownMenuLabel>
-                      <DropdownMenuCheckboxItem
-                        checked={sortField === 'ngay_tiep_nhan' && sortOrder === 'asc'}
-                        onCheckedChange={() => {
+                      <DropdownMenuItem
+                        onClick={() => {
                           setSortField('ngay_tiep_nhan')
                           setSortOrder('asc')
                         }}
-                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800 flex items-center justify-between gap-2"
                       >
-                        Cũ nhất xếp trước
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={sortField === 'ngay_tiep_nhan' && sortOrder === 'desc'}
-                        onCheckedChange={() => {
+                        <span>Cũ nhất xếp trước</span>
+                        {sortField === 'ngay_tiep_nhan' && sortOrder === 'asc' && (
+                          <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
                           setSortField('ngay_tiep_nhan')
                           setSortOrder('desc')
                         }}
-                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800 flex items-center justify-between gap-2"
                       >
-                        Mới nhất xếp trước
-                      </DropdownMenuCheckboxItem>
+                        <span>Mới nhất xếp trước</span>
+                        {sortField === 'ngay_tiep_nhan' && sortOrder === 'desc' && (
+                          <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                        )}
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -240,26 +244,30 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Sắp xếp Ngày lập phiếu</DropdownMenuLabel>
-                      <DropdownMenuCheckboxItem
-                        checked={sortField === 'created_at' && sortOrder === 'asc'}
-                        onCheckedChange={() => {
+                      <DropdownMenuItem
+                        onClick={() => {
                           setSortField('created_at')
                           setSortOrder('asc')
                         }}
-                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800 flex items-center justify-between gap-2"
                       >
-                        Cũ nhất xếp trước
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={sortField === 'created_at' && sortOrder === 'desc'}
-                        onCheckedChange={() => {
+                        <span>Cũ nhất xếp trước</span>
+                        {sortField === 'created_at' && sortOrder === 'asc' && (
+                          <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
                           setSortField('created_at')
                           setSortOrder('desc')
                         }}
-                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800 flex items-center justify-between gap-2"
                       >
-                        Mới nhất xếp trước
-                      </DropdownMenuCheckboxItem>
+                        <span>Mới nhất xếp trước</span>
+                        {sortField === 'created_at' && sortOrder === 'desc' && (
+                          <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                        )}
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -277,27 +285,30 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Biển xe</DropdownMenuLabel>
                       {selectedVehicles.length > 0 && (
                         <>
-                          <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => setSelectedVehicles([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold">
-                            Xóa bộ lọc cột
-                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuItem onClick={() => setSelectedVehicles([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold flex items-center justify-between">
+                            <span>Xóa bộ lọc cột</span>
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-slate-800" />
                         </>
                       )}
                       {uniqueVehicles.map(v => (
-                        <DropdownMenuCheckboxItem
+                        <DropdownMenuItem
                           key={v}
-                          checked={selectedVehicles.includes(v)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedVehicles([...selectedVehicles, v])
-                            } else {
+                          closeOnClick={false}
+                          onClick={() => {
+                            if (selectedVehicles.includes(v)) {
                               setSelectedVehicles(selectedVehicles.filter(item => item !== v))
+                            } else {
+                              setSelectedVehicles([...selectedVehicles, v])
                             }
                           }}
-                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800 flex items-center justify-between gap-2 text-slate-200"
                         >
-                          {v}
-                        </DropdownMenuCheckboxItem>
+                          <span>{v}</span>
+                          {selectedVehicles.includes(v) && (
+                            <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                          )}
+                        </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -316,27 +327,30 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Trạng thái</DropdownMenuLabel>
                       {selectedStatuses.length > 0 && (
                         <>
-                          <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => setSelectedStatuses([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold">
-                            Xóa bộ lọc cột
-                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuItem onClick={() => setSelectedStatuses([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold flex items-center justify-between">
+                            <span>Xóa bộ lọc cột</span>
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-slate-800" />
                         </>
                       )}
                       {uniqueStatuses.map(s => (
-                        <DropdownMenuCheckboxItem
+                        <DropdownMenuItem
                           key={s}
-                          checked={selectedStatuses.includes(s)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedStatuses([...selectedStatuses, s])
-                            } else {
+                          closeOnClick={false}
+                          onClick={() => {
+                            if (selectedStatuses.includes(s)) {
                               setSelectedStatuses(selectedStatuses.filter(item => item !== s))
+                            } else {
+                              setSelectedStatuses([...selectedStatuses, s])
                             }
                           }}
-                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800 flex items-center justify-between gap-2 text-slate-200"
                         >
-                          {s}
-                        </DropdownMenuCheckboxItem>
+                          <span>{s}</span>
+                          {selectedStatuses.includes(s) && (
+                            <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                          )}
+                        </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -355,27 +369,30 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Loại phiếu</DropdownMenuLabel>
                       {selectedTypes.length > 0 && (
                         <>
-                          <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => setSelectedTypes([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold">
-                            Xóa bộ lọc cột
-                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuItem onClick={() => setSelectedTypes([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold flex items-center justify-between">
+                            <span>Xóa bộ lọc cột</span>
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-slate-800" />
                         </>
                       )}
                       {uniqueTypes.map(t => (
-                        <DropdownMenuCheckboxItem
+                        <DropdownMenuItem
                           key={t}
-                          checked={selectedTypes.includes(t)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedTypes([...selectedTypes, t])
-                            } else {
+                          closeOnClick={false}
+                          onClick={() => {
+                            if (selectedTypes.includes(t)) {
                               setSelectedTypes(selectedTypes.filter(item => item !== t))
+                            } else {
+                              setSelectedTypes([...selectedTypes, t])
                             }
                           }}
-                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800 flex items-center justify-between gap-2 text-slate-200"
                         >
-                          {t}
-                        </DropdownMenuCheckboxItem>
+                          <span>{t}</span>
+                          {selectedTypes.includes(t) && (
+                            <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                          )}
+                        </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -391,26 +408,30 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-slate-900 border-slate-800 text-slate-100 min-w-[160px] shadow-2xl">
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Sắp xếp Chi phí</DropdownMenuLabel>
-                      <DropdownMenuCheckboxItem
-                        checked={sortField === 'tong_chi_phi' && sortOrder === 'asc'}
-                        onCheckedChange={() => {
+                      <DropdownMenuItem
+                        onClick={() => {
                           setSortField('tong_chi_phi')
                           setSortOrder('asc')
                         }}
-                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800 flex items-center justify-between gap-2"
                       >
-                        Thấp đến Cao
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={sortField === 'tong_chi_phi' && sortOrder === 'desc'}
-                        onCheckedChange={() => {
+                        <span>Thấp đến Cao</span>
+                        {sortField === 'tong_chi_phi' && sortOrder === 'asc' && (
+                          <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
                           setSortField('tong_chi_phi')
                           setSortOrder('desc')
                         }}
-                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                        className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800 flex items-center justify-between gap-2"
                       >
-                        Cao đến Thấp
-                      </DropdownMenuCheckboxItem>
+                        <span>Cao đến Thấp</span>
+                        {sortField === 'tong_chi_phi' && sortOrder === 'desc' && (
+                          <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                        )}
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <span>Tổng chi phí</span>
@@ -429,27 +450,30 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Người phụ trách</DropdownMenuLabel>
                       {selectedMechanics.length > 0 && (
                         <>
-                          <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => setSelectedMechanics([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold">
-                            Xóa bộ lọc cột
-                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuItem onClick={() => setSelectedMechanics([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold flex items-center justify-between">
+                            <span>Xóa bộ lọc cột</span>
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-slate-800" />
                         </>
                       )}
                       {uniqueMechanics.map(m => (
-                        <DropdownMenuCheckboxItem
+                        <DropdownMenuItem
                           key={m}
-                          checked={selectedMechanics.includes(m)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedMechanics([...selectedMechanics, m])
-                            } else {
+                          closeOnClick={false}
+                          onClick={() => {
+                            if (selectedMechanics.includes(m)) {
                               setSelectedMechanics(selectedMechanics.filter(item => item !== m))
+                            } else {
+                              setSelectedMechanics([...selectedMechanics, m])
                             }
                           }}
-                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800 flex items-center justify-between gap-2 text-slate-200"
                         >
-                          {m}
-                        </DropdownMenuCheckboxItem>
+                          <span>{m}</span>
+                          {selectedMechanics.includes(m) && (
+                            <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                          )}
+                        </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -468,27 +492,30 @@ export function AdminTicketTable({ data, onViewDetails }: AdminTicketTableProps)
                       <DropdownMenuLabel className="text-slate-400 text-xs py-1.5 px-2">Lọc theo Tọa độ GPS</DropdownMenuLabel>
                       {selectedGps.length > 0 && (
                         <>
-                          <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => setSelectedGps([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold">
-                            Xóa bộ lọc cột
-                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuItem onClick={() => setSelectedGps([])} className="text-red-400 hover:text-red-300 text-xs py-1 px-2 cursor-pointer font-bold flex items-center justify-between">
+                            <span>Xóa bộ lọc cột</span>
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-slate-800" />
                         </>
                       )}
                       {['Hợp lệ', 'Lệch vị trí'].map(g => (
-                        <DropdownMenuCheckboxItem
+                        <DropdownMenuItem
                           key={g}
-                          checked={selectedGps.includes(g)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedGps([...selectedGps, g])
-                            } else {
+                          closeOnClick={false}
+                          onClick={() => {
+                            if (selectedGps.includes(g)) {
                               setSelectedGps(selectedGps.filter(item => item !== g))
+                            } else {
+                              setSelectedGps([...selectedGps, g])
                             }
                           }}
-                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800"
+                          className="text-xs py-1.5 px-2 cursor-pointer hover:bg-slate-800 flex items-center justify-between gap-2 text-slate-200"
                         >
-                          {g}
-                        </DropdownMenuCheckboxItem>
+                          <span>{g}</span>
+                          {selectedGps.includes(g) && (
+                            <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                          )}
+                        </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
