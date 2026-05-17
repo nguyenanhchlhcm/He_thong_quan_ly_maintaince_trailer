@@ -308,7 +308,7 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
                 className="border-blue-500/20 text-blue-400 hover:bg-blue-500/10 font-bold flex items-center gap-2"
                 onClick={() => {
                   onOpenChange(false)
-                  router.push(`/mechanic/tickets/edit/${ticket.id}`)
+                  router.push(`/admin/tickets/edit/${ticket.id}`)
                 }}
                 disabled={isUpdating || isDeleting}
               >
