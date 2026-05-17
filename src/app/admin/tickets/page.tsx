@@ -104,9 +104,9 @@ export default function AdminTicketsPage() {
         'Loại sửa ngoài': t.loai_sua_ngoai || '',
         'Ngày tiếp nhận': new Date(t.ngay_tiep_nhan || t.created_at).toLocaleDateString('vi-VN'),
         'Ngày tạo phiếu': new Date(t.created_at).toLocaleDateString('vi-VN'),
-        'Tổng tiền vật tư': t.tong_vat_tu || 0,
-        'Tiền công': t.tien_cong || 0,
-        'Tổng chi phí': t.tong_chi_phi || 0,
+        'Tổng tiền vật tư': (t.tong_vat_tu || 0).toLocaleString('vi-VN') + ' đ',
+        'Tiền công': (t.tien_cong || 0).toLocaleString('vi-VN') + ' đ',
+        'Tổng chi phí': (t.tong_chi_phi || 0).toLocaleString('vi-VN') + ' đ',
         'Trạng thái': t.trang_thai_phieu,
         'Ghi chú': t.ghi_chu_ngoai || ''
       }))
@@ -120,8 +120,8 @@ export default function AdminTicketsPage() {
           'Ngày tạo phiếu': ticket ? new Date(ticket.created_at).toLocaleDateString('vi-VN') : '',
           'Tên vật tư / Dịch vụ': p.sku?.ten_vat_tu || 'Không rõ',
           'Số lượng': p.so_luong || 0,
-          'Đơn giá': p.don_gia || 0,
-          'Thành tiền': p.thanh_tien || 0,
+          'Đơn giá': (p.don_gia || 0).toLocaleString('vi-VN') + ' đ',
+          'Thành tiền': (p.thanh_tien || 0).toLocaleString('vi-VN') + ' đ',
           'Người thực hiện': ticket?.profiles?.full_name || 'Chưa gán'
         }
       })
@@ -129,9 +129,31 @@ export default function AdminTicketsPage() {
       const wb = XLSX.utils.book_new()
       
       const ws1 = XLSX.utils.json_to_sheet(ws1Data)
-      XLSX.utils.book_append_sheet(wb, ws1, 'Tổng quan phiếu')
-      
       const ws2 = XLSX.utils.json_to_sheet(ws2Data)
+
+      // Auto-fit Column Widths
+      const autoFitColumns = (ws: XLSX.WorkSheet, data: any[]) => {
+        if (data.length === 0) return
+        const keys = Object.keys(data[0])
+        ws['!cols'] = keys.map(key => {
+          let maxLength = key.length
+          data.forEach(row => {
+            const val = row[key]
+            if (val !== undefined && val !== null) {
+              const valStr = String(val)
+              if (valStr.length > maxLength) {
+                maxLength = valStr.length
+              }
+            }
+          })
+          return { wch: maxLength + 3 } // Padding
+        })
+      }
+
+      autoFitColumns(ws1, ws1Data)
+      autoFitColumns(ws2, ws2Data)
+
+      XLSX.utils.book_append_sheet(wb, ws1, 'Tổng quan phiếu')
       XLSX.utils.book_append_sheet(wb, ws2, 'Chi tiết vật tư')
       
       const fileName = isDefaultYearRange 

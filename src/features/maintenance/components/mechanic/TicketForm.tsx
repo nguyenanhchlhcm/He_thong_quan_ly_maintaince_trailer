@@ -60,6 +60,7 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
     receipt: string | null;
     parts: { old: string | null; new: string | null }[];
   }>({ odo: null, receipt: null, parts: [] })
+  const [showDraftAlert, setShowDraftAlert] = useState(false)
   
   const { draftTicket, saveDraft, clearDraft, addToSyncQueue } = useTicketStore()
 
@@ -157,22 +158,13 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
     fetchTicketData()
   }, [ticketId, reset])
 
-  // Restore draft on mount only - FIXED: Use ref to prevent loop
+  // Check for draft on mount (Only if creating new ticket)
   useEffect(() => {
-    if (draftTicket && !isMounted.current && !ticketId) {
-      reset({
-        id_xe: draftTicket.id_xe,
-        id_gara: draftTicket.id_gara,
-        so_km_luc_sua: draftTicket.so_km_luc_sua || 0,
-        tien_cong: draftTicket.tien_cong,
-        odometer_photo_base64: draftTicket.odometer_photo_base64 || null,
-        receipt_photo_base64: draftTicket.receipt_photo_base64 || null,
-        checkin_photos_base64: draftTicket.checkin_photos_base64 || [null, null, null, null],
-        parts: draftTicket.parts,
-      })
+    if (draftTicket && !ticketId && !isMounted.current) {
+      setShowDraftAlert(true)
       isMounted.current = true
     }
-  }, [draftTicket, reset, ticketId])
+  }, [draftTicket, ticketId])
 
   // Auto-save draft on changes (Only if NOT in edit mode)
   const formValues = watch()
@@ -258,6 +250,7 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
 
       const totalVatTu = data.parts.reduce((sum, p) => sum + (p.so_luong * p.don_gia), 0)
       let activeTicketId = ticketId
+      let insertedPhieu: any = null
 
       if (ticketId) {
         // Edit flow: Update main ticket
@@ -281,7 +274,7 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
         if (phieuError) throw phieuError
       } else {
         // New flow: Create main ticket record
-        const { data: phieu, error: phieuError } = await supabase
+        const { data: phieuData, error: phieuError } = await supabase
           .from('phieu_bao_tri')
           .insert([{
             id_xe: data.id_xe,
@@ -300,7 +293,8 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
           .single()
 
         if (phieuError) throw phieuError
-        activeTicketId = phieu.id
+        insertedPhieu = phieuData
+        activeTicketId = phieuData.id
       }
 
       // 4. Upload part photos and create detail records
@@ -344,6 +338,38 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
       if (ctError) throw ctError
 
       toast.success(ticketId ? 'Cập nhật phiếu bảo trì thành công!' : 'Gửi phiếu bảo trì thành công!')
+      
+      // Trigger Telegram notification in the background
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        const mechanicName = user?.user_metadata?.full_name || user?.email || 'Thợ máy CHL'
+        const vehiclePlate = vehicleList.find(v => v.id === data.id_xe)?.bien_so || data.id_xe
+        
+        let ticketCode = ticketId ? '' : (insertedPhieu?.ma_phieu || '')
+        if (ticketId) {
+          const { data: updatedPhieu } = await supabase.from('phieu_bao_tri').select('ma_phieu').eq('id', ticketId).single()
+          ticketCode = updatedPhieu?.ma_phieu || ''
+        }
+
+        fetch('/api/telegram-notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'new_ticket',
+            ticket: {
+              ma_phieu: ticketCode || 'N/A',
+              bien_so: vehiclePlate,
+              loai_phieu: ticketId ? 'Cập nhật phiếu sửa chữa' : 'Phiếu bảo trì sửa chữa',
+              tho_may: mechanicName,
+              ngay_tiep_nhan: new Date().toLocaleDateString('vi-VN'),
+              tong_chi_phi: totalVatTu + (data.tien_cong || 0)
+            }
+          })
+        }).catch(err => console.error('Telegram notification error:', err))
+      } catch (tgErr) {
+        console.error('Failed to dispatch Telegram notification:', tgErr)
+      }
+
       if (!ticketId) {
         clearDraft()
       }
@@ -370,6 +396,55 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-24">
+      {/* Draft recovery prompt */}
+      {showDraftAlert && draftTicket && (
+        <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-amber-500/10 border border-amber-500/25 rounded-xl gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-3 text-amber-500 text-left">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <div className="text-left">
+              <p className="text-sm font-bold">Phát hiện Bản nháp chưa gửi!</p>
+              <p className="text-xs text-slate-400">Hệ thống đã lưu lại tiến trình viết dở trước đó của bạn.</p>
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-end">
+            <Button 
+              type="button" 
+              size="sm" 
+              variant="outline" 
+              className="h-8 border-slate-700 hover:bg-slate-800 text-xs text-slate-300 cursor-pointer"
+              onClick={() => {
+                clearDraft()
+                setShowDraftAlert(false)
+                toast.info('Đã xóa bản nháp.')
+              }}
+            >
+              Xóa nháp
+            </Button>
+            <Button 
+              type="button" 
+              size="sm" 
+              className="h-8 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs cursor-pointer border-0"
+              onClick={() => {
+                reset({
+                  id_xe: draftTicket.id_xe,
+                  id_gara: draftTicket.id_gara,
+                  so_km_luc_sua: draftTicket.so_km_luc_sua || 0,
+                  tien_cong: draftTicket.tien_cong,
+                  odometer_photo_base64: draftTicket.odometer_photo_base64 || null,
+                  receipt_photo_base64: draftTicket.receipt_photo_base64 || null,
+                  checkin_photos_base64: draftTicket.checkin_photos_base64 || [null, null, null, null],
+                  parts: draftTicket.parts,
+                })
+                setShowDraftAlert(false)
+                toast.success('Khôi phục bản nháp thành công!')
+              }}
+            >
+              Khôi phục
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Thông tin chung */}
       <Card className="glass-card">
         <CardHeader className="pb-4">

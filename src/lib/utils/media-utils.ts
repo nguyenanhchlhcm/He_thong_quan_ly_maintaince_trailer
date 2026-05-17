@@ -1,4 +1,5 @@
 import imageCompression from 'browser-image-compression'
+import { compressImage as canvasCompress } from './imageCompressor'
 
 /**
  * Converts a File object to a Base64 string
@@ -32,6 +33,7 @@ export const base64ToFile = (base64: string, filename: string): File => {
 /**
  * Compresses an image file and converts it to WebP format
  * Max size enforced: 100KB (Lean & Efficient)
+ * Falls back to native Canvas-based compression if worker fails.
  */
 export const compressImage = async (file: File): Promise<File> => {
   const options = {
@@ -51,7 +53,14 @@ export const compressImage = async (file: File): Promise<File> => {
 
     return compressedFile
   } catch (error) {
-    console.error('Error compressing image:', error)
-    throw error
+    console.warn('browser-image-compression worker failed, falling back to native Canvas compression...', error)
+    try {
+      const fallbackFile = await canvasCompress(file, 0.7, 800)
+      return fallbackFile
+    } catch (fallbackError) {
+      console.error('Canvas fallback compression failed too:', fallbackError)
+      return file // Ultimate fallback: original file
+    }
   }
 }
+

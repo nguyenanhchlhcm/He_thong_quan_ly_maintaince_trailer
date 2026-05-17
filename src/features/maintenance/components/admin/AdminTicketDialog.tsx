@@ -84,6 +84,26 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
         `Đổi trạng thái phiếu ${ticket.ma_phieu || ticket.id.slice(0,8)} sang ${newStatus}`
       )
 
+      // Trigger Telegram notification in the background
+      try {
+        fetch('/api/telegram-notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'status_change',
+            ticket: {
+              ma_phieu: ticket.ma_phieu || ticket.id.slice(0, 8),
+              bien_so: ticket.vehicles?.bien_so || ticket.id_xe || 'N/A',
+              tong_chi_phi: ticket.tong_chi_phi || 0,
+              old_status: ticket.trang_thai_phieu,
+              new_status: newStatus
+            }
+          })
+        }).catch(err => console.error('Telegram notification error:', err))
+      } catch (tgErr) {
+        console.error('Failed to dispatch Telegram notification:', tgErr)
+      }
+
       toast.success(`Đã chuyển trạng thái phiếu sang: ${newStatus}`)
       onSuccess()
       onOpenChange(false)

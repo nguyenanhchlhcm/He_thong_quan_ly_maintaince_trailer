@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import { Truck, Users, Warehouse, Package, Settings, LogOut, Disc, FileText, LayoutDashboard } from 'lucide-react'
+import { Truck, Users, Warehouse, Package, Settings, LogOut, Disc, FileText, LayoutDashboard, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LogoutButton } from '@/components/layout/LogoutButton'
 
@@ -51,10 +51,16 @@ export default async function AdminLayout({
             <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Quản lý Lốp xe</span>
           </Link>
           {isAdmin && (
-            <Link href="/admin/master-data?tab=users" className="flex items-center px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors whitespace-nowrap">
-              <Users className="w-5 h-5 flex-shrink-0" />
-              <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Nhân viên</span>
-            </Link>
+            <>
+              <Link href="/admin/master-data?tab=users" className="flex items-center px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors whitespace-nowrap">
+                <Users className="w-5 h-5 flex-shrink-0" />
+                <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Nhân viên</span>
+              </Link>
+              <Link href="/admin/audit-logs" className="flex items-center px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors whitespace-nowrap">
+                <ShieldAlert className="w-5 h-5 flex-shrink-0" />
+                <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Nhật ký Hệ thống</span>
+              </Link>
+            </>
           )}
         </nav>
       </aside>
