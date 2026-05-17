@@ -17,6 +17,8 @@ export default function AdminTicketsPage() {
   const [selectedTicket, setSelectedTicket] = useState<PhieuBaoTri | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [startDate, setStartDate] = useState<string>('')
+  const [endDate, setEndDate] = useState<string>('')
 
   const fetchTickets = useCallback(async () => {
     setIsLoading(true)
@@ -47,12 +49,21 @@ export default function AdminTicketsPage() {
     fetchTickets()
   }, [fetchTickets])
 
-  // Stats calculation
+  const filteredTickets = tickets.filter(ticket => {
+    if (!ticket.created_at) return true
+    const ticketDate = new Date(ticket.created_at).toISOString().split('T')[0]
+    
+    if (startDate && ticketDate < startDate) return false
+    if (endDate && ticketDate > endDate) return false
+    return true
+  })
+
+  // Stats calculation based on filtered list
   const stats = {
-    total: tickets.length,
-    pending: tickets.filter(t => t.trang_thai_phieu === 'Chờ duyệt').length,
-    inProgress: tickets.filter(t => t.trang_thai_phieu === 'Đang sửa').length,
-    completed: tickets.filter(t => t.trang_thai_phieu === 'Đã xong').length
+    total: filteredTickets.length,
+    pending: filteredTickets.filter(t => t.trang_thai_phieu === 'Chờ duyệt').length,
+    inProgress: filteredTickets.filter(t => t.trang_thai_phieu === 'Đang sửa').length,
+    completed: filteredTickets.filter(t => t.trang_thai_phieu === 'Đã xong').length
   }
 
   if (isLoading) {
@@ -145,6 +156,82 @@ export default function AdminTicketsPage() {
         </Card>
       </div>
 
+      {/* Date Range Filter Panel */}
+      <div className="flex flex-col md:flex-row gap-4 items-end bg-slate-900/50 p-4 border border-slate-800 rounded-xl backdrop-blur-sm">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              const today = new Date().toISOString().split('T')[0]
+              setStartDate(today)
+              setEndDate(today)
+            }}
+            className={`border-slate-800 hover:bg-slate-800 text-xs ${startDate === new Date().toISOString().split('T')[0] && endDate === new Date().toISOString().split('T')[0] ? 'bg-primary text-slate-900 hover:bg-primary/95 border-primary font-bold' : 'text-slate-300'}`}
+          >
+            Hôm nay
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              const end = new Date().toISOString().split('T')[0]
+              const start = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+              setStartDate(start)
+              setEndDate(end)
+            }}
+            className={`border-slate-800 hover:bg-slate-800 text-xs ${startDate === new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] && endDate === new Date().toISOString().split('T')[0] ? 'bg-primary text-slate-900 hover:bg-primary/95 border-primary font-bold' : 'text-slate-300'}`}
+          >
+            7 ngày qua
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              const end = new Date().toISOString().split('T')[0]
+              const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+              setStartDate(start)
+              setEndDate(end)
+            }}
+            className={`border-slate-800 hover:bg-slate-800 text-xs ${startDate === new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] && endDate === new Date().toISOString().split('T')[0] ? 'bg-primary text-slate-900 hover:bg-primary/95 border-primary font-bold' : 'text-slate-300'}`}
+          >
+            30 ngày qua
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              setStartDate('')
+              setEndDate('')
+            }}
+            className={`border-slate-800 hover:bg-slate-800 text-xs ${!startDate && !endDate ? 'bg-primary text-slate-900 hover:bg-primary/95 border-primary font-bold' : 'text-slate-300'}`}
+          >
+            Tất cả
+          </Button>
+        </div>
+
+        <div className="flex gap-3 items-center w-full md:w-auto">
+          <div className="grid gap-1 w-full md:w-40">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Từ ngày</span>
+            <input 
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary w-full [color-scheme:dark]"
+            />
+          </div>
+          <div className="grid gap-1 w-full md:w-40">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Đến ngày</span>
+            <input 
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary w-full [color-scheme:dark]"
+            />
+          </div>
+        </div>
+      </div>
+
       <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm shadow-2xl">
         <CardHeader>
           <CardTitle>Danh sách Phiếu hệ thống</CardTitle>
@@ -154,7 +241,7 @@ export default function AdminTicketsPage() {
         </CardHeader>
         <CardContent>
           <AdminTicketTable 
-            data={tickets} 
+            data={filteredTickets} 
             onViewDetails={(ticket) => {
               setSelectedTicket(ticket);
               setIsDialogOpen(true);
