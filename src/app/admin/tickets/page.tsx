@@ -9,11 +9,13 @@ import { CreateTicketDialog } from '@/features/maintenance/components/admin/Crea
 import { PhieuBaoTri } from '@/types/database'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { FileText, Clock, Hammer, CheckCircle2, Loader2, RefreshCw, Plus } from 'lucide-react'
+import { FileText, Clock, Hammer, CheckCircle2, Loader2, RefreshCw, Plus, FileDown } from 'lucide-react'
+import * as XLSX from 'xlsx'
 
 export default function AdminTicketsPage() {
   const [tickets, setTickets] = useState<PhieuBaoTri[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isExporting, setIsExporting] = useState(false)
   const [selectedTicket, setSelectedTicket] = useState<PhieuBaoTri | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -49,6 +51,98 @@ export default function AdminTicketsPage() {
   useEffect(() => {
     fetchTickets()
   }, [fetchTickets])
+
+  const handleExportExcel = async () => {
+    let ticketsToExport = filteredTickets
+    let isDefaultYearRange = false
+    
+    if (!startDate && !endDate) {
+      isDefaultYearRange = true
+      const currentYear = new Date().getFullYear()
+      const startOfYear = new Date(`${currentYear}-01-01T00:00:00.000Z`)
+      
+      ticketsToExport = tickets.filter(ticket => {
+        if (!ticket.created_at) return false
+        const ticketDate = new Date(ticket.created_at)
+        return ticketDate >= startOfYear
+      })
+    }
+
+    if (ticketsToExport.length === 0) {
+      toast.error('Không có dữ liệu phiếu bảo trì để xuất!')
+      return
+    }
+
+    setIsExporting(true)
+    try {
+      const ticketIds = ticketsToExport.map(t => t.id)
+      let partsData: any[] = []
+      
+      if (ticketIds.length > 0) {
+        const { data, error } = await supabase
+          .from('chi_tiet_vat_tu_su_dung')
+          .select(`
+            *,
+            sku:skus!id_sku (
+              ten_vat_tu:name
+            )
+          `)
+          .in('id_phieu', ticketIds)
+        
+        if (error) throw error
+        partsData = data || []
+      }
+
+      const ws1Data = ticketsToExport.map(t => ({
+        'Mã phiếu': t.ma_phieu || t.id.slice(0, 8),
+        'Biển số xe': t.vehicles?.bien_so || t.id_xe || 'N/A',
+        'Loại xe': t.vehicles?.loai_xe || '',
+        'Loại phiếu': t.loai_phieu,
+        'Thợ máy thực hiện': t.profiles?.full_name || t.profiles?.email || 'Chưa gán',
+        'Đơn vị sửa ngoài': t.don_vi_sua_ngoai || '',
+        'Loại sửa ngoài': t.loai_sua_ngoai || '',
+        'Ngày lập': new Date(t.created_at).toLocaleDateString('vi-VN'),
+        'Tổng tiền vật tư': t.tong_vat_tu || 0,
+        'Tiền công': t.tien_cong || 0,
+        'Tổng chi phí': t.tong_chi_phi || 0,
+        'Trạng thái': t.trang_thai_phieu,
+        'Ghi chú': t.ghi_chu_ngoai || ''
+      }))
+
+      const ws2Data = partsData.map(p => {
+        const ticket = ticketsToExport.find(t => t.id === p.id_phieu)
+        return {
+          'Mã phiếu': ticket?.ma_phieu || p.id_phieu.slice(0, 8),
+          'Biển số xe': ticket?.vehicles?.bien_so || ticket?.id_xe || 'N/A',
+          'Ngày lập': ticket ? new Date(ticket.created_at).toLocaleDateString('vi-VN') : '',
+          'Tên vật tư / Dịch vụ': p.sku?.ten_vat_tu || 'Không rõ',
+          'Số lượng': p.so_luong || 0,
+          'Đơn giá': p.don_gia || 0,
+          'Thành tiền': p.thanh_tien || 0,
+          'Người thực hiện': ticket?.profiles?.full_name || 'Chưa gán'
+        }
+      })
+
+      const wb = XLSX.utils.book_new()
+      
+      const ws1 = XLSX.utils.json_to_sheet(ws1Data)
+      XLSX.utils.book_append_sheet(wb, ws1, 'Tổng quan phiếu')
+      
+      const ws2 = XLSX.utils.json_to_sheet(ws2Data)
+      XLSX.utils.book_append_sheet(wb, ws2, 'Chi tiết vật tư')
+      
+      const fileName = isDefaultYearRange 
+        ? `Phieu_Bao_Tri_Dau_Nam_Den_Nay_${new Date().toISOString().split('T')[0]}.xlsx`
+        : `Phieu_Bao_Tri_Bo_Loc_${new Date().toISOString().split('T')[0]}.xlsx`
+        
+      XLSX.writeFile(wb, fileName)
+      toast.success(`Đã xuất ${ticketsToExport.length} phiếu bảo trì sang Excel thành công!`)
+    } catch (error: any) {
+      toast.error('Lỗi khi xuất Excel: ' + error.message)
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const filteredTickets = tickets.filter(ticket => {
     if (!ticket.created_at) return true
@@ -87,6 +181,19 @@ export default function AdminTicketsPage() {
           <p className="text-slate-400">Xem xét, phê duyệt và nghiệm thu các yêu cầu sửa chữa từ đội ngũ thợ máy.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline"
+            className="gap-2 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 font-bold"
+            onClick={handleExportExcel}
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4" />
+            )}
+            Xuất Excel
+          </Button>
           <Button 
             className="gap-2 bg-primary hover:bg-primary/90 font-bold"
             onClick={() => setIsCreateDialogOpen(true)}
