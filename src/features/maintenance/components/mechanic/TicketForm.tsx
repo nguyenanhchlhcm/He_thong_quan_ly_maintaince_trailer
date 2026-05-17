@@ -210,17 +210,8 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
       return
     }
 
-    if (!deviceLocation) {
-      alert('Chưa xác định được vị trí GPS. Vui lòng cấp quyền truy cập vị trí.')
-      return
-    }
-
-    const selectedGara = garaList.find(g => g.id === data.id_gara)
-    const distance = (selectedGara?.toa_do_lat && selectedGara?.toa_do_lng && deviceLocation)
-      ? calculateDistance(deviceLocation.lat, deviceLocation.lng, selectedGara.toa_do_lat, selectedGara.toa_do_lng)
-      : 0
-    
-    const hasGPSWarning = distance > 1 && !isDebugMode
+    // GPS Verification (TEMPORARILY BYPASSED FOR TESTING)
+    const hasGPSWarning = false
 
     // Validation Rule 3: Odometer Poka-yoke
     if (!data.so_km_luc_sua || data.so_km_luc_sua <= 0) {
@@ -307,9 +298,9 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
           .update({
             id_xe: data.id_xe,
             id_gara: data.id_gara,
-            toa_do_app_lat: deviceLocation?.lat ?? null,
-            toa_do_app_lng: deviceLocation?.lng ?? null,
-            canh_bao_gps: hasGPSWarning,
+            toa_do_app_lat: null,
+            toa_do_app_lng: null,
+            canh_bao_gps: false,
             trang_thai_phieu: 'Chờ duyệt', // Trả về Chờ duyệt để Quản lý duyệt lại
             tong_vat_tu: totalVatTu,
             tien_cong: data.tien_cong || 0,
@@ -327,9 +318,9 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
           .insert([{
             id_xe: data.id_xe,
             id_gara: data.id_gara,
-            toa_do_app_lat: deviceLocation?.lat ?? null,
-            toa_do_app_lng: deviceLocation?.lng ?? null,
-            canh_bao_gps: hasGPSWarning,
+            toa_do_app_lat: null,
+            toa_do_app_lng: null,
+            canh_bao_gps: false,
             trang_thai_phieu: 'Chờ duyệt',
             tong_vat_tu: totalVatTu,
             tien_cong: data.tien_cong || 0,
