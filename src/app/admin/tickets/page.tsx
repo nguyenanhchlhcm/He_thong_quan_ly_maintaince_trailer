@@ -62,8 +62,9 @@ export default function AdminTicketsPage() {
       const startOfYear = new Date(`${currentYear}-01-01T00:00:00.000Z`)
       
       ticketsToExport = tickets.filter(ticket => {
-        if (!ticket.created_at) return false
-        const ticketDate = new Date(ticket.created_at)
+        const targetDate = ticket.ngay_tiep_nhan || ticket.created_at
+        if (!targetDate) return false
+        const ticketDate = new Date(targetDate)
         return ticketDate >= startOfYear
       })
     }
@@ -101,7 +102,8 @@ export default function AdminTicketsPage() {
         'Thợ máy thực hiện': t.profiles?.full_name || t.profiles?.email || 'Chưa gán',
         'Đơn vị sửa ngoài': t.don_vi_sua_ngoai || '',
         'Loại sửa ngoài': t.loai_sua_ngoai || '',
-        'Ngày lập': new Date(t.created_at).toLocaleDateString('vi-VN'),
+        'Ngày tiếp nhận': new Date(t.ngay_tiep_nhan || t.created_at).toLocaleDateString('vi-VN'),
+        'Ngày tạo phiếu': new Date(t.created_at).toLocaleDateString('vi-VN'),
         'Tổng tiền vật tư': t.tong_vat_tu || 0,
         'Tiền công': t.tien_cong || 0,
         'Tổng chi phí': t.tong_chi_phi || 0,
@@ -114,7 +116,8 @@ export default function AdminTicketsPage() {
         return {
           'Mã phiếu': ticket?.ma_phieu || p.id_phieu.slice(0, 8),
           'Biển số xe': ticket?.vehicles?.bien_so || ticket?.id_xe || 'N/A',
-          'Ngày lập': ticket ? new Date(ticket.created_at).toLocaleDateString('vi-VN') : '',
+          'Ngày tiếp nhận': ticket ? new Date(ticket.ngay_tiep_nhan || ticket.created_at).toLocaleDateString('vi-VN') : '',
+          'Ngày tạo phiếu': ticket ? new Date(ticket.created_at).toLocaleDateString('vi-VN') : '',
           'Tên vật tư / Dịch vụ': p.sku?.ten_vat_tu || 'Không rõ',
           'Số lượng': p.so_luong || 0,
           'Đơn giá': p.don_gia || 0,
@@ -145,8 +148,9 @@ export default function AdminTicketsPage() {
   }
 
   const filteredTickets = tickets.filter(ticket => {
-    if (!ticket.created_at) return true
-    const ticketDate = new Date(ticket.created_at).toISOString().split('T')[0]
+    const targetDate = ticket.ngay_tiep_nhan || ticket.created_at
+    if (!targetDate) return true
+    const ticketDate = new Date(targetDate).toISOString().split('T')[0]
     
     if (startDate && ticketDate < startDate) return false
     if (endDate && ticketDate > endDate) return false

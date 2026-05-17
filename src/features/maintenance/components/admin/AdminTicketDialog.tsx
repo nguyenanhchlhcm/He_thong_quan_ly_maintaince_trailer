@@ -143,7 +143,7 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-1">
             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Phương tiện</p>
             <p className="text-lg font-bold text-primary">
@@ -160,7 +160,13 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
             </p>
           </div>
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-1">
-            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Ngày lập</p>
+            <p className="text-[10px] text-emerald-400 uppercase font-bold tracking-wider">Ngày tiếp nhận</p>
+            <p className="text-sm font-bold text-emerald-400">
+              {new Date(ticket.ngay_tiep_nhan || ticket.created_at).toLocaleDateString('vi-VN')}
+            </p>
+          </div>
+          <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 space-y-1">
+            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Ngày lập phiếu</p>
             <p className="text-sm font-medium">{new Date(ticket.created_at).toLocaleDateString('vi-VN')}</p>
           </div>
         </div>

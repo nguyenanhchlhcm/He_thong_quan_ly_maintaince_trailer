@@ -146,9 +146,15 @@ export default function TicketDetailPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-2 text-sm text-slate-400">
-                  <Clock className="w-4 h-4" />
-                  Được tạo lúc: {formatDate(ticket.created_at)}
+                <div className="flex flex-col gap-1 text-sm text-slate-400">
+                  <div className="flex items-center gap-2 text-emerald-400 font-medium">
+                    <Clock className="w-4 h-4" />
+                    Ngày tiếp nhận: {new Date(ticket.ngay_tiep_nhan || ticket.created_at).toLocaleDateString('vi-VN')}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-slate-500" />
+                    Được tạo lúc: {formatDate(ticket.created_at)}
+                  </div>
                 </div>
               </CardContent>
             </Card>

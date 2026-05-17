@@ -83,6 +83,7 @@ export interface PhieuBaoTri {
   tong_chi_phi: number;
   last_updated: string;
   created_at: string;
+  ngay_tiep_nhan?: string | null;
   // Joined relations
   vehicles?: {
     id: string;

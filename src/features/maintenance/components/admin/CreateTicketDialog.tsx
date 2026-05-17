@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, Plus, Trash2, Package, Truck, User, Wrench, MapPin, FileText } from 'lucide-react'
+import { Loader2, Plus, Trash2, Package, Truck, User, Wrench, MapPin, FileText, Calendar } from 'lucide-react'
 import { Xe, VatTuSKU, Profile, LoaiPhieu, LoaiSuaNgoai } from '@/types/database'
 import { logAction } from '@/lib/supabase/audit'
 import { uploadBase64Image } from '@/lib/supabase/storage'
@@ -59,6 +59,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
   const [donViSuaNgoai, setDonViSuaNgoai] = useState('')
   const [ghiChuNgoai, setGhiChuNgoai] = useState('')
   const [receiptPhotoBase64, setReceiptPhotoBase64] = useState<string | null>(null)
+  const [ngayTiepNhan, setNgayTiepNhan] = useState('')
 
   useEffect(() => {
     if (open) {
@@ -77,6 +78,10 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
         setGhiChuNgoai(editTicket.ghi_chu_ngoai || '')
         setLaborCost(editTicket.tien_cong || 0)
         setReceiptPhotoBase64(null)
+        
+        const dateVal = editTicket.ngay_tiep_nhan || editTicket.created_at
+        setNgayTiepNhan(dateVal ? new Date(dateVal).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+        
         fetchTicketParts(editTicket.id)
       } else {
         setSelectedVehicle('')
@@ -88,6 +93,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
         setDonViSuaNgoai('')
         setGhiChuNgoai('')
         setReceiptPhotoBase64(null)
+        setNgayTiepNhan(new Date().toISOString().split('T')[0])
       }
     }
   }, [open, editTicket])
@@ -230,7 +236,8 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
             receipt_photo_url: receiptPhotoUrl,
             tong_vat_tu: totalVatTu,
             tien_cong: laborCost,
-            tong_chi_phi: totalVatTu + laborCost
+            tong_chi_phi: totalVatTu + laborCost,
+            ngay_tiep_nhan: ngayTiepNhan ? new Date(ngayTiepNhan).toISOString() : new Date().toISOString()
           })
           .eq('id', editTicket.id)
 
@@ -251,7 +258,8 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
             receipt_photo_url: receiptPhotoUrl,
             tong_vat_tu: totalVatTu,
             tien_cong: laborCost,
-            tong_chi_phi: totalVatTu + laborCost
+            tong_chi_phi: totalVatTu + laborCost,
+            ngay_tiep_nhan: ngayTiepNhan ? new Date(ngayTiepNhan).toISOString() : new Date().toISOString()
           }])
           .select()
           .single()
@@ -353,7 +361,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
             </div>
           ) : (
             <div className="grid gap-6 py-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2"><Truck className="w-4 h-4 text-slate-500" /> Chọn phương tiện</Label>
                   <div className="flex gap-2">
@@ -417,6 +425,15 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2"><Calendar className="w-4 h-4 text-slate-500" /> Ngày tiếp nhận</Label>
+                  <Input 
+                    type="date"
+                    value={ngayTiepNhan}
+                    onChange={(e) => setNgayTiepNhan(e.target.value)}
+                    className="bg-slate-800 border-slate-700 text-slate-100 w-full [color-scheme:dark]"
+                  />
                 </div>
               </div>
 
