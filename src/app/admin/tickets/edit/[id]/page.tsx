@@ -18,7 +18,7 @@ export default function AdminEditTicketPage() {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => router.back()}
+          onClick={() => router.push('/admin/tickets')}
           className="text-slate-400 hover:text-slate-100 -ml-2"
         >
           <ChevronLeft className="w-6 h-6" />

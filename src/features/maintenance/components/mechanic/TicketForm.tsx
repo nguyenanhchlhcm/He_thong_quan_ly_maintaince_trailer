@@ -348,7 +348,8 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
         clearDraft()
       }
       reset()
-      router.push(ticketId ? '/admin/tickets' : '/mechanic/tickets')
+      const isCustomAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+      router.push(isCustomAdmin ? '/admin/tickets' : '/mechanic/tickets')
     } catch (error: any) {
       toast.error('Lỗi khi lưu phiếu: ' + error.message)
     } finally {
