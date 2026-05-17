@@ -204,46 +204,14 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
   const totalCost = totalPartsCost + (Number(watchTienCong) || 0)
 
   const onSubmit = async (data: TicketFormValues) => {
-    // Validation Rule 2: GPS Verification
-    if (!data.id_gara) {
-      alert('Vui lòng chọn Gara đang thực hiện sửa chữa.')
+    // Check if vehicle is selected
+    if (!data.id_xe) {
+      alert('Vui lòng chọn xe.')
       return
     }
 
     // GPS Verification (TEMPORARILY BYPASSED FOR TESTING)
     const hasGPSWarning = false
-
-    // Validation Rule 3: Odometer Poka-yoke
-    if (!data.so_km_luc_sua || data.so_km_luc_sua <= 0) {
-      alert('Vui lòng nhập số Km hiện tại của xe.')
-      return
-    }
-
-    // Validation Rule 1: Visual Proof
-    if (!data.odometer_photo_base64 && !existingUrls.odo) {
-      alert('Vui lòng chụp ảnh đồng hồ ODO (Bắt buộc) để xác minh số Km.')
-      return
-    }
-
-    if (data.tien_cong > 0 && !data.receipt_photo_base64 && !existingUrls.receipt) {
-      alert('Vui lòng chụp ảnh hóa đơn/chứng từ khi có phát sinh chi phí mua ngoài/tiền công thợ ngoài.')
-      return
-    }
-
-    if (data.parts.length === 0 && data.tien_cong === 0) {
-      alert('Vui lòng thêm ít nhất 1 vật tư hoặc khai báo tiền công vào phiếu bảo trì.')
-      return
-    }
-
-    for (let i = 0; i < data.parts.length; i++) {
-      const part = data.parts[i]
-      const hasOld = part.photos?.oldPartBase64 || existingUrls.parts[i]?.old
-      const hasNew = part.photos?.newPartBase64 || existingUrls.parts[i]?.new
-      if (!hasOld || !hasNew) {
-        alert(`Lỗi: Vật tư dòng thứ ${i + 1} chưa có đủ 2 ảnh (CŨ & MỚI). Đây là yêu cầu bắt buộc!`)
-        return
-      }
-    }
 
     setIsSubmitting(true)
     
@@ -354,8 +322,8 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
             so_luong: part.so_luong,
             don_gia: part.don_gia,
             thanh_tien: part.so_luong * part.don_gia,
-            anh_vat_tu_cu_url: oldUrl,
-            anh_vat_tu_moi_url: newUrl,
+            anh_vat_tu_cu_url: oldUrl || "",
+            anh_vat_tu_moi_url: newUrl || "",
           }
         })
       )
@@ -380,7 +348,7 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
         clearDraft()
       }
       reset()
-      router.push('/mechanic/tickets')
+      router.push(ticketId ? '/admin/tickets' : '/mechanic/tickets')
     } catch (error: any) {
       toast.error('Lỗi khi lưu phiếu: ' + error.message)
     } finally {
@@ -438,9 +406,9 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
 
           <div className="space-y-2">
             <SinglePhotoUploader 
-              title="Ảnh Đồng Hồ ODO" 
-              description="Bắt buộc chụp rõ số Km hiện tại" 
-              required={true}
+              title="Ảnh Đồng Hồ ODO (Tùy chọn)" 
+              description="Không bắt buộc - Có thể chụp số Km hiện tại" 
+              required={false}
               initialUrl={existingUrls.odo}
               onPhotoChange={(base64) => setValue('odometer_photo_base64', base64)}
             />
@@ -538,14 +506,14 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="so_km_luc_sua">Số Km lúc sửa (Odometer) <span className="text-red-500">*</span></Label>
+            <Label htmlFor="so_km_luc_sua">Số Km lúc sửa (Odometer)</Label>
             <div className="relative">
               <Input 
                 id="so_km_luc_sua" 
                 type="number"
                 placeholder="Nhập số Km trên đồng hồ..." 
                 className="bg-slate-800/50 border-slate-700 h-12 text-lg font-mono text-primary"
-                {...register('so_km_luc_sua', { required: true, valueAsNumber: true })}
+                {...register('so_km_luc_sua', { required: false, valueAsNumber: true })}
                 onFocus={(e) => e.target.select()}
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-bold">KM</div>
@@ -566,9 +534,9 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
           {watchTienCong > 0 && (
             <div className="space-y-2 mt-4 pt-4 border-t border-slate-700/50">
               <SinglePhotoUploader 
-                title="Hóa đơn / Chứng từ mua ngoài" 
-                description="Bắt buộc khi có phát sinh tiền công/vật tư ngoài" 
-                required={true}
+                title="Hóa đơn / Chứng từ mua ngoài (Tùy chọn)" 
+                description="Không bắt buộc" 
+                required={false}
                 initialUrl={existingUrls.receipt}
                 onPhotoChange={(base64) => setValue('receipt_photo_base64', base64)}
               />
@@ -660,8 +628,8 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
                   {/* Phase 8 Anti-Fraud hook: Upload ảnh */}
                   <div className="pt-4 border-t border-slate-700/50">
                     <div className="flex items-center gap-2 mb-2">
-                      <AlertCircle className="w-4 h-4 text-amber-500" />
-                      <Label className="text-amber-500">Bằng chứng hình ảnh (Bắt buộc)</Label>
+                      <AlertCircle className="w-4 h-4 text-slate-500" />
+                      <Label className="text-slate-400">Bằng chứng hình ảnh (Tùy chọn)</Label>
                     </div>
                     <PhotoUploader 
                       initialOldUrl={existingUrls.parts[index]?.old}
@@ -670,13 +638,6 @@ export function TicketForm({ ticketId }: { ticketId?: string }) {
                         setValue(`parts.${index}.photos`, photos)
                       }}
                     />
-                    
-                    {((!watchParts[index]?.photos?.oldPartBase64 && !existingUrls.parts[index]?.old) || 
-                      (!watchParts[index]?.photos?.newPartBase64 && !existingUrls.parts[index]?.new)) && (
-                      <p className="text-xs text-red-400 mt-2 text-center">
-                        * Vui lòng chụp đủ 2 ảnh Cũ và Mới để nghiệm thu.
-                      </p>
-                    )}
                   </div>
 
                   <div className="pt-2 border-t border-slate-700/50 text-xs text-slate-500 italic flex justify-between">
