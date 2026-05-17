@@ -7,10 +7,11 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, Truck, User, Calendar, CheckCircle2, XCircle, AlertTriangle, Image as ImageIcon, FileText, MapPin, Wrench } from 'lucide-react'
+import { Loader2, Truck, User, Calendar, CheckCircle2, XCircle, AlertTriangle, Image as ImageIcon, FileText, MapPin, Wrench, Trash2 } from 'lucide-react'
 import { PhieuBaoTri, ChiTietVatTu } from '@/types/database'
 import { logAction } from '@/lib/supabase/audit'
 import { useAuthStore } from '@/store/authStore'
+import { useRouter } from 'next/navigation'
 
 interface AdminTicketDialogProps {
   open: boolean
@@ -23,6 +24,8 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
   const [details, setDetails] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     if (open && ticket) {
@@ -81,6 +84,38 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
       toast.error('Lỗi cập nhật trạng thái: ' + error.message)
     } finally {
       setIsUpdating(false)
+    }
+  }
+
+  const handleDeleteTicket = async () => {
+    if (!confirm('Bạn có chắc chắn muốn xóa phiếu bảo trì này? Hành động này sẽ xóa vĩnh viễn phiếu và toàn bộ danh sách vật tư đính kèm.')) {
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      const { error } = await supabase
+        .from('phieu_bao_tri')
+        .delete()
+        .eq('id', ticket!.id)
+      
+      if (error) throw error
+
+      // Ghi nhật ký
+      await logAction(
+        authUser?.email, 
+        'XÓA', 
+        'Phiếu', 
+        `Xóa phiếu bảo trì ${ticket!.ma_phieu || ticket!.id.slice(0,8)}`
+      )
+
+      toast.success('Xóa phiếu bảo trì thành công!')
+      onSuccess()
+      onOpenChange(false)
+    } catch (error: any) {
+      toast.error('Lỗi khi xóa phiếu: ' + error.message)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -249,24 +284,52 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
           </div>
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between mt-6 border-t border-slate-800 pt-6">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-slate-400">Đóng</Button>
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 justify-between mt-6 border-t border-slate-800 pt-6 w-full">
+          <div className="flex gap-2">
+            {/* Delete button for Báo giá/Chờ duyệt */}
+            {['Báo giá', 'Chờ duyệt'].includes(ticket.trang_thai_phieu) && (
+              <Button 
+                variant="destructive"
+                className="font-bold flex items-center gap-2"
+                onClick={handleDeleteTicket}
+                disabled={isDeleting || isUpdating}
+              >
+                <Trash2 className="w-4 h-4" /> XÓA PHIẾU
+              </Button>
+            )}
+            <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-slate-400">Đóng</Button>
+          </div>
           
           <div className="flex gap-2">
+            {/* Edit button for Báo giá/Chờ duyệt */}
+            {['Báo giá', 'Chờ duyệt'].includes(ticket.trang_thai_phieu) && (
+              <Button 
+                variant="outline"
+                className="border-blue-500/20 text-blue-400 hover:bg-blue-500/10 font-bold flex items-center gap-2"
+                onClick={() => {
+                  onOpenChange(false)
+                  router.push(`/mechanic/tickets/edit/${ticket.id}`)
+                }}
+                disabled={isUpdating || isDeleting}
+              >
+                <Wrench className="w-4 h-4" /> SỬA PHIẾU
+              </Button>
+            )}
+
             {ticket.trang_thai_phieu === 'Chờ duyệt' && (
               <>
                 <Button 
                   variant="outline" 
-                  className="border-red-500/20 text-red-500 hover:bg-red-500/10"
+                  className="border-red-500/20 text-red-500 hover:bg-red-500/10 font-bold"
                   onClick={() => updateStatus('Báo giá')}
-                  disabled={isUpdating}
+                  disabled={isUpdating || isDeleting}
                 >
                   <XCircle className="w-4 h-4 mr-2" /> Từ chối
                 </Button>
                 <Button 
                   className="bg-green-600 hover:bg-green-700 text-white font-bold px-8"
                   onClick={() => updateStatus('Đang sửa')}
-                  disabled={isUpdating}
+                  disabled={isUpdating || isDeleting}
                 >
                   {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
                   PHÊ DUYỆT PHIẾU
