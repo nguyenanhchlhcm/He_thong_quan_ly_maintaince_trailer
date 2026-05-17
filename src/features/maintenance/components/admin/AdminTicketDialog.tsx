@@ -13,6 +13,12 @@ import { logAction } from '@/lib/supabase/audit'
 import { useAuthStore } from '@/store/authStore'
 import { useRouter } from 'next/navigation'
 
+const isValidImageUrl = (url: any) => {
+  if (!url) return false
+  const str = String(url).trim().toLowerCase()
+  return str !== '' && str !== 'null' && str !== 'undefined'
+}
+
 interface AdminTicketDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -240,22 +246,21 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
                       <TableCell className="text-right font-mono font-bold text-primary">{item.thanh_tien.toLocaleString()} đ</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-3">
-                          <div className="flex flex-col items-center gap-1">
-                            <span className="text-[8px] text-slate-500 uppercase">Trước</span>
-                            {item.anh_vat_tu_cu_url ? (
+                          {isValidImageUrl(item.anh_vat_tu_cu_url) && (
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-[8px] text-slate-500 uppercase">Trước</span>
                               <img src={item.anh_vat_tu_cu_url} alt="Cũ" className="w-10 h-10 object-cover rounded border border-slate-700 cursor-pointer hover:scale-150 transition-transform" />
-                            ) : (
-                              <div className="w-10 h-10 bg-slate-800 rounded border border-slate-700 flex items-center justify-center"><ImageIcon className="w-4 h-4 text-slate-600" /></div>
-                            )}
-                          </div>
-                          <div className="flex flex-col items-center gap-1">
-                            <span className="text-[8px] text-slate-500 uppercase">Sau</span>
-                            {item.anh_vat_tu_moi_url ? (
+                            </div>
+                          )}
+                          {isValidImageUrl(item.anh_vat_tu_moi_url) && (
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-[8px] text-slate-500 uppercase">Sau</span>
                               <img src={item.anh_vat_tu_moi_url} alt="Mới" className="w-10 h-10 object-cover rounded border border-slate-700 cursor-pointer hover:scale-150 transition-transform" />
-                            ) : (
-                              <div className="w-10 h-10 bg-slate-800 rounded border border-slate-700 flex items-center justify-center"><ImageIcon className="w-4 h-4 text-slate-600" /></div>
-                            )}
-                          </div>
+                            </div>
+                          )}
+                          {!isValidImageUrl(item.anh_vat_tu_cu_url) && !isValidImageUrl(item.anh_vat_tu_moi_url) && (
+                            <span className="text-xs text-slate-500 italic">Không có</span>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
