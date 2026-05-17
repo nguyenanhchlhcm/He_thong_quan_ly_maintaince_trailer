@@ -31,12 +31,16 @@ CREATE TABLE IF NOT EXISTS public.danh_muc_vat_tu_sku (
 );
 
 -- 4. Asset: Danh sách xe
-CREATE TABLE IF NOT EXISTS public.danh_sach_xe (
-    id_xe TEXT PRIMARY KEY, -- Thường dùng biển số xe làm ID
+CREATE TABLE IF NOT EXISTS public.vehicles (
+    id TEXT PRIMARY KEY, -- Biển số xe (renamed from danh_sach_xe.id_xe)
     bien_so TEXT NOT NULL,
     loai_xe TEXT CHECK (loai_xe IN ('Đầu kéo', 'Rơ-moóc', 'Xe tải')),
+    model TEXT,
     so_km_hien_tai NUMERIC DEFAULT 0,
+    odometer NUMERIC DEFAULT 0,
     so_gio_may NUMERIC DEFAULT 0,
+    last_oil_change_km NUMERIC DEFAULT 0,
+    next_maintenance_km NUMERIC DEFAULT 0,
     toa_do_xe_gps_lat FLOAT,
     toa_do_xe_gps_lng FLOAT,
     qr_code_url TEXT,
@@ -46,23 +50,33 @@ CREATE TABLE IF NOT EXISTS public.danh_sach_xe (
 -- 5. Asset: Quản lý lốp xe
 CREATE TABLE IF NOT EXISTS public.quan_ly_vo_xe (
     id_vo TEXT PRIMARY KEY, -- Physical Serial Number
-    id_xe TEXT REFERENCES public.danh_sach_xe(id_xe) ON DELETE SET NULL,
+    id_xe TEXT REFERENCES public.vehicles(id) ON DELETE SET NULL,
     vi_tri_lap TEXT, -- e.g., 'Vỏ 1', 'Vỏ 2'
     tinh_trang_gai NUMERIC,
     trang_thai_vo TEXT CHECK (trang_thai_vo IN ('Đang chạy', 'Chờ đắp', 'Thanh lý')),
+    serial_photo_url TEXT,
+    tread_condition_photo_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 6. Workflow: Phiếu bảo trì
 CREATE TABLE IF NOT EXISTS public.phieu_bao_tri (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    id_xe TEXT REFERENCES public.danh_sach_xe(id_xe),
+    id_xe TEXT REFERENCES public.vehicles(id),
+    id_gara TEXT REFERENCES public.garages(id),
     id_tho_may UUID REFERENCES auth.users(id),
     so_km_luc_sua NUMERIC, 
     toa_do_app_lat FLOAT,
     toa_do_app_lng FLOAT,
     canh_bao_gps BOOLEAN DEFAULT FALSE,
     trang_thai_phieu TEXT CHECK (trang_thai_phieu IN ('Báo giá', 'Chờ duyệt', 'Đang sửa', 'Đã xong')) DEFAULT 'Báo giá',
+    loai_phieu TEXT CHECK (loai_phieu IN ('Nội bộ', 'Bên ngoài')),
+    loai_sua_ngoai TEXT,
+    don_vi_sua_ngoai TEXT,
+    ghi_chu_ngoai TEXT,
+    ma_phieu TEXT,
+    odometer_photo_url TEXT,
+    receipt_photo_url TEXT,
     tong_vat_tu NUMERIC DEFAULT 0,
     tien_cong NUMERIC DEFAULT 0,
     tong_chi_phi NUMERIC DEFAULT 0,
@@ -116,7 +130,7 @@ CREATE TABLE IF NOT EXISTS public.danh_muc_dich_vu (
 -- 11. Workflow: Nhật ký bảo trì định kỳ (Preventive Logs)
 CREATE TABLE IF NOT EXISTS public.preventive_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    id_xe TEXT REFERENCES public.danh_sach_xe(id_xe),
+    id_xe TEXT REFERENCES public.vehicles(id),
     noi_dung_bao_tri TEXT,
     so_km_thuc_hien NUMERIC,
     ngay_thuc_hien DATE DEFAULT CURRENT_DATE,
@@ -127,7 +141,7 @@ CREATE TABLE IF NOT EXISTS public.preventive_logs (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.danh_muc_gara ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.danh_muc_vat_tu_sku ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.danh_sach_xe ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.quan_ly_vo_xe ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.phieu_bao_tri ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chi_tiet_vat_tu_su_dung ENABLE ROW LEVEL SECURITY;
@@ -144,7 +158,7 @@ CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT U
 -- Master Data: Public Read
 CREATE POLICY "Public read for gara" ON public.danh_muc_gara FOR SELECT USING (true);
 CREATE POLICY "Public read for sku" ON public.danh_muc_vat_tu_sku FOR SELECT USING (true);
-CREATE POLICY "Public read for xe" ON public.danh_sach_xe FOR SELECT USING (true);
+CREATE POLICY "Public read for xe" ON public.vehicles FOR SELECT USING (true);
 CREATE POLICY "Public read for vo_xe" ON public.quan_ly_vo_xe FOR SELECT USING (true);
 CREATE POLICY "Public read for customers" ON public.danh_muc_khach_hang FOR SELECT USING (true);
 CREATE POLICY "Public read for suppliers" ON public.danh_muc_nha_cung_cap FOR SELECT USING (true);
@@ -206,9 +220,9 @@ CREATE OR REPLACE FUNCTION public.sync_vehicle_odometer()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (NEW.trang_thai_phieu = 'Đã xong' AND OLD.trang_thai_phieu <> 'Đã xong') THEN
-        UPDATE public.danh_sach_xe
+        UPDATE public.vehicles
         SET so_km_hien_tai = NEW.so_km_luc_sua
-        WHERE id_xe = NEW.id_xe;
+        WHERE id = NEW.id_xe;
     END IF;
     RETURN NEW;
 END;

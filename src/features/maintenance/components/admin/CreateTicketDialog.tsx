@@ -152,7 +152,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
 
       let receiptPhotoUrl: string | null = null
       if (loaiPhieu === 'Bên ngoài' && receiptPhotoBase64) {
-        receiptPhotoUrl = await uploadBase64Image('maintenance', `admin_receipt_${Date.now()}`, receiptPhotoBase64)
+        receiptPhotoUrl = await uploadBase64Image('t2m-evidence', `admin_receipt_${Date.now()}`, receiptPhotoBase64)
       }
 
       // 1. Tạo Phiếu chính
@@ -201,7 +201,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       }))
 
       const { error: ctError } = await supabase
-        .from('chi_tiet_phieu_bao_tri')
+        .from('chi_tiet_vat_tu_su_dung')
         .insert(chiTietData)
 
       if (ctError) throw ctError

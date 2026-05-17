@@ -107,8 +107,12 @@ export function useServices() {
   return useQuery({
     queryKey: MASTER_DATA_KEYS.services,
     queryFn: async () => {
-      // Bảng danh_muc_dich_vu chưa tồn tại trong DB mới
-      return [] as DichVu[]
+      const { data, error } = await supabase
+        .from('danh_muc_dich_vu')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as DichVu[]
     }
   })
 }
@@ -117,8 +121,12 @@ export function useCustomers() {
   return useQuery({
     queryKey: MASTER_DATA_KEYS.customers,
     queryFn: async () => {
-      // Bảng danh_muc_khach_hang chưa tồn tại trong DB mới
-      return [] as KhachHang[]
+      const { data, error } = await supabase
+        .from('danh_muc_khach_hang')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as KhachHang[]
     }
   })
 }
@@ -127,8 +135,12 @@ export function useSuppliers() {
   return useQuery({
     queryKey: MASTER_DATA_KEYS.suppliers,
     queryFn: async () => {
-      // Bảng danh_muc_nha_cung_cap chưa tồn tại trong DB mới
-      return [] as NhaCungCap[]
+      const { data, error } = await supabase
+        .from('danh_muc_nha_cung_cap')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data as NhaCungCap[]
     }
   })
 }

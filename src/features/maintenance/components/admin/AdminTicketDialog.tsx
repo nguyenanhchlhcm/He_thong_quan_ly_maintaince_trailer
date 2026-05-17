@@ -35,10 +35,10 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
     setIsLoading(true)
     try {
       const { data, error } = await supabase
-        .from('chi_tiet_phieu_bao_tri')
+        .from('chi_tiet_vat_tu_su_dung')
         .select(`
           *,
-          danh_muc_vat_tu_sku:skus!id_sku (
+          skus!id_sku (
             ten_vat_tu:name
           )
         `)
@@ -195,7 +195,7 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
                     <TableRow key={item.id} className="border-slate-800">
                       <TableCell className="font-medium text-slate-200">
                         <p className="text-sm font-bold text-slate-100">
-                          {item.danh_muc_vat_tu_sku?.ten_vat_tu || 'Không rõ'}
+                          {item.skus?.ten_vat_tu || 'Không rõ'}
                         </p>
                         <p className="text-[10px] text-slate-500 font-mono">{item.id_sku?.slice(0, 8)}</p>
                       </TableCell>

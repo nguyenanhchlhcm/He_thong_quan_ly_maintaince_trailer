@@ -159,15 +159,6 @@ function MasterDataContent() {
             <Wrench className="w-4 h-4" />
             Dịch vụ
           </TabsTrigger>
-          <TabsTrigger value="garages" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Warehouse className="w-4 h-4" />
-            Gara
-          </TabsTrigger>
-          {/* 
-          <TabsTrigger value="services" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Wrench className="w-4 h-4" />
-            Dịch vụ
-          </TabsTrigger>
           <TabsTrigger value="customers" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Users className="w-4 h-4" />
             Khách hàng
@@ -176,7 +167,6 @@ function MasterDataContent() {
             <Truck className="w-4 h-4" />
             Nhà cung cấp
           </TabsTrigger>
-          */}
           {isAdmin && (
             <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Users className="w-4 h-4" />

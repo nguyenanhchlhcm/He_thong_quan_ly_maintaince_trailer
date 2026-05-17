@@ -229,6 +229,7 @@ export function TicketForm() {
         .from('phieu_bao_tri')
         .insert([{
           id_xe: data.id_xe,
+          id_gara: data.id_gara,
           toa_do_app_lat: deviceLocation?.lat ?? null,
           toa_do_app_lng: deviceLocation?.lng ?? null,
           canh_bao_gps: hasGPSWarning,

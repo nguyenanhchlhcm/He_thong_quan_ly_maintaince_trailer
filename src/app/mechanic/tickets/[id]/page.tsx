@@ -42,7 +42,7 @@ export default function TicketDetailPage() {
 
       // 2. Fetch parts used
       const { data: partsData, error: partsError } = await supabase
-        .from('chi_tiet_phieu_bao_tri')
+        .from('chi_tiet_vat_tu_su_dung')
         .select(`
           *,
           sku:skus!id_sku(ten_vat_tu:name)
