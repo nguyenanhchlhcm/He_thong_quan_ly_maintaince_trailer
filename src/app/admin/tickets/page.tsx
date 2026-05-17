@@ -17,6 +17,7 @@ export default function AdminTicketsPage() {
   const [selectedTicket, setSelectedTicket] = useState<PhieuBaoTri | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [editingTicket, setEditingTicket] = useState<PhieuBaoTri | null>(null)
   const [startDate, setStartDate] = useState<string>('')
   const [endDate, setEndDate] = useState<string>('')
 
@@ -255,12 +256,20 @@ export default function AdminTicketsPage() {
         onOpenChange={setIsDialogOpen}
         onSuccess={fetchTickets}
         ticket={selectedTicket}
+        onEditClick={(ticket) => {
+          setEditingTicket(ticket)
+          setIsCreateDialogOpen(true)
+        }}
       />
 
       <CreateTicketDialog 
         open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
+        onOpenChange={(open) => {
+          setIsCreateDialogOpen(open)
+          if (!open) setEditingTicket(null)
+        }}
         onSuccess={fetchTickets}
+        editTicket={editingTicket}
       />
     </div>
   )

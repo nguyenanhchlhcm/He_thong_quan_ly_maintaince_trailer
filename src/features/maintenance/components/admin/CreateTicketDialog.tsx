@@ -23,6 +23,7 @@ interface CreateTicketDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  editTicket?: any | null
 }
 
 interface SelectedItem {
@@ -35,7 +36,7 @@ interface SelectedItem {
   anh_moi?: string | null
 }
 
-export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTicketDialogProps) {
+export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }: CreateTicketDialogProps) {
   const [vehicles, setVehicles] = useState<Xe[]>([])
   const [mechanics, setMechanics] = useState<Profile[]>([])
   const [skus, setSkus] = useState<VatTuSKU[]>([])
@@ -64,6 +65,64 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       fetchMasterData()
     }
   }, [open])
+
+  useEffect(() => {
+    if (open) {
+      if (editTicket) {
+        setSelectedVehicle(editTicket.id_xe || '')
+        setSelectedMechanic(editTicket.id_tho_may || '')
+        setLoaiPhieu(editTicket.loai_phieu || 'Nội bộ')
+        setLoaiSuaNgoai(editTicket.loai_sua_ngoai || '')
+        setDonViSuaNgoai(editTicket.don_vi_sua_ngoai || '')
+        setGhiChuNgoai(editTicket.ghi_chu_ngoai || '')
+        setLaborCost(editTicket.tien_cong || 0)
+        setReceiptPhotoBase64(null)
+        fetchTicketParts(editTicket.id)
+      } else {
+        setSelectedVehicle('')
+        setSelectedMechanic('')
+        setSelectedItems([])
+        setLaborCost(0)
+        setLoaiPhieu('Nội bộ')
+        setLoaiSuaNgoai('')
+        setDonViSuaNgoai('')
+        setGhiChuNgoai('')
+        setReceiptPhotoBase64(null)
+      }
+    }
+  }, [open, editTicket])
+
+  const fetchTicketParts = async (ticketId: string) => {
+    setIsLoading(true)
+    try {
+      const { data: details, error } = await supabase
+        .from('chi_tiet_vat_tu_su_dung')
+        .select(`
+          *,
+          sku:skus!id_sku(id, ten_vat_tu:name, loai)
+        `)
+        .eq('id_phieu', ticketId)
+      
+      if (error) throw error
+      
+      if (details) {
+        const items: SelectedItem[] = details.map(d => ({
+          id_sku: d.id_sku,
+          name: d.sku?.ten_vat_tu || '',
+          so_luong: d.so_luong,
+          don_gia: d.don_gia,
+          loai: (d.sku?.loai as any) || 'Vật tư',
+          anh_cu: d.anh_vat_tu_cu_url,
+          anh_moi: d.anh_vat_tu_moi_url
+        }))
+        setSelectedItems(items)
+      }
+    } catch (err: any) {
+      toast.error('Lỗi tải chi tiết vật tư: ' + err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const fetchMasterData = async (autoSelectId?: string, type?: 'vehicle' | 'mechanic' | 'sku') => {
     setIsLoading(true)
@@ -150,31 +209,56 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
     try {
       const ticketRef = `admin_ticket_${Date.now()}`
 
-      let receiptPhotoUrl: string | null = null
+      let receiptPhotoUrl = editTicket?.receipt_photo_url || null
       if (loaiPhieu === 'Bên ngoài' && receiptPhotoBase64) {
         receiptPhotoUrl = await uploadBase64Image('t2m-evidence', `admin_receipt_${Date.now()}`, receiptPhotoBase64)
       }
 
-      // 1. Tạo Phiếu chính
-      const { data: phieu, error: phieuError } = await supabase
-        .from('phieu_bao_tri')
-        .insert([{
-          id_xe: selectedVehicle,
-          id_tho_may: selectedMechanic || null,
-          trang_thai_phieu: 'Chờ duyệt',
-          loai_phieu: loaiPhieu,
-          loai_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (loaiSuaNgoai || null) : null,
-          don_vi_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (donViSuaNgoai || null) : null,
-          ghi_chu_ngoai: loaiPhieu === 'Bên ngoài' ? (ghiChuNgoai || null) : null,
-          receipt_photo_url: receiptPhotoUrl,
-          tong_vat_tu: totalVatTu,
-          tien_cong: laborCost,
-          tong_chi_phi: totalVatTu + laborCost
-        }])
-        .select()
-        .single()
+      let phieuId = ''
 
-      if (phieuError) throw phieuError
+      if (editTicket) {
+        // Cập nhật Phiếu bảo trì chính
+        const { error: phieuError } = await supabase
+          .from('phieu_bao_tri')
+          .update({
+            id_xe: selectedVehicle,
+            id_tho_may: selectedMechanic || null,
+            loai_phieu: loaiPhieu,
+            loai_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (loaiSuaNgoai || null) : null,
+            don_vi_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (donViSuaNgoai || null) : null,
+            ghi_chu_ngoai: loaiPhieu === 'Bên ngoài' ? (ghiChuNgoai || null) : null,
+            receipt_photo_url: receiptPhotoUrl,
+            tong_vat_tu: totalVatTu,
+            tien_cong: laborCost,
+            tong_chi_phi: totalVatTu + laborCost
+          })
+          .eq('id', editTicket.id)
+
+        if (phieuError) throw phieuError
+        phieuId = editTicket.id
+      } else {
+        // Tạo mới Phiếu bảo trì
+        const { data: phieu, error: phieuError } = await supabase
+          .from('phieu_bao_tri')
+          .insert([{
+            id_xe: selectedVehicle,
+            id_tho_may: selectedMechanic || null,
+            trang_thai_phieu: 'Chờ duyệt',
+            loai_phieu: loaiPhieu,
+            loai_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (loaiSuaNgoai || null) : null,
+            don_vi_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (donViSuaNgoai || null) : null,
+            ghi_chu_ngoai: loaiPhieu === 'Bên ngoài' ? (ghiChuNgoai || null) : null,
+            receipt_photo_url: receiptPhotoUrl,
+            tong_vat_tu: totalVatTu,
+            tien_cong: laborCost,
+            tong_chi_phi: totalVatTu + laborCost
+          }])
+          .select()
+          .single()
+
+        if (phieuError) throw phieuError
+        phieuId = phieu.id
+      }
 
       // 2. Upload ảnh và tạo các Chi tiết phiếu
       const chiTietData = await Promise.all(selectedItems.map(async (item, index) => {
@@ -190,15 +274,24 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
         }
 
         return {
-          id_phieu: phieu.id,
+          id_phieu: phieuId,
           id_sku: item.id_sku,
           so_luong: item.so_luong,
           don_gia: item.don_gia,
           thanh_tien: item.so_luong * item.don_gia,
-          anh_vat_tu_cu_url: anhCuUrl,
-          anh_vat_tu_moi_url: anhMoiUrl
+          anh_vat_tu_cu_url: anhCuUrl || "",
+          anh_vat_tu_moi_url: anhMoiUrl || ""
         }
       }))
+
+      // Nếu là edit, xóa các chi tiết vật tư cũ trước khi chèn mới để tránh trùng lặp
+      if (editTicket) {
+        const { error: delError } = await supabase
+          .from('chi_tiet_vat_tu_su_dung')
+          .delete()
+          .eq('id_phieu', editTicket.id)
+        if (delError) throw delError
+      }
 
       const { error: ctError } = await supabase
         .from('chi_tiet_vat_tu_su_dung')
@@ -209,12 +302,14 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       // Ghi nhật ký
       await logAction(
         authUser?.email, 
-        'TẠO MỚI', 
+        editTicket ? 'CẬP NHẬT' : 'TẠO MỚI', 
         'Phiếu', 
-        `Lập phiếu bảo trì mới cho xe ${selectedVehicle}`
+        editTicket 
+          ? `Cập nhật phiếu bảo trì ${editTicket.ma_phieu || editTicket.id.slice(0, 8)} cho xe ${selectedVehicle}`
+          : `Lập phiếu bảo trì mới cho xe ${selectedVehicle}`
       )
 
-      toast.success('Lập phiếu bảo trì thành công!')
+      toast.success(editTicket ? 'Cập nhật phiếu bảo trì thành công!' : 'Lập phiếu bảo trì thành công!')
       onSuccess()
       onOpenChange(false)
       
@@ -228,7 +323,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
       setReceiptPhotoBase64(null)
     } catch (error: any) {
       console.error('Submit Error:', error)
-      toast.error('Lỗi khi lập phiếu: ' + error.message)
+      toast.error('Lỗi khi lập/cập nhật phiếu: ' + error.message)
     } finally {
       setIsSubmitting(false)
     }
@@ -241,288 +336,304 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess }: CreateTick
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-              <Plus className="w-6 h-6 text-primary" />
-              Lập phiếu bảo trì mới
+              {editTicket ? <Wrench className="w-6 h-6 text-primary" /> : <Plus className="w-6 h-6 text-primary" />}
+              {editTicket ? 'Chỉnh sửa phiếu bảo trì' : 'Lập phiếu bảo trì mới'}
             </DialogTitle>
             <DialogDescription className="text-slate-400">
-              Admin tạo phiếu trực tiếp cho phương tiện và gán người thực hiện (Thợ máy/Tài xế/Điều độ).
+              {editTicket 
+                ? `Cập nhật thông tin chi tiết phiếu bảo trì cho xe ${vehicles.find(v => v.id === selectedVehicle)?.bien_so || ''}` 
+                : 'Admin tạo phiếu trực tiếp cho phương tiện và gán người thực hiện (Thợ máy/Tài xế/Điều độ).'}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-6 py-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2"><Truck className="w-4 h-4 text-slate-500" /> Chọn phương tiện</Label>
-                <div className="flex gap-2">
-                  <Select value={selectedVehicle} onValueChange={(val: any) => setSelectedVehicle(val)}>
-                    <SelectTrigger className="bg-slate-800 border-slate-700">
-                      <SelectValue placeholder="Chọn biển số xe..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                      {vehicles.map(v => (
-                        <SelectItem key={v.id} value={v.id}>{v.bien_so}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="icon" 
-                    className="shrink-0 bg-slate-800 border-slate-700 hover:bg-primary/20 hover:border-primary/50"
-                    onClick={() => setShowAddVehicle(true)}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2"><User className="w-4 h-4 text-slate-500" /> Người thực hiện / Chịu trách nhiệm</Label>
-                <div className="flex gap-2">
-                  <Select value={selectedMechanic} onValueChange={(val: any) => setSelectedMechanic(val)}>
-                    <SelectTrigger className="bg-slate-800 border-slate-700">
-                      <SelectValue>
-                        {selectedMechanic 
-                          ? (mechanics.find(m => m.id === selectedMechanic)?.full_name || mechanics.find(m => m.id === selectedMechanic)?.email || "Đang tải tên...") 
-                          : "Chọn người thực hiện..."}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                      {mechanics.map(m => (
-                        <SelectItem key={m.id} value={m.id}>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${
-                              m.role === 'ADMIN' ? 'bg-red-500/20 text-red-400' :
-                              m.role === 'MECHANIC' ? 'bg-orange-500/20 text-orange-400' : 
-                              m.role === 'DRIVER' ? 'bg-blue-500/20 text-blue-400' : 
-                              'bg-purple-500/20 text-purple-400'
-                            }`}>
-                              {m.role === 'ADMIN' ? 'Admin' : m.role === 'MECHANIC' ? 'Thợ' : m.role === 'DRIVER' ? 'Tài' : 'N.Sự'}
-                            </span>
-                            {m.full_name || m.email}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="icon" 
-                    className="shrink-0 bg-slate-800 border-slate-700 hover:bg-primary/20 hover:border-primary/50"
-                    onClick={() => setShowAddMechanic(true)}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+              <Loader2 className="w-10 h-10 text-primary animate-spin" />
+              <p className="text-slate-400">Đang tải thông tin...</p>
             </div>
-
-            {/* Loại phiếu */}
-            <div className="space-y-4 border-t border-slate-800 pt-6">
-              <Label className="flex items-center gap-2 text-primary font-bold">
-                <FileText className="w-4 h-4" /> Loại phiếu bảo trì
-              </Label>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all duration-200 ${
-                    loaiPhieu === 'Nội bộ'
-                      ? 'border-primary bg-primary/10 text-primary shadow-lg shadow-primary/10'
-                      : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
-                  }`}
-                  onClick={() => setLoaiPhieu('Nội bộ')}
-                >
-                  <Wrench className="w-5 h-5 mx-auto mb-1" />
-                  Nội bộ (Gara)
-                </button>
-                <button
-                  type="button"
-                  className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all duration-200 ${
-                    loaiPhieu === 'Bên ngoài'
-                      ? 'border-amber-500 bg-amber-500/10 text-amber-400 shadow-lg shadow-amber-500/10'
-                      : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
-                  }`}
-                  onClick={() => setLoaiPhieu('Bên ngoài')}
-                >
-                  <MapPin className="w-5 h-5 mx-auto mb-1" />
-                  Bên ngoài
-                </button>
-              </div>
-
-              {loaiPhieu === 'Bên ngoài' && (
-                <div className="space-y-3 bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 animate-in fade-in-0 slide-in-from-top-2 duration-300">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Tên đơn vị sửa (Tiệm/Gara ngoài)</Label>
-                      <Input
-                        value={donViSuaNgoai}
-                        onChange={(e) => setDonViSuaNgoai(e.target.value)}
-                        placeholder="VD: Vá vỏ lưu động ABC..."
-                        className="bg-slate-800 border-amber-500/30 text-slate-100"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Loại sửa chữa</Label>
-                      <Select value={loaiSuaNgoai} onValueChange={(val: any) => setLoaiSuaNgoai(val)}>
-                        <SelectTrigger className="bg-slate-800 border-amber-500/30 text-slate-100">
-                          <SelectValue placeholder="Chọn loại..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                          <SelectItem value="Vá vỏ">🔧 Vá vỏ</SelectItem>
-                          <SelectItem value="Thay vỏ">🛞 Thay vỏ</SelectItem>
-                          <SelectItem value="Bảo trì lớn">🏗️ Bảo trì lớn</SelectItem>
-                          <SelectItem value="Khác">📋 Khác</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Mô tả sự cố & Ghi chú</Label>
-                    <textarea
-                      value={ghiChuNgoai}
-                      onChange={(e) => setGhiChuNgoai(e.target.value)}
-                      placeholder="VD: Vỏ trước bên phải bị đinh, lòi bố..."
-                      className="w-full min-h-[80px] bg-slate-800 border border-amber-500/30 rounded-lg p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
-                    />
-                  </div>
-                  <div className="pt-2 border-t border-amber-500/20">
-                    <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider mb-2 block">Ảnh Hóa Đơn / Phiếu Thu (Nếu có)</Label>
-                    <SinglePhotoUploader 
-                      title="Chụp/Tải lên hóa đơn" 
-                      required={false}
-                      onPhotoChange={setReceiptPhotoBase64}
-                    />
+          ) : (
+            <div className="grid gap-6 py-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2"><Truck className="w-4 h-4 text-slate-500" /> Chọn phương tiện</Label>
+                  <div className="flex gap-2">
+                    <Select value={selectedVehicle} onValueChange={(val: any) => setSelectedVehicle(val)}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700">
+                        <SelectValue placeholder="Chọn biển số xe..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                        {vehicles.map(v => (
+                          <SelectItem key={v.id} value={v.id}>{v.bien_so}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="icon" 
+                      className="shrink-0 bg-slate-800 border-slate-700 hover:bg-primary/20 hover:border-primary/50"
+                      onClick={() => setShowAddVehicle(true)}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
-              )}
-            </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2"><User className="w-4 h-4 text-slate-500" /> Người thực hiện / Chịu trách nhiệm</Label>
+                  <div className="flex gap-2">
+                    <Select value={selectedMechanic} onValueChange={(val: any) => setSelectedMechanic(val)}>
+                      <SelectTrigger className="bg-slate-800 border-slate-700">
+                        <SelectValue>
+                          {selectedMechanic 
+                            ? (mechanics.find(m => m.id === selectedMechanic)?.full_name || mechanics.find(m => m.id === selectedMechanic)?.email || "Đang tải tên...") 
+                            : "Chọn người thực hiện..."}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                        {mechanics.map(m => (
+                          <SelectItem key={m.id} value={m.id}>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                                m.role === 'ADMIN' ? 'bg-red-500/20 text-red-400' :
+                                m.role === 'MECHANIC' ? 'bg-orange-500/20 text-orange-400' : 
+                                m.role === 'DRIVER' ? 'bg-blue-500/20 text-blue-400' : 
+                                'bg-purple-500/20 text-purple-400'
+                              }`}>
+                                {m.role === 'ADMIN' ? 'Admin' : m.role === 'MECHANIC' ? 'Thợ' : m.role === 'DRIVER' ? 'Tài' : 'N.Sự'}
+                              </span>
+                              {m.full_name || m.email}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="icon" 
+                      className="shrink-0 bg-slate-800 border-slate-700 hover:bg-primary/20 hover:border-primary/50"
+                      onClick={() => setShowAddMechanic(true)}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
 
-            <div className="space-y-4 border-t border-slate-800 pt-6">
-              <div className="flex items-center justify-between">
+              {/* Loại phiếu */}
+              <div className="space-y-4 border-t border-slate-800 pt-6">
                 <Label className="flex items-center gap-2 text-primary font-bold">
-                  <Package className="w-4 h-4" /> Danh mục Vật tư & Dịch vụ
+                  <FileText className="w-4 h-4" /> Loại phiếu bảo trì
                 </Label>
-                <div className="flex items-center gap-2">
-                  <Select onValueChange={(val: any) => addItem(val)}>
-                    <SelectTrigger className="w-[250px] h-8 bg-primary/10 border-primary/20 text-primary text-xs">
-                      <SelectValue placeholder="+ Thêm Vật tư / Dịch vụ" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                      <div className="px-2 py-1 text-[10px] text-slate-500 font-bold uppercase">Vật tư</div>
-                      {skus.filter(s => s.loai !== 'Dịch vụ').map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.ten_vat_tu} ({s.don_vi_tinh})</SelectItem>
-                      ))}
-                      <div className="px-2 py-1 mt-2 text-[10px] text-slate-500 font-bold uppercase border-t border-slate-800">Dịch vụ</div>
-                      {skus.filter(s => s.loai === 'Dịch vụ').map(s => (
-                        <SelectItem key={s.id} value={s.id}>🛠️ {s.ten_vat_tu}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="icon" 
-                    className="shrink-0 h-8 w-8 bg-slate-800 border-slate-700 hover:bg-primary/20 hover:border-primary/50"
-                    onClick={() => setShowAddPart(true)}
-                    title="Tạo danh mục vật tư mới"
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all duration-200 ${
+                      loaiPhieu === 'Nội bộ'
+                        ? 'border-primary bg-primary/10 text-primary shadow-lg shadow-primary/10'
+                        : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                    }`}
+                    onClick={() => setLoaiPhieu('Nội bộ')}
                   >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                    <Wrench className="w-5 h-5 mx-auto mb-1" />
+                    Nội bộ (Gara)
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-bold transition-all duration-200 ${
+                      loaiPhieu === 'Bên ngoài'
+                        ? 'border-amber-500 bg-amber-500/10 text-amber-400 shadow-lg shadow-amber-500/10'
+                        : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                    }`}
+                    onClick={() => setLoaiPhieu('Bên ngoài')}
+                  >
+                    <MapPin className="w-5 h-5 mx-auto mb-1" />
+                    Bên ngoài
+                  </button>
                 </div>
-              </div>
 
-              <div className="space-y-3">
-                {selectedItems.length > 0 ? (
-                  selectedItems.map((item) => (
-                    <div key={item.id_sku} className="bg-slate-800/50 rounded-lg border border-slate-700 overflow-hidden">
-                      <div className="flex items-center gap-3 p-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${item.loai === 'Dịch vụ' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700 text-slate-400'}`}>
-                              {item.loai === 'Dịch vụ' ? 'Dịch vụ' : 'Vật tư'}
-                            </span>
-                            <p className="text-sm font-medium truncate">{item.name}</p>
-                          </div>
-                          <p className="text-[10px] text-slate-500 font-mono">#{item.id_sku.slice(0,8)}</p>
-                        </div>
-                        <div className="w-20">
-                          <Input 
-                            type="number" 
-                            value={item.so_luong} 
-                            onChange={(e) => updateItem(item.id_sku, 'so_luong', Number(e.target.value))}
-                            className="h-8 bg-slate-900 border-slate-700 text-center"
-                            min={1}
-                            onFocus={(e) => e.target.select()}
-                          />
-                        </div>
-                        <div className="w-28">
-                          <Input 
-                            type="number" 
-                            value={item.don_gia} 
-                            onChange={(e) => updateItem(item.id_sku, 'don_gia', Number(e.target.value))}
-                            className="h-8 bg-slate-900 border-slate-700 text-right font-mono"
-                            onFocus={(e) => e.target.select()}
-                          />
-                        </div>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-slate-500 hover:text-red-400"
-                          onClick={() => removeItem(item.id_sku)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      
-                      {/* Ảnh minh chứng cho từng hạng mục */}
-                      <div className="px-3 pb-3 pt-1 border-t border-slate-700/50 bg-slate-900/20">
-                        <PhotoUploader 
-                          onPhotosChange={(photos) => {
-                            updateItem(item.id_sku, 'anh_cu', photos.oldPartBase64)
-                            updateItem(item.id_sku, 'anh_moi', photos.newPartBase64)
-                          }}
+                {loaiPhieu === 'Bên ngoài' && (
+                  <div className="space-y-3 bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 animate-in fade-in-0 slide-in-from-top-2 duration-300">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Tên đơn vị sửa (Tiệm/Gara ngoài)</Label>
+                        <Input
+                          value={donViSuaNgoai}
+                          onChange={(e) => setDonViSuaNgoai(e.target.value)}
+                          placeholder="VD: Vá vỏ lưu động ABC..."
+                          className="bg-slate-800 border-amber-500/30 text-slate-100"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Loại sửa chữa</Label>
+                        <Select value={loaiSuaNgoai} onValueChange={(val: any) => setLoaiSuaNgoai(val)}>
+                          <SelectTrigger className="bg-slate-800 border-amber-500/30 text-slate-100">
+                            <SelectValue placeholder="Chọn loại..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                            <SelectItem value="Vá vỏ">🔧 Vá vỏ</SelectItem>
+                            <SelectItem value="Thay vỏ">🛞 Thay vỏ</SelectItem>
+                            <SelectItem value="Bảo trì lớn">🏗️ Bảo trì lớn</SelectItem>
+                            <SelectItem value="Khác">📋 Khác</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="h-20 border-2 border-dashed border-slate-800 rounded-lg flex items-center justify-center text-slate-600 text-sm">
-                    Chưa có hạng mục nào được chọn.
+                    <div className="space-y-2">
+                      <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Mô tả sự cố & Ghi chú</Label>
+                      <textarea
+                        value={ghiChuNgoai}
+                        onChange={(e) => setGhiChuNgoai(e.target.value)}
+                        placeholder="VD: Vỏ trước bên phải bị đinh, lòi bố..."
+                        className="w-full min-h-[80px] bg-slate-800 border border-amber-500/30 rounded-lg p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                      />
+                    </div>
+                    <div className="pt-2 border-t border-amber-500/20">
+                      <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider mb-2 block">Ảnh Hóa Đơn / Phiếu Thu (Nếu có)</Label>
+                      <SinglePhotoUploader 
+                        title="Chụp/Tải lên hóa đơn" 
+                        required={false}
+                        initialUrl={editTicket?.receipt_photo_url}
+                        onPhotoChange={setReceiptPhotoBase64}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-6">
-              <div className="space-y-2">
-                <Label>Tiền công thợ (đ)</Label>
-                <Input 
-                  type="number" 
-                  value={laborCost} 
-                  onChange={(e) => setLaborCost(Number(e.target.value))}
-                  className="bg-slate-800 border-slate-700 font-mono"
-                  onFocus={(e) => e.target.select()}
-                />
+              <div className="space-y-4 border-t border-slate-800 pt-6">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2 text-primary font-bold">
+                    <Package className="w-4 h-4" /> Danh mục Vật tư & Dịch vụ
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Select onValueChange={(val: any) => addItem(val)}>
+                      <SelectTrigger className="w-[250px] h-8 bg-primary/10 border-primary/20 text-primary text-xs">
+                        <SelectValue placeholder="+ Thêm Vật tư / Dịch vụ" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                        <div className="px-2 py-1 text-[10px] text-slate-500 font-bold uppercase">Vật tư</div>
+                        {skus.filter(s => s.loai !== 'Dịch vụ').map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.ten_vat_tu} ({s.don_vi_tinh})</SelectItem>
+                        ))}
+                        <div className="px-2 py-1 mt-2 text-[10px] text-slate-500 font-bold uppercase border-t border-slate-800">Dịch vụ</div>
+                        {skus.filter(s => s.loai === 'Dịch vụ').map(s => (
+                          <SelectItem key={s.id} value={s.id}>🛠️ {s.ten_vat_tu}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="icon" 
+                      className="shrink-0 h-8 w-8 bg-slate-800 border-slate-700 hover:bg-primary/20 hover:border-primary/50"
+                      onClick={() => setShowAddPart(true)}
+                      title="Tạo danh mục vật tư mới"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {selectedItems.length > 0 ? (
+                    selectedItems.map((item) => (
+                      <div key={item.id_sku} className="bg-slate-800/50 rounded-lg border border-slate-700 overflow-hidden">
+                        <div className="flex items-center gap-3 p-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${item.loai === 'Dịch vụ' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700 text-slate-400'}`}>
+                                {item.loai === 'Dịch vụ' ? 'Dịch vụ' : 'Vật tư'}
+                              </span>
+                              <p className="text-sm font-medium truncate">{item.name}</p>
+                            </div>
+                            <p className="text-[10px] text-slate-500 font-mono">#{item.id_sku.slice(0, 8)}</p>
+                          </div>
+                          <div className="w-20">
+                            <Input 
+                              type="number" 
+                              value={item.so_luong} 
+                              onChange={(e) => updateItem(item.id_sku, 'so_luong', Number(e.target.value))}
+                              className="h-8 bg-slate-900 border-slate-700 text-center"
+                              min={1}
+                              onFocus={(e) => e.target.select()}
+                            />
+                          </div>
+                          <div className="w-28">
+                            <Input 
+                              type="number" 
+                              value={item.don_gia} 
+                              onChange={(e) => updateItem(item.id_sku, 'don_gia', Number(e.target.value))}
+                              className="h-8 bg-slate-900 border-slate-700 text-right font-mono"
+                              onFocus={(e) => e.target.select()}
+                            />
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-slate-500 hover:text-red-400"
+                            onClick={() => removeItem(item.id_sku)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        
+                        {/* Ảnh minh chứng cho từng hạng mục */}
+                        <div className="px-3 pb-3 pt-1 border-t border-slate-700/50 bg-slate-900/20">
+                          <PhotoUploader 
+                            initialOldUrl={item.anh_cu}
+                            initialNewUrl={item.anh_moi}
+                            onPhotosChange={(photos) => {
+                              updateItem(item.id_sku, 'anh_cu', photos.oldPartBase64 || item.anh_cu)
+                              updateItem(item.id_sku, 'anh_moi', photos.newPartBase64 || item.anh_moi)
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="h-20 border-2 border-dashed border-slate-800 rounded-lg flex items-center justify-center text-slate-600 text-sm">
+                      Chưa có hạng mục nào được chọn.
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex flex-col items-end justify-center">
-                <p className="text-xs text-slate-500 uppercase font-bold">Tổng chi phí dự kiến</p>
-                <p className="text-2xl font-bold text-primary font-mono">
-                  {(calculateTotalVatTu() + laborCost).toLocaleString()} đ
-                </p>
+
+              <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-6">
+                <div className="space-y-2">
+                  <Label>Tiền công thợ (đ)</Label>
+                  <Input 
+                    type="number" 
+                    value={laborCost} 
+                    onChange={(e) => setLaborCost(Number(e.target.value))}
+                    className="bg-slate-800 border-slate-700 font-mono"
+                    onFocus={(e) => e.target.select()}
+                  />
+                </div>
+                <div className="flex flex-col items-end justify-center">
+                  <p className="text-xs text-slate-500 uppercase font-bold">Tổng chi phí dự kiến</p>
+                  <p className="text-2xl font-bold text-primary font-mono">
+                    {(calculateTotalVatTu() + laborCost).toLocaleString()} đ
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <DialogFooter className="border-t border-slate-800 pt-6">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-slate-400">
               Hủy
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="min-w-[120px] bg-primary hover:bg-primary/90 font-bold">
+            <Button type="submit" disabled={isSubmitting || isLoading} className="min-w-[120px] bg-primary hover:bg-primary/90 font-bold">
               {isSubmitting ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang tạo...</>
+                editTicket ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang cập nhật...</>
+                ) : (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang tạo...</>
+                )
               ) : (
-                'TẠO PHIẾU'
+                editTicket ? 'CẬP NHẬT PHIẾU' : 'TẠO PHIẾU'
               )}
             </Button>
           </DialogFooter>

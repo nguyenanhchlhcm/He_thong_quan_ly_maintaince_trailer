@@ -18,9 +18,10 @@ interface AdminTicketDialogProps {
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
   ticket: PhieuBaoTri | null
+  onEditClick?: (ticket: PhieuBaoTri) => void
 }
 
-export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: AdminTicketDialogProps) {
+export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEditClick }: AdminTicketDialogProps) {
   const [details, setDetails] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -308,7 +309,9 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket }: Adm
                 className="border-blue-500/20 text-blue-400 hover:bg-blue-500/10 font-bold flex items-center gap-2"
                 onClick={() => {
                   onOpenChange(false)
-                  router.push(`/admin/tickets/edit/${ticket.id}`)
+                  if (onEditClick) {
+                    onEditClick(ticket)
+                  }
                 }}
                 disabled={isUpdating || isDeleting}
               >
