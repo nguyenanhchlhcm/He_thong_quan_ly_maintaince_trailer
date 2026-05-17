@@ -34,6 +34,7 @@ export interface VatTuSKU {
   price: number;
   gia_tham_khao?: number; // Alias for price
   loai: 'Vật tư' | 'Dịch vụ' | null;
+  photo_url?: string | null;
   created_at: string;
 }
 

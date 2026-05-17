@@ -8,8 +8,10 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Camera } from 'lucide-react'
 import { VatTuSKU } from '@/types/database'
+import { SinglePhotoUploader } from '@/features/maintenance/components/mechanic/SinglePhotoUploader'
+import { uploadBase64Image } from '@/lib/supabase/storage'
 
 interface PartDialogProps {
   open: boolean
@@ -23,6 +25,8 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
   const [donViTinh, setDonViTinh] = useState<'Cái' | 'Bộ' | 'Can' | 'Lít' | 'Gói'>('Cái')
   const [giaThamKhao, setGiaThamKhao] = useState('')
   const [nhomVatTu, setNhomVatTu] = useState<'Động cơ' | 'Gầm' | 'Điện' | 'Lốp' | 'Máy lạnh'>('Động cơ')
+  const [skuPhoto, setSkuPhoto] = useState<string | null>(null)
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -31,11 +35,15 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
       setDonViTinh((initialData.unit || initialData.don_vi_tinh || 'Cái') as any)
       setGiaThamKhao((initialData.price || initialData.gia_tham_khao || 0).toString())
       setNhomVatTu(initialData.nhom_vat_tu || 'Động cơ')
+      setExistingPhotoUrl(initialData.photo_url || null)
+      setSkuPhoto(null)
     } else {
       setTenVatTu('')
       setDonViTinh('Cái')
       setGiaThamKhao('0')
       setNhomVatTu('Động cơ')
+      setExistingPhotoUrl(null)
+      setSkuPhoto(null)
     }
   }, [initialData, open])
 
@@ -46,11 +54,19 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
     setIsSubmitting(true)
 
     try {
+      let finalPhotoUrl = existingPhotoUrl
+
+      if (skuPhoto) {
+        const path = `skus/${Date.now()}_sku.webp`
+        finalPhotoUrl = await uploadBase64Image('t2m-evidence', path, skuPhoto)
+      }
+
       const payload = { 
         name: tenVatTu, 
         unit: donViTinh, 
         price: giaThamKhao ? parseFloat(giaThamKhao) : 0,
-        loai: nhomVatTu
+        loai: nhomVatTu,
+        photo_url: finalPhotoUrl
       }
 
       if (initialData) {
@@ -144,6 +160,17 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
                 onChange={(e) => setGiaThamKhao(e.target.value)}
                 placeholder="VD: 1500000"
                 className="bg-slate-800 border-slate-700 focus:ring-primary"
+              />
+            </div>
+            <div className="grid gap-2 pt-2 border-t border-slate-800">
+              <Label>Hình ảnh vật tư (Không bắt buộc)</Label>
+              <SinglePhotoUploader 
+                title="Ảnh SKU / Vật tư"
+                description="Nhấp để chụp hoặc chọn ảnh"
+                required={false}
+                onPhotoChange={setSkuPhoto}
+                initialUrl={existingPhotoUrl}
+                icon={<Camera className="w-5 h-5" />}
               />
             </div>
           </div>
