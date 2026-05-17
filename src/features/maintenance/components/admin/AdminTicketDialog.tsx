@@ -292,37 +292,33 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
 
         <DialogFooter className="flex flex-col sm:flex-row gap-2 justify-between mt-6 border-t border-slate-800 pt-6 w-full">
           <div className="flex gap-2">
-            {/* Delete button for Báo giá/Chờ duyệt */}
-            {['Báo giá', 'Chờ duyệt'].includes(ticket.trang_thai_phieu) && (
-              <Button 
-                variant="destructive"
-                className="font-bold flex items-center gap-2"
-                onClick={handleDeleteTicket}
-                disabled={isDeleting || isUpdating}
-              >
-                <Trash2 className="w-4 h-4" /> XÓA PHIẾU
-              </Button>
-            )}
+            {/* Delete button - always visible for Admin */}
+            <Button 
+              variant="destructive"
+              className="font-bold flex items-center gap-2"
+              onClick={handleDeleteTicket}
+              disabled={isDeleting || isUpdating}
+            >
+              <Trash2 className="w-4 h-4" /> XÓA PHIẾU
+            </Button>
             <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-slate-400">Đóng</Button>
           </div>
           
           <div className="flex gap-2">
-            {/* Edit button for Báo giá/Chờ duyệt */}
-            {['Báo giá', 'Chờ duyệt'].includes(ticket.trang_thai_phieu) && (
-              <Button 
-                variant="outline"
-                className="border-blue-500/20 text-blue-400 hover:bg-blue-500/10 font-bold flex items-center gap-2"
-                onClick={() => {
-                  onOpenChange(false)
-                  if (onEditClick) {
-                    onEditClick(ticket)
-                  }
-                }}
-                disabled={isUpdating || isDeleting}
-              >
-                <Wrench className="w-4 h-4" /> SỬA PHIẾU
-              </Button>
-            )}
+            {/* Edit button - always visible for Admin */}
+            <Button 
+              variant="outline"
+              className="border-blue-500/20 text-blue-400 hover:bg-blue-500/10 font-bold flex items-center gap-2"
+              onClick={() => {
+                onOpenChange(false)
+                if (onEditClick) {
+                  onEditClick(ticket)
+                }
+              }}
+              disabled={isUpdating || isDeleting}
+            >
+              <Wrench className="w-4 h-4" /> SỬA PHIẾU
+            </Button>
 
             {ticket.trang_thai_phieu === 'Chờ duyệt' && (
               <>
