@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ChevronLeft, Truck, Wrench, Clock, MapPin, Receipt, Loader2 } from 'lucide-react'
+import { ChevronLeft, Truck, Wrench, Clock, MapPin, Receipt, Loader2, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
@@ -17,6 +17,7 @@ export default function TicketDetailPage() {
   const [ticket, setTicket] = useState<any>(null)
   const [parts, setParts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -57,6 +58,29 @@ export default function TicketDetailPage() {
       toast.error('Lỗi khi tải chi tiết phiếu: ' + error.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteTicket = async () => {
+    if (!confirm('Bạn có chắc chắn muốn xóa phiếu bảo trì này? Hành động này sẽ xóa vĩnh viễn phiếu và toàn bộ danh sách vật tư đính kèm.')) {
+      return
+    }
+
+    try {
+      setIsDeleting(true)
+      const { error } = await supabase
+        .from('phieu_bao_tri')
+        .delete()
+        .eq('id', id)
+      
+      if (error) throw error
+
+      toast.success('Xóa phiếu bảo trì thành công!')
+      router.push('/mechanic/tickets')
+    } catch (error: any) {
+      toast.error('Lỗi khi xóa phiếu: ' + error.message)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -192,9 +216,22 @@ export default function TicketDetailPage() {
                 Hoàn thành phiếu
               </Button>
             )}
-            {ticket.trang_thai_phieu === 'Báo giá' && (
-              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm text-center">
-                Đang chờ Quản lý duyệt giá. Bạn không thể chỉnh sửa lúc này.
+            {['Báo giá', 'Chờ duyệt'].includes(ticket.trang_thai_phieu) && (
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => router.push(`/mechanic/tickets/edit/${ticket.id}`)}
+                  className="w-full h-12 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 border-none"
+                >
+                  <Wrench className="w-4 h-4" /> Sửa Phiếu Bảo Trì
+                </Button>
+                <Button 
+                  onClick={handleDeleteTicket}
+                  disabled={isDeleting}
+                  variant="destructive"
+                  className="w-full h-12 text-sm font-bold flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" /> {isDeleting ? 'Đang xóa...' : 'Xóa Phiếu Bảo Trì'}
+                </Button>
               </div>
             )}
             {ticket.trang_thai_phieu === 'Đã xong' && (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Camera, X, Loader2 } from 'lucide-react'
 import { compressImage, fileToBase64 } from '@/lib/utils/media-utils'
@@ -12,12 +12,20 @@ interface SinglePhotoUploaderProps {
   required?: boolean;
   onPhotoChange: (base64: string | null) => void;
   icon?: React.ReactNode;
+  initialUrl?: string | null;
 }
 
-export function SinglePhotoUploader({ title, description, required = false, onPhotoChange, icon }: SinglePhotoUploaderProps) {
+export function SinglePhotoUploader({ title, description, required = false, onPhotoChange, icon, initialUrl }: SinglePhotoUploaderProps) {
   const [photo, setPhoto] = useState<{ base64: string; url: string } | null>(null)
   const [isCompressing, setIsCompressing] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Initialize from initialUrl if provided
+  useEffect(() => {
+    if (initialUrl) {
+      setPhoto({ base64: '', url: initialUrl })
+    }
+  }, [initialUrl])
 
   const handleCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

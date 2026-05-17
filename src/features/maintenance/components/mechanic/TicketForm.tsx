@@ -18,6 +18,8 @@ import { supabase } from '@/lib/supabase/client'
 import { uploadBase64Image } from '@/lib/supabase/storage'
 import { toast } from 'sonner'
 
+import { useRouter } from 'next/navigation'
+
 // Types for master data fetched from Supabase
 type SkuItem = { id: string; ten_vat_tu: string; don_vi_tinh: string | null; gia_tham_khao: number; loai: string | null }
 type GaraItem = { id: string; ten_gara: string; toa_do_lat: number | null; toa_do_lng: number | null }
@@ -42,7 +44,8 @@ type TicketFormValues = {
   }[]
 }
 
-export function TicketForm() {
+export function TicketForm({ ticketId }: { ticketId?: string }) {
+  const router = useRouter()
   const isMounted = useRef(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [deviceLocation, setDeviceLocation] = useState<{ lat: number; lng: number } | null>(null)
@@ -51,6 +54,12 @@ export function TicketForm() {
   const [garaList, setGaraList] = useState<GaraItem[]>([])
   const [vehicleList, setVehicleList] = useState<VehicleItem[]>([])
   const [isLoadingMaster, setIsLoadingMaster] = useState(true)
+  const [isLoadingTicket, setIsLoadingTicket] = useState(false)
+  const [existingUrls, setExistingUrls] = useState<{
+    odo: string | null;
+    receipt: string | null;
+    parts: { old: string | null; new: string | null }[];
+  }>({ odo: null, receipt: null, parts: [] })
   
   const { draftTicket, saveDraft, clearDraft, addToSyncQueue } = useTicketStore()
 
@@ -88,9 +97,69 @@ export function TicketForm() {
     }
   })
 
+  // Fetch existing ticket details for editing
+  useEffect(() => {
+    if (!ticketId) return
+    const fetchTicketData = async () => {
+      setIsLoadingTicket(true)
+      try {
+        // 1. Fetch ticket
+        const { data: ticket, error: ticketError } = await supabase
+          .from('phieu_bao_tri')
+          .select('*')
+          .eq('id', ticketId)
+          .single()
+        if (ticketError) throw ticketError
+
+        // 2. Fetch details (parts)
+        const { data: parts, error: partsError } = await supabase
+          .from('chi_tiet_vat_tu_su_dung')
+          .select('*')
+          .eq('id_phieu', ticketId)
+        if (partsError) throw partsError
+
+        // Store existing URLs
+        setExistingUrls({
+          odo: ticket.odometer_photo_url,
+          receipt: ticket.receipt_photo_url,
+          parts: parts.map(p => ({
+            old: p.anh_vat_tu_cu_url,
+            new: p.anh_vat_tu_moi_url
+          }))
+        })
+
+        // Populate fields
+        reset({
+          id_xe: ticket.id_xe || '',
+          id_gara: ticket.id_gara || '',
+          so_km_luc_sua: ticket.so_km_luc_sua || 0,
+          tien_cong: ticket.tien_cong || 0,
+          odometer_photo_base64: null,
+          receipt_photo_base64: null,
+          checkin_photos_base64: [null, null, null, null], // We can assume checkin photos are skipped or handled in bucket
+          parts: parts.map(p => ({
+            id_sku: p.id_sku,
+            so_luong: p.so_luong,
+            don_gia: p.don_gia,
+            photos: {
+              oldPartBase64: null,
+              newPartBase64: null
+            }
+          }))
+        })
+        isMounted.current = true
+      } catch (error: any) {
+        toast.error('Lỗi tải thông tin phiếu bảo trì: ' + error.message)
+      } finally {
+        setIsLoadingTicket(false)
+      }
+    }
+    fetchTicketData()
+  }, [ticketId, reset])
+
   // Restore draft on mount only - FIXED: Use ref to prevent loop
   useEffect(() => {
-    if (draftTicket && !isMounted.current) {
+    if (draftTicket && !isMounted.current && !ticketId) {
       reset({
         id_xe: draftTicket.id_xe,
         id_gara: draftTicket.id_gara,
@@ -103,11 +172,12 @@ export function TicketForm() {
       })
       isMounted.current = true
     }
-  }, [draftTicket, reset])
+  }, [draftTicket, reset, ticketId])
 
-  // Auto-save draft on changes
+  // Auto-save draft on changes (Only if NOT in edit mode)
   const formValues = watch()
   useEffect(() => {
+    if (ticketId) return
     const hasData = formValues.id_xe || formValues.parts?.length || formValues.tien_cong > 0
     if (hasData) {
       // Use a timeout or debounce to prevent excessive writes
@@ -119,7 +189,7 @@ export function TicketForm() {
       }, 1000)
       return () => clearTimeout(timeout)
     }
-  }, [formValues, saveDraft])
+  }, [formValues, saveDraft, ticketId])
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -158,21 +228,13 @@ export function TicketForm() {
       return
     }
 
-    // Ở thực tế sẽ check với DB, ở đây giả lập check với xe đang chọn (nếu tìm thấy)
-    // Giả sử có list xe thật từ useVehicles hook
-    // const currentXe = vehicles.find(x => x.id_xe === data.id_xe);
-    // if (currentXe && data.so_km_luc_sua < currentXe.so_km_hien_tai) {
-    //   alert(`LỖI: Số Km nhập (${data.so_km_luc_sua}) thấp hơn số Km hiện tại của xe (${currentXe.so_km_hien_tai}).`);
-    //   return;
-    // }
-
     // Validation Rule 1: Visual Proof
-    if (!data.odometer_photo_base64) {
+    if (!data.odometer_photo_base64 && !existingUrls.odo) {
       alert('Vui lòng chụp ảnh đồng hồ ODO (Bắt buộc) để xác minh số Km.')
       return
     }
 
-    if (data.tien_cong > 0 && !data.receipt_photo_base64) {
+    if (data.tien_cong > 0 && !data.receipt_photo_base64 && !existingUrls.receipt) {
       alert('Vui lòng chụp ảnh hóa đơn/chứng từ khi có phát sinh chi phí mua ngoài/tiền công thợ ngoài.')
       return
     }
@@ -184,7 +246,9 @@ export function TicketForm() {
 
     for (let i = 0; i < data.parts.length; i++) {
       const part = data.parts[i]
-      if (!part.photos?.oldPartBase64 || !part.photos?.newPartBase64) {
+      const hasOld = part.photos?.oldPartBase64 || existingUrls.parts[i]?.old
+      const hasNew = part.photos?.newPartBase64 || existingUrls.parts[i]?.new
+      if (!hasOld || !hasNew) {
         alert(`Lỗi: Vật tư dòng thứ ${i + 1} chưa có đủ 2 ảnh (CŨ & MỚI). Đây là yêu cầu bắt buộc!`)
         return
       }
@@ -192,77 +256,127 @@ export function TicketForm() {
 
     setIsSubmitting(true)
     
-    // Offline flow: queue to IndexedDB
+    // Offline flow: queue to IndexedDB (Only for new tickets, editing requires online connection)
     if (!navigator.onLine) {
+      if (ticketId) {
+        toast.error('Lỗi: Bạn phải có kết nối mạng để chỉnh sửa phiếu bảo trì.')
+        setIsSubmitting(false)
+        return
+      }
       addToSyncQueue({ ...data, createdAt: Date.now() } as any)
       clearDraft()
-      toast.info('Đã lưu Phếu vào bộ nhớ tạm. Hệ thống sẽ tự động đồng bộ khi có mạng!')
+      toast.info('Đã lưu Phiếu vào bộ nhớ tạm. Hệ thống sẽ tự động đồng bộ khi có mạng!')
       setIsSubmitting(false)
       reset()
       return
     }
 
-    // Online flow: upload images + insert to Supabase
+    // Online flow: upload images + insert/update to Supabase
     try {
       const ticketRef = `ticket_${Date.now()}`
 
-      // 1. Upload ODO photo (required)
-      const odoUrl = await uploadBase64Image(
-        't2m-evidence',
-        `odometer/${ticketRef}_odo.webp`,
-        data.odometer_photo_base64!
-      )
+      // 1. Upload ODO photo (required if new base64 provided)
+      let odoUrl = existingUrls.odo
+      if (data.odometer_photo_base64) {
+        odoUrl = await uploadBase64Image(
+          't2m-evidence',
+          `odometer/${ticketRef}_odo.webp`,
+          data.odometer_photo_base64
+        )
+      }
 
       // 2. Upload receipt photo (optional)
-      let receiptUrl: string | null = null
+      let receiptUrl = existingUrls.receipt
       if (data.receipt_photo_base64) {
         receiptUrl = await uploadBase64Image(
           't2m-evidence',
           `receipts/${ticketRef}_receipt.webp`,
           data.receipt_photo_base64
         )
+      } else if (data.tien_cong === 0) {
+        receiptUrl = null
       }
 
-      // 3. Create main ticket record
       const totalVatTu = data.parts.reduce((sum, p) => sum + (p.so_luong * p.don_gia), 0)
-      const { data: phieu, error: phieuError } = await supabase
-        .from('phieu_bao_tri')
-        .insert([{
-          id_xe: data.id_xe,
-          id_gara: data.id_gara,
-          toa_do_app_lat: deviceLocation?.lat ?? null,
-          toa_do_app_lng: deviceLocation?.lng ?? null,
-          canh_bao_gps: hasGPSWarning,
-          trang_thai_phieu: 'Chờ duyệt',
-          tong_vat_tu: totalVatTu,
-          tien_cong: data.tien_cong || 0,
-          tong_chi_phi: totalVatTu + (data.tien_cong || 0),
-          odometer_photo_url: odoUrl,
-          receipt_photo_url: receiptUrl
-        }])
-        .select()
-        .single()
+      let activeTicketId = ticketId
 
-      if (phieuError) throw phieuError
+      if (ticketId) {
+        // Edit flow: Update main ticket
+        const { error: phieuError } = await supabase
+          .from('phieu_bao_tri')
+          .update({
+            id_xe: data.id_xe,
+            id_gara: data.id_gara,
+            toa_do_app_lat: deviceLocation?.lat ?? null,
+            toa_do_app_lng: deviceLocation?.lng ?? null,
+            canh_bao_gps: hasGPSWarning,
+            trang_thai_phieu: 'Chờ duyệt', // Trả về Chờ duyệt để Quản lý duyệt lại
+            tong_vat_tu: totalVatTu,
+            tien_cong: data.tien_cong || 0,
+            tong_chi_phi: totalVatTu + (data.tien_cong || 0),
+            odometer_photo_url: odoUrl,
+            receipt_photo_url: receiptUrl
+          })
+          .eq('id', ticketId)
+
+        if (phieuError) throw phieuError
+      } else {
+        // New flow: Create main ticket record
+        const { data: phieu, error: phieuError } = await supabase
+          .from('phieu_bao_tri')
+          .insert([{
+            id_xe: data.id_xe,
+            id_gara: data.id_gara,
+            toa_do_app_lat: deviceLocation?.lat ?? null,
+            toa_do_app_lng: deviceLocation?.lng ?? null,
+            canh_bao_gps: hasGPSWarning,
+            trang_thai_phieu: 'Chờ duyệt',
+            tong_vat_tu: totalVatTu,
+            tien_cong: data.tien_cong || 0,
+            tong_chi_phi: totalVatTu + (data.tien_cong || 0),
+            odometer_photo_url: odoUrl,
+            receipt_photo_url: receiptUrl
+          }])
+          .select()
+          .single()
+
+        if (phieuError) throw phieuError
+        activeTicketId = phieu.id
+      }
 
       // 4. Upload part photos and create detail records
       const chiTietData = await Promise.all(
         data.parts.map(async (part, i) => {
-          const [anhCuUrl, anhMoiUrl] = await Promise.all([
-            uploadBase64Image('t2m-evidence', `parts/${ticketRef}_part${i}_old.webp`, part.photos.oldPartBase64!),
-            uploadBase64Image('t2m-evidence', `parts/${ticketRef}_part${i}_new.webp`, part.photos.newPartBase64!)
-          ])
+          let oldUrl = existingUrls.parts[i]?.old || null
+          let newUrl = existingUrls.parts[i]?.new || null
+
+          if (part.photos?.oldPartBase64) {
+            oldUrl = await uploadBase64Image('t2m-evidence', `parts/${ticketRef}_part${i}_old.webp`, part.photos.oldPartBase64)
+          }
+          if (part.photos?.newPartBase64) {
+            newUrl = await uploadBase64Image('t2m-evidence', `parts/${ticketRef}_part${i}_new.webp`, part.photos.newPartBase64)
+          }
+
           return {
-            id_phieu: phieu.id,
+            id_phieu: activeTicketId,
             id_sku: part.id_sku,
             so_luong: part.so_luong,
             don_gia: part.don_gia,
             thanh_tien: part.so_luong * part.don_gia,
-            anh_vat_tu_cu_url: anhCuUrl,
-            anh_vat_tu_moi_url: anhMoiUrl,
+            anh_vat_tu_cu_url: oldUrl,
+            anh_vat_tu_moi_url: newUrl,
           }
         })
       )
+
+      if (ticketId) {
+        // Delete previous detail records first
+        const { error: delError } = await supabase
+          .from('chi_tiet_vat_tu_su_dung')
+          .delete()
+          .eq('id_phieu', ticketId)
+        if (delError) throw delError
+      }
 
       const { error: ctError } = await supabase
         .from('chi_tiet_vat_tu_su_dung')
@@ -270,11 +384,14 @@ export function TicketForm() {
 
       if (ctError) throw ctError
 
-      toast.success('Gửi phiếu bảo trì thành công!')
-      clearDraft()
+      toast.success(ticketId ? 'Cập nhật phiếu bảo trì thành công!' : 'Gửi phiếu bảo trì thành công!')
+      if (!ticketId) {
+        clearDraft()
+      }
       reset()
-    } catch (err: any) {
-      toast.error('Lỗi khi gửi phiếu: ' + err.message)
+      router.push('/mechanic/tickets')
+    } catch (error: any) {
+      toast.error('Lỗi khi lưu phiếu: ' + error.message)
     } finally {
       setIsSubmitting(false)
     }
@@ -333,6 +450,7 @@ export function TicketForm() {
               title="Ảnh Đồng Hồ ODO" 
               description="Bắt buộc chụp rõ số Km hiện tại" 
               required={true}
+              initialUrl={existingUrls.odo}
               onPhotoChange={(base64) => setValue('odometer_photo_base64', base64)}
             />
           </div>
@@ -384,7 +502,7 @@ export function TicketForm() {
 
           <div className="space-y-2 pt-4 border-t border-slate-700/50">
             <Label htmlFor="id_gara">Chọn Gara Sửa Chữa</Label>
-            <Select onValueChange={(val: any) => setValue('id_gara', val)}>
+            <Select value={watch('id_gara')} onValueChange={(val: any) => setValue('id_gara', val)}>
               <SelectTrigger className="bg-slate-800/50 border-slate-700 h-12">
                 <SelectValue placeholder="Chọn Gara..." />
               </SelectTrigger>
@@ -407,7 +525,7 @@ export function TicketForm() {
 
           <div className="space-y-2">
             <Label htmlFor="id_xe">Biển số xe / Mã xe <span className="text-red-500">*</span></Label>
-            <Select onValueChange={(val: any) => setValue('id_xe', val)}>
+            <Select value={watch('id_xe')} onValueChange={(val: any) => setValue('id_xe', val)}>
               <SelectTrigger className="bg-slate-800/50 border-slate-700 h-12 text-lg uppercase">
                 <SelectValue placeholder="Chọn xe..." />
               </SelectTrigger>
@@ -460,6 +578,7 @@ export function TicketForm() {
                 title="Hóa đơn / Chứng từ mua ngoài" 
                 description="Bắt buộc khi có phát sinh tiền công/vật tư ngoài" 
                 required={true}
+                initialUrl={existingUrls.receipt}
                 onPhotoChange={(base64) => setValue('receipt_photo_base64', base64)}
               />
             </div>
@@ -554,12 +673,15 @@ export function TicketForm() {
                       <Label className="text-amber-500">Bằng chứng hình ảnh (Bắt buộc)</Label>
                     </div>
                     <PhotoUploader 
+                      initialOldUrl={existingUrls.parts[index]?.old}
+                      initialNewUrl={existingUrls.parts[index]?.new}
                       onPhotosChange={(photos) => {
                         setValue(`parts.${index}.photos`, photos)
                       }}
                     />
                     
-                    {(!watchParts[index]?.photos?.oldPartBase64 || !watchParts[index]?.photos?.newPartBase64) && (
+                    {((!watchParts[index]?.photos?.oldPartBase64 && !existingUrls.parts[index]?.old) || 
+                      (!watchParts[index]?.photos?.newPartBase64 && !existingUrls.parts[index]?.new)) && (
                       <p className="text-xs text-red-400 mt-2 text-center">
                         * Vui lòng chụp đủ 2 ảnh Cũ và Mới để nghiệm thu.
                       </p>
@@ -585,7 +707,7 @@ export function TicketForm() {
           <div className="flex-1">
             <p className="text-xs text-slate-400">Tổng chi phí dự kiến</p>
             <p className="text-xl font-bold font-mono text-green-400">{totalCost.toLocaleString()} đ</p>
-            {draftTicket && <p className="text-[10px] text-amber-500 flex items-center gap-1"><WifiOff className="w-3 h-3"/> Đang có bản nháp chưa lưu</p>}
+            {draftTicket && !ticketId && <p className="text-[10px] text-amber-500 flex items-center gap-1"><WifiOff className="w-3 h-3"/> Đang có bản nháp chưa lưu</p>}
           </div>
           <Button 
             type="submit" 
@@ -593,7 +715,7 @@ export function TicketForm() {
             className="big-button flex-1 premium-gradient text-white border-none"
           >
             <Save className="w-6 h-6" />
-            {isSubmitting ? 'Đang lưu...' : 'GỬI PHIẾU BẢO TRÌ'}
+            {isSubmitting ? 'Đang lưu...' : ticketId ? 'CẬP NHẬT PHIẾU' : 'GỬI PHIẾU BẢO TRÌ'}
           </Button>
         </div>
       </div>

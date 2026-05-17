@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Camera, Image as ImageIcon, X, Loader2 } from 'lucide-react'
 import { compressImage, fileToBase64 } from '@/lib/utils/media-utils'
@@ -8,9 +8,11 @@ import Image from 'next/image'
 
 interface PhotoUploaderProps {
   onPhotosChange: (photos: { oldPartBase64: string | null; newPartBase64: string | null }) => void
+  initialOldUrl?: string | null
+  initialNewUrl?: string | null
 }
 
-export function PhotoUploader({ onPhotosChange }: PhotoUploaderProps) {
+export function PhotoUploader({ onPhotosChange, initialOldUrl, initialNewUrl }: PhotoUploaderProps) {
   const [oldPhoto, setOldPhoto] = useState<{ base64: string; url: string } | null>(null)
   const [newPhoto, setNewPhoto] = useState<{ base64: string; url: string } | null>(null)
   const [isCompressingOld, setIsCompressingOld] = useState(false)
@@ -18,6 +20,19 @@ export function PhotoUploader({ onPhotosChange }: PhotoUploaderProps) {
 
   const oldInputRef = useRef<HTMLInputElement>(null)
   const newInputRef = useRef<HTMLInputElement>(null)
+
+  // Initialize from props if provided
+  useEffect(() => {
+    if (initialOldUrl) {
+      setOldPhoto({ base64: '', url: initialOldUrl })
+    }
+  }, [initialOldUrl])
+
+  useEffect(() => {
+    if (initialNewUrl) {
+      setNewPhoto({ base64: '', url: initialNewUrl })
+    }
+  }, [initialNewUrl])
 
   const handleCapture = async (
     e: React.ChangeEvent<HTMLInputElement>,
