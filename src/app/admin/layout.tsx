@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import { Truck, Users, Warehouse, Package, Settings, LogOut, Disc, FileText, LayoutDashboard, ShieldAlert } from 'lucide-react'
+import { Truck, Users, Warehouse, Package, Settings, LogOut, Disc, FileText, LayoutDashboard, ShieldAlert, Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LogoutButton } from '@/components/layout/LogoutButton'
 
@@ -50,6 +50,10 @@ export default async function AdminLayout({
             <Disc className="w-5 h-5 flex-shrink-0" />
             <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Quản lý Lốp xe</span>
           </Link>
+          <Link href="/admin/alerts" className="flex items-center px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors whitespace-nowrap">
+            <Bell className="w-5 h-5 flex-shrink-0" />
+            <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Cảnh báo Hệ thống</span>
+          </Link>
           {isAdmin && (
             <>
               <Link href="/admin/master-data?tab=users" className="flex items-center px-3 py-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors whitespace-nowrap">
@@ -78,6 +82,10 @@ export default async function AdminLayout({
         <Link href="/admin/tires" className="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-primary active:scale-90 transition-all">
           <Disc className="w-5 h-5 mb-1" />
           <span className="text-[10px] font-medium">Lốp xe</span>
+        </Link>
+        <Link href="/admin/alerts" className="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-primary active:scale-90 transition-all">
+          <Bell className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-medium">Cảnh báo</span>
         </Link>
         <Link href="/admin/master-data" className="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-primary active:scale-90 transition-all">
           <Settings className="w-5 h-5 mb-1" />

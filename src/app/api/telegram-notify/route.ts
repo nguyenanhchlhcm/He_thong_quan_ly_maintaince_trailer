@@ -45,6 +45,27 @@ ${icon} <b>CẬP NHẬT TRẠNG THÁI PHIẾU BẢO TRÌ</b>
 
 👉 <a href="https://he-thong-quan-ly-maintaince-trailer.vercel.app/admin/tickets">Xem thông tin chi tiết</a>
       `.trim()
+    } else if (type === 'maintenance_alert') {
+      messageHtml = `
+⚠️ <b>CẢNH BÁO BẢO TRÌ XE</b>
+
+🚛 <b>Biển số:</b> <code>${ticket.bien_so}</code>
+📊 <b>KM hiện tại:</b> <code>${ticket.odometer.toLocaleString('vi-VN')} km</code>
+🔧 <b>KM bảo dưỡng tiếp:</b> <code>${ticket.next_maintenance_km.toLocaleString('vi-VN')} km</code>
+⏰ <b>Trạng thái:</b> <b>${ticket.alert_severity === 'CRITICAL' ? '🔴 QUÁ HẠN BẢO TRÌ' : '🟡 SẮP ĐẾN HẠN BẢO TRÌ'}</b>
+
+👉 <a href="https://he-thong-quan-ly-maintaince-trailer.vercel.app/admin/alerts">Xem và xử lý cảnh báo tại đây</a>
+      `.trim()
+    } else if (type === 'gps_fraud_alert') {
+      messageHtml = `
+🚨 <b>CẢNH BÁO GIAN LẬN GPS</b>
+
+📌 <b>Mã phiếu:</b> <code>${ticket.ma_phieu}</code>
+🚛 <b>Biển số:</b> <code>${ticket.bien_so}</code>
+📍 Khoảng cách GPS thực tế sai lệch vượt quá giới hạn 1km!
+
+👉 <a href="https://he-thong-quan-ly-maintaince-trailer.vercel.app/admin/tickets">Kiểm tra ngay tại đây</a>
+      `.trim()
     }
 
     if (!messageHtml) {

@@ -22,6 +22,7 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
   const [bienSo, setBienSo] = useState('')
   const [loaiXe, setLoaiXe] = useState<'Đầu kéo' | 'Rơ-moóc' | 'Xe tải'>('Đầu kéo')
   const [soKm, setSoKm] = useState(0)
+  const [nextMaintenanceKm, setNextMaintenanceKm] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -30,11 +31,13 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
       setBienSo(initialData.bien_so || initialData.id)
       setLoaiXe((initialData.loai_xe || initialData.model || 'Đầu kéo') as 'Đầu kéo' | 'Rơ-moóc' | 'Xe tải')
       setSoKm(initialData.so_km_hien_tai || initialData.odometer || 0)
+      setNextMaintenanceKm(initialData.next_maintenance_km || 0)
     } else {
       setIdXe('')
       setBienSo('')
       setLoaiXe('Đầu kéo')
       setSoKm(0)
+      setNextMaintenanceKm(0)
     }
   }, [initialData, open])
 
@@ -47,7 +50,8 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
     try {
       const payload = { 
         model: loaiXe, 
-        odometer: soKm 
+        odometer: soKm,
+        next_maintenance_km: nextMaintenanceKm
       }
 
       if (initialData) {
@@ -132,6 +136,17 @@ export function VehicleDialog({ open, onOpenChange, onSuccess, initialData }: Ve
                 value={soKm}
                 onChange={(e) => setSoKm(Number(e.target.value))}
                 placeholder="0"
+                className="bg-slate-800 border-slate-700 focus:ring-primary"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="next_maintenance_km">Số KM bảo trì tiếp theo</Label>
+              <Input
+                id="next_maintenance_km"
+                type="number"
+                value={nextMaintenanceKm}
+                onChange={(e) => setNextMaintenanceKm(Number(e.target.value))}
+                placeholder="VD: 15000"
                 className="bg-slate-800 border-slate-700 focus:ring-primary"
               />
             </div>
