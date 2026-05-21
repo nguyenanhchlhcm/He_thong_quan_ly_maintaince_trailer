@@ -60,12 +60,48 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
   const [ghiChuNgoai, setGhiChuNgoai] = useState('')
   const [receiptPhotoBase64, setReceiptPhotoBase64] = useState<string | null>(null)
   const [ngayTiepNhan, setNgayTiepNhan] = useState('')
+  const [nganHangNgoai, setNganHangNgoai] = useState('')
+  const [soTaiKhoanNgoai, setSoTaiKhoanNgoai] = useState('')
+  const [tenTaiKhoanNgoai, setTenTaiKhoanNgoai] = useState('')
+  const [banks, setBanks] = useState<{ code: string; shortName: string; customLabel: string }[]>([])
 
   useEffect(() => {
     if (open) {
       fetchMasterData()
     }
   }, [open])
+
+  useEffect(() => {
+    if (open && loaiPhieu === 'Bên ngoài' && banks.length === 0) {
+      fetch('https://api.vietqr.io/v2/banks')
+        .then(res => res.json())
+        .then(res => {
+          if (res.code === '00' && Array.isArray(res.data)) {
+            const list = res.data.map((b: any) => ({
+              code: b.code,
+              shortName: b.shortName,
+              customLabel: `${b.code} - ${b.shortName}`
+            }))
+            setBanks(list)
+          }
+        })
+        .catch(err => {
+          console.error('Failed to fetch banks:', err)
+          setBanks([
+            { code: 'VCB', shortName: 'Vietcombank', customLabel: 'VCB - Vietcombank' },
+            { code: 'TCB', shortName: 'Techcombank', customLabel: 'TCB - Techcombank' },
+            { code: 'MB', shortName: 'MBBank', customLabel: 'MB - MBBank' },
+            { code: 'ACB', shortName: 'ACB', customLabel: 'ACB - ACB' },
+            { code: 'BIDV', shortName: 'BIDV', customLabel: 'BIDV - BIDV' },
+            { code: 'CTG', shortName: 'VietinBank', customLabel: 'CTG - VietinBank' },
+            { code: 'VBA', shortName: 'Agribank', customLabel: 'VBA - Agribank' },
+            { code: 'VPB', shortName: 'VPBank', customLabel: 'VPB - VPBank' },
+            { code: 'STB', shortName: 'Sacombank', customLabel: 'STB - Sacombank' },
+            { code: 'TPB', shortName: 'TPBank', customLabel: 'TPB - TPBank' }
+          ])
+        })
+    }
+  }, [open, loaiPhieu, banks.length])
 
   useEffect(() => {
     if (open) {
@@ -76,6 +112,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
         setLoaiSuaNgoai(editTicket.loai_sua_ngoai || '')
         setDonViSuaNgoai(editTicket.don_vi_sua_ngoai || '')
         setGhiChuNgoai(editTicket.ghi_chu_ngoai || '')
+        setNganHangNgoai(editTicket.ngan_hang_ngoai || '')
+        setSoTaiKhoanNgoai(editTicket.so_tai_khoan_ngoai || '')
+        setTenTaiKhoanNgoai(editTicket.ten_tai_khoan_ngoai || '')
         setLaborCost(editTicket.tien_cong || 0)
         setReceiptPhotoBase64(null)
         
@@ -92,6 +131,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
         setLoaiSuaNgoai('')
         setDonViSuaNgoai('')
         setGhiChuNgoai('')
+        setNganHangNgoai('')
+        setSoTaiKhoanNgoai('')
+        setTenTaiKhoanNgoai('')
         setReceiptPhotoBase64(null)
         setNgayTiepNhan(new Date().toISOString().split('T')[0])
       }
@@ -233,6 +275,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
             loai_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (loaiSuaNgoai || null) : null,
             don_vi_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (donViSuaNgoai || null) : null,
             ghi_chu_ngoai: loaiPhieu === 'Bên ngoài' ? (ghiChuNgoai || null) : null,
+            ngan_hang_ngoai: loaiPhieu === 'Bên ngoài' ? (nganHangNgoai || null) : null,
+            so_tai_khoan_ngoai: loaiPhieu === 'Bên ngoài' ? (soTaiKhoanNgoai || null) : null,
+            ten_tai_khoan_ngoai: loaiPhieu === 'Bên ngoài' ? (tenTaiKhoanNgoai || null) : null,
             receipt_photo_url: receiptPhotoUrl,
             tong_vat_tu: totalVatTu,
             tien_cong: laborCost,
@@ -255,6 +300,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
             loai_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (loaiSuaNgoai || null) : null,
             don_vi_sua_ngoai: loaiPhieu === 'Bên ngoài' ? (donViSuaNgoai || null) : null,
             ghi_chu_ngoai: loaiPhieu === 'Bên ngoài' ? (ghiChuNgoai || null) : null,
+            ngan_hang_ngoai: loaiPhieu === 'Bên ngoài' ? (nganHangNgoai || null) : null,
+            so_tai_khoan_ngoai: loaiPhieu === 'Bên ngoài' ? (soTaiKhoanNgoai || null) : null,
+            ten_tai_khoan_ngoai: loaiPhieu === 'Bên ngoài' ? (tenTaiKhoanNgoai || null) : null,
             receipt_photo_url: receiptPhotoUrl,
             tong_vat_tu: totalVatTu,
             tien_cong: laborCost,
@@ -364,6 +412,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
       setLoaiSuaNgoai('')
       setDonViSuaNgoai('')
       setGhiChuNgoai('')
+      setNganHangNgoai('')
+      setSoTaiKhoanNgoai('')
+      setTenTaiKhoanNgoai('')
       setReceiptPhotoBase64(null)
     } catch (error: any) {
       console.error('Submit Error:', error)
@@ -510,16 +561,17 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                   <div className="space-y-3 bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 animate-in fade-in-0 slide-in-from-top-2 duration-300">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Tên đơn vị sửa (Tiệm/Gara ngoài)</Label>
+                        <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Tên đơn vị sửa (Tiệm/Gara ngoài) <span className="text-red-500">*</span></Label>
                         <Input
                           value={donViSuaNgoai}
                           onChange={(e) => setDonViSuaNgoai(e.target.value)}
                           placeholder="VD: Vá vỏ lưu động ABC..."
                           className="bg-slate-800 border-amber-500/30 text-slate-100"
+                          required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Loại sửa chữa</Label>
+                        <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Loại sửa chữa <span className="text-red-500">*</span></Label>
                         <Select value={loaiSuaNgoai} onValueChange={(val: any) => setLoaiSuaNgoai(val)}>
                           <SelectTrigger className="bg-slate-800 border-amber-500/30 text-slate-100">
                             <SelectValue placeholder="Chọn loại..." />
@@ -542,6 +594,45 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                         className="w-full min-h-[80px] bg-slate-800 border border-amber-500/30 rounded-lg p-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
                       />
                     </div>
+                    
+                    {/* Thông tin chuyển khoản thanh toán */}
+                    <div className="pt-3 border-t border-amber-500/20 space-y-3">
+                      <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider block">Thông tin thanh toán chuyển khoản (VietQR)</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-slate-400 text-[11px]">Ngân hàng</Label>
+                          <select
+                            value={nganHangNgoai}
+                            onChange={(e) => setNganHangNgoai(e.target.value)}
+                            className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-slate-100"
+                          >
+                            <option value="">Chọn ngân hàng...</option>
+                            {banks.map(b => (
+                              <option key={b.code} value={b.code}>{b.customLabel}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-slate-400 text-[11px]">Số tài khoản</Label>
+                          <Input
+                            value={soTaiKhoanNgoai}
+                            onChange={(e) => setSoTaiKhoanNgoai(e.target.value)}
+                            placeholder="Nhập số tài khoản..."
+                            className="bg-slate-800 border-slate-700 text-slate-100"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-slate-400 text-[11px]">Tên chủ tài khoản</Label>
+                          <Input
+                            value={tenTaiKhoanNgoai}
+                            onChange={(e) => setTenTaiKhoanNgoai(e.target.value.toUpperCase())}
+                            placeholder="NHAP TEN CHU TK..."
+                            className="bg-slate-800 border-slate-700 text-slate-100 font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="pt-2 border-t border-amber-500/20">
                       <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider mb-2 block">Ảnh Hóa Đơn / Phiếu Thu (Nếu có)</Label>
                       <SinglePhotoUploader 

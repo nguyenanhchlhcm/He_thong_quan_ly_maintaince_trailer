@@ -76,6 +76,10 @@ export interface PhieuBaoTri {
   loai_sua_ngoai: LoaiSuaNgoai | null;
   don_vi_sua_ngoai: string | null;
   ghi_chu_ngoai: string | null;
+  ngan_hang_ngoai?: string | null;
+  so_tai_khoan_ngoai?: string | null;
+  ten_tai_khoan_ngoai?: string | null;
+  trang_thai_thanh_toan?: 'Chờ thanh toán' | 'Đã thanh toán' | null;
   odometer_photo_url?: string | null;
   receipt_photo_url?: string | null;
   tong_vat_tu: number;

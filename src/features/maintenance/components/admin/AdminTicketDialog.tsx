@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, Truck, User, Calendar, CheckCircle2, XCircle, AlertTriangle, Image as ImageIcon, FileText, MapPin, Wrench, Trash2 } from 'lucide-react'
+import { Loader2, Truck, User, Calendar, CheckCircle2, XCircle, AlertTriangle, Image as ImageIcon, FileText, MapPin, Wrench, Trash2, QrCode } from 'lucide-react'
 import { PhieuBaoTri, ChiTietVatTu } from '@/types/database'
 import { logAction } from '@/lib/supabase/audit'
 import { useAuthStore } from '@/store/authStore'
@@ -32,6 +32,7 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
   const [isLoading, setIsLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showQRDialog, setShowQRDialog] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -39,6 +40,39 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
       fetchDetails()
     }
   }, [open, ticket])
+
+  const confirmPayment = async () => {
+    if (!ticket) return
+    setIsUpdating(true)
+    try {
+      const { error } = await supabase
+        .from('phieu_bao_tri')
+        .update({ 
+          trang_thai_phieu: 'Đã xong',
+          trang_thai_thanh_toan: 'Đã thanh toán' 
+        })
+        .eq('id', ticket.id)
+
+      if (error) throw error
+      
+      // Ghi nhật ký
+      await logAction(
+        authUser?.email, 
+        'CẬP NHẬT', 
+        'Phiếu', 
+        `Đã thanh toán QR và nghiệm thu xong phiếu ${ticket.ma_phieu || ticket.id.slice(0,8)}`
+      )
+
+      toast.success('Xác nhận thanh toán và nghiệm thu phiếu thành công!')
+      setShowQRDialog(false)
+      onSuccess()
+      onOpenChange(false)
+    } catch (error: any) {
+      toast.error('Lỗi xác nhận thanh toán: ' + error.message)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   const fetchDetails = async () => {
     if (!ticket) return
@@ -149,8 +183,9 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
   if (!ticket) return null
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-slate-950 border-slate-800 text-slate-100 sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="bg-slate-950 border-slate-800 text-slate-100 sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-lg">
@@ -226,6 +261,24 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
                 <p className="text-sm text-slate-300 italic">"{ticket.ghi_chu_ngoai || 'Không có mô tả'}"</p>
               </div>
             </div>
+
+            {/* Thông tin chuyển khoản thanh toán */}
+            {(ticket.ngan_hang_ngoai || ticket.so_tai_khoan_ngoai) && (
+              <div className="pt-4 border-t border-amber-500/20 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Ngân hàng thụ hưởng</p>
+                  <p className="text-sm font-bold text-amber-400">{ticket.ngan_hang_ngoai || 'N/A'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Số tài khoản</p>
+                  <p className="text-sm font-mono font-bold text-slate-200">{ticket.so_tai_khoan_ngoai || 'N/A'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Tên chủ tài khoản</p>
+                  <p className="text-sm font-bold text-slate-200 font-mono">{ticket.ten_tai_khoan_ngoai || 'N/A'}</p>
+                </div>
+              </div>
+            )}
             
             {ticket.receipt_photo_url && (
               <div className="pt-4 border-t border-amber-500/20">
@@ -327,6 +380,16 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
             >
               <Trash2 className="w-4 h-4" /> XÓA PHIẾU
             </Button>
+            {ticket.loai_phieu === 'Bên ngoài' && ticket.trang_thai_phieu !== 'Đã xong' && (
+              <Button 
+                variant="outline"
+                className="border-amber-500/20 text-amber-400 hover:bg-amber-500/10 font-bold flex items-center gap-2"
+                onClick={() => setShowQRDialog(true)}
+                disabled={isUpdating || isDeleting}
+              >
+                <QrCode className="w-4 h-4" /> THANH TOÁN QR
+              </Button>
+            )}
             <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-slate-400">Đóng</Button>
           </div>
           
@@ -380,5 +443,81 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Hộp thoại quét mã QR thanh toán (VietQR) */}
+    <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
+        <DialogContent className="bg-slate-950 border-slate-800 text-slate-100 sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-amber-400" />
+              Thanh Toán Chuyển Khoản Gara Ngoài
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Quét mã VietQR dưới đây để thanh toán tự động cho đơn vị sửa ngoài.
+            </DialogDescription>
+          </DialogHeader>
+
+          {(!ticket.ngan_hang_ngoai || !ticket.so_tai_khoan_ngoai) ? (
+            <div className="flex flex-col items-center justify-center p-6 gap-3 text-center">
+              <AlertTriangle className="w-8 h-8 text-amber-500" />
+              <p className="text-sm text-slate-300">
+                Phiếu này hiện chưa có thông tin tài khoản thụ hưởng.
+              </p>
+              <p className="text-xs text-slate-500">
+                Vui lòng nhấn nút <strong>Sửa phiếu</strong> để bổ sung thông tin Ngân hàng và Số tài khoản trước khi thực hiện.
+              </p>
+              <Button variant="outline" className="mt-2 w-full" onClick={() => setShowQRDialog(false)}>Đóng</Button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-4 space-y-4">
+              <div className="bg-white p-3 rounded-2xl border border-slate-800 shadow-xl overflow-hidden flex items-center justify-center w-[260px] h-[260px]">
+                <img 
+                  src={`https://img.vietqr.io/image/${ticket.ngan_hang_ngoai}-${ticket.so_tai_khoan_ngoai}-compact.png?amount=${ticket.tong_chi_phi}&addInfo=${encodeURIComponent('THANH TOAN ' + (ticket.ma_phieu || ticket.id.slice(0, 8)))}&accountName=${encodeURIComponent(ticket.ten_tai_khoan_ngoai || '')}`} 
+                  alt="VietQR Payment Code" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+
+              <div className="w-full bg-slate-900/50 p-4 rounded-xl border border-slate-800 text-xs space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Đơn vị thụ hưởng:</span>
+                  <span className="font-bold text-slate-200 text-right max-w-[200px] truncate">{ticket.don_vi_sua_ngoai}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Ngân hàng:</span>
+                  <span className="font-bold text-slate-200">{ticket.ngan_hang_ngoai}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Số tài khoản:</span>
+                  <span className="font-mono font-bold text-slate-200">{ticket.so_tai_khoan_ngoai}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Tên chủ tài khoản:</span>
+                  <span className="font-bold text-slate-200 font-mono">{ticket.ten_tai_khoan_ngoai || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-t border-slate-800 pt-2 mt-2 text-sm">
+                  <span className="text-slate-400">Số tiền:</span>
+                  <span className="font-bold text-primary font-mono">{ticket.tong_chi_phi.toLocaleString()} đ</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 w-full pt-2">
+                <Button variant="ghost" className="flex-1 text-slate-400" onClick={() => setShowQRDialog(false)}>
+                  Hủy bỏ
+                </Button>
+                <Button 
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold"
+                  onClick={confirmPayment}
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                  Đã chuyển tiền
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
