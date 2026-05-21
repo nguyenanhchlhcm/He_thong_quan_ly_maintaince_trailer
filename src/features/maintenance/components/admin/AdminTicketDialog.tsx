@@ -48,7 +48,6 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
       const { error } = await supabase
         .from('phieu_bao_tri')
         .update({ 
-          trang_thai_phieu: 'Đã xong',
           trang_thai_thanh_toan: 'Đã thanh toán' 
         })
         .eq('id', ticket.id)
@@ -380,7 +379,7 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
             >
               <Trash2 className="w-4 h-4" /> XÓA PHIẾU
             </Button>
-            {ticket.loai_phieu === 'Bên ngoài' && ticket.trang_thai_phieu !== 'Đã xong' && (
+            {ticket.loai_phieu === 'Bên ngoài' && ticket.trang_thai_phieu === 'Đã xong' && ticket.trang_thai_thanh_toan !== 'Đã thanh toán' && (
               <Button 
                 variant="outline"
                 className="border-amber-500/20 text-amber-400 hover:bg-amber-500/10 font-bold flex items-center gap-2"
@@ -472,7 +471,7 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
             <div className="flex flex-col items-center justify-center py-4 space-y-4">
               <div className="bg-white p-3 rounded-2xl border border-slate-800 shadow-xl overflow-hidden flex items-center justify-center w-[260px] h-[260px]">
                 <img 
-                  src={`https://img.vietqr.io/image/${ticket.ngan_hang_ngoai}-${ticket.so_tai_khoan_ngoai}-compact.png?amount=${ticket.tong_chi_phi}&addInfo=${encodeURIComponent('THANH TOAN ' + (ticket.ma_phieu || ticket.id.slice(0, 8)))}&accountName=${encodeURIComponent(ticket.ten_tai_khoan_ngoai || '')}`} 
+                  src={`https://img.vietqr.io/image/${ticket.ngan_hang_ngoai}-${ticket.so_tai_khoan_ngoai}-compact.png?amount=${ticket.tong_chi_phi}&addInfo=${encodeURIComponent((() => { const d = new Date(ticket.ngay_tiep_nhan || ticket.created_at); const ymd = String(d.getFullYear()).slice(2) + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0'); const plate = (ticket.vehicles?.bien_so || ticket.id_xe || '').replace(/[^a-zA-Z0-9]/g,''); const desc = (ticket.ghi_chu_ngoai || ticket.loai_sua_ngoai || '').slice(0,30).replace(/[^a-zA-Z0-9 ]/g,''); return `T2M ${ymd} ${plate} ${desc}`.trim(); })())}&accountName=${encodeURIComponent(ticket.ten_tai_khoan_ngoai || '')}`} 
                   alt="VietQR Payment Code" 
                   className="w-full h-full object-contain"
                 />
