@@ -40,7 +40,13 @@ export default function AdminTicketsPage() {
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      setTickets((data || []) as PhieuBaoTri[])
+      const newTickets = (data || []) as PhieuBaoTri[]
+      setTickets(newTickets)
+      // Đồng bộ selectedTicket với dữ liệu mới nhất sau khi sửa phiếu
+      setSelectedTicket(prev => {
+        if (!prev) return null
+        return newTickets.find(t => t.id === prev.id) || null
+      })
     } catch (error: any) {
       toast.error('Lỗi tải danh sách phiếu: ' + error.message)
     } finally {
