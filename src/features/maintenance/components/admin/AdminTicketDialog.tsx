@@ -504,16 +504,29 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
                     
                     // Loại bỏ tiếng Việt có dấu và ký tự đặc biệt ở mô tả
                     const descRaw = ticket.ghi_chu_ngoai || ticket.loai_sua_ngoai || '';
-                    const descNoTones = removeVietnameseTones(descRaw).replace(/[^a-zA-Z0-9 ]/g,'');
+                    let descNoTones = removeVietnameseTones(descRaw).replace(/[^a-zA-Z0-9 ]/g,'').trim();
                     
                     // Loại bỏ tiếng Việt có dấu và ký tự đặc biệt ở đơn vị thụ hưởng (gara ngoài)
                     const payeeRaw = ticket.don_vi_sua_ngoai || '';
-                    const payeeNoTones = removeVietnameseTones(payeeRaw).replace(/[^a-zA-Z0-9 ]/g,'');
+                    let payeeNoTones = removeVietnameseTones(payeeRaw).replace(/[^a-zA-Z0-9 ]/g,'').trim();
+                    
+                    // Napas/VietQR có giới hạn cứng (hard-limit) chính xác là 40 ký tự cho phần Diễn giải (addInfo).
+                    // Để đảm bảo tên đơn vị thụ hưởng LUÔN hiện lên, ta sẽ ưu tiên cắt bớt mô tả nếu quá dài.
+                    
+                    // Rút gọn tên đơn vị thụ hưởng tối đa 12 ký tự nếu quá dài
+                    if (payeeNoTones.length > 12) payeeNoTones = payeeNoTones.slice(0, 12).trim();
+                    
+                    // Tính toán số ký tự còn trống để điền mô tả (tối đa 40)
+                    const spaceForDesc = 40 - (ymd.length + plate.length + payeeNoTones.length + 3);
+                    if (descNoTones.length > spaceForDesc && spaceForDesc > 0) {
+                      descNoTones = descNoTones.slice(0, spaceForDesc).trim();
+                    }
                     
                     // Ghép chuỗi diễn giải: ngày + biển số + mô tả + đơn vị thụ hưởng không dấu
                     const fullInfo = `${ymd} ${plate} ${descNoTones} ${payeeNoTones}`.replace(/\s+/g, ' ').trim();
-                    // Giới hạn tối đa 200 ký tự (theo dung lượng hỗ trợ tối đa của Sacombank và các ngân hàng lớn)
-                    return fullInfo.slice(0, 200);
+                    
+                    // Chốt lại an toàn 40 ký tự cuối cùng
+                    return fullInfo.slice(0, 40);
                   })())}&t=${Date.now()}`} 
                   alt="VietQR Payment Code" 
                   className="w-full h-full object-contain"
