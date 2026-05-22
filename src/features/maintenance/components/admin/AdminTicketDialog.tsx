@@ -510,11 +510,19 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
                     const payeeRaw = ticket.don_vi_sua_ngoai || '';
                     let payeeNoTones = removeVietnameseTones(payeeRaw).replace(/[^a-zA-Z0-9 ]/g,'').trim();
                     
-                    // Ghép chuỗi diễn giải: ngày + biển số + mô tả + đơn vị thụ hưởng không dấu
-                    const fullInfo = `${ymd} ${plate} ${descNoTones} ${payeeNoTones}`.replace(/\s+/g, ' ').trim();
+                    // Chuẩn VietQR (EMVCo) giới hạn trường Tag 62 tối đa 99 byte, nên phần Diễn giải thực tế chỉ chứa tối đa ~40 ký tự trong QR.
+                    // Dù app ngân hàng cho nhập tay 190 ký tự, QR vẫn chỉ truyền được 40 ký tự.
+                    // Do đó, ta MỘT LẦN NỮA ÁP DỤNG CẮT CHUỖI THÔNG MINH để ƯU TIÊN GIỮ TÊN NGƯỜI NHẬN.
                     
-                    // Trả lại 200 ký tự theo yêu cầu của ứng dụng Sacombank
-                    return fullInfo.slice(0, 200);
+                    if (payeeNoTones.length > 15) payeeNoTones = payeeNoTones.slice(0, 15).trim();
+                    
+                    const spaceForDesc = 40 - (ymd.length + plate.length + payeeNoTones.length + 3);
+                    if (descNoTones.length > spaceForDesc && spaceForDesc > 0) {
+                      descNoTones = descNoTones.slice(0, spaceForDesc).trim();
+                    }
+                    
+                    const fullInfo = `${ymd} ${plate} ${descNoTones} ${payeeNoTones}`.replace(/\s+/g, ' ').trim();
+                    return fullInfo.slice(0, 40);
                   })())}&t=${Date.now()}`} 
                   alt="VietQR Payment Code" 
                   className="w-full h-full object-contain"
