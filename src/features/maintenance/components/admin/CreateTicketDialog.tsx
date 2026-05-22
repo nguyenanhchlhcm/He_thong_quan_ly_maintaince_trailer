@@ -595,8 +595,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                       />
                     </div>
                     
-                    {/* Thông tin chuyển khoản thanh toán - chỉ hiện khi sửa phiếu đã nghiệm thu */}
-                    {editTicket?.trang_thai_phieu === 'Đã xong' && (
+                    {/* Thông tin chuyển khoản thanh toán */}
                     <div className="pt-3 border-t border-amber-500/20 space-y-3">
                       <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider block">Thông tin thanh toán chuyển khoản (VietQR)</Label>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -633,7 +632,6 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                         </div>
                       </div>
                     </div>
-                    )}
 
                     <div className="pt-2 border-t border-amber-500/20">
                       <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider mb-2 block">Ảnh Hóa Đơn / Phiếu Thu (Nếu có)</Label>

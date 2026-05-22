@@ -262,7 +262,7 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
             </div>
 
             {/* Thông tin chuyển khoản thanh toán */}
-            {(ticket.ngan_hang_ngoai || ticket.so_tai_khoan_ngoai) && (
+            {ticket.trang_thai_phieu === 'Đã xong' && (ticket.ngan_hang_ngoai || ticket.so_tai_khoan_ngoai) && (
               <div className="pt-4 border-t border-amber-500/20 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Ngân hàng thụ hưởng</p>
