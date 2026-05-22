@@ -497,7 +497,7 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
                     const fullInfo = `${ymd} ${plate} ${descNoTones} ${payeeNoTones}`.replace(/\s+/g, ' ').trim();
                     // Giới hạn tối đa 200 ký tự (theo dung lượng hỗ trợ tối đa của Sacombank và các ngân hàng lớn)
                     return fullInfo.slice(0, 200);
-                  })())}&accountName=${encodeURIComponent(removeVietnameseTones(ticket.ten_tai_khoan_ngoai || ''))}`} 
+                  })())}`} 
                   alt="VietQR Payment Code" 
                   className="w-full h-full object-contain"
                 />
