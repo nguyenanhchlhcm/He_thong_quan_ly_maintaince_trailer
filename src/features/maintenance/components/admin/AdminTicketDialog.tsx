@@ -510,23 +510,11 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
                     const payeeRaw = ticket.don_vi_sua_ngoai || '';
                     let payeeNoTones = removeVietnameseTones(payeeRaw).replace(/[^a-zA-Z0-9 ]/g,'').trim();
                     
-                    // Napas/VietQR có giới hạn cứng (hard-limit) chính xác là 40 ký tự cho phần Diễn giải (addInfo).
-                    // Để đảm bảo tên đơn vị thụ hưởng LUÔN hiện lên, ta sẽ ưu tiên cắt bớt mô tả nếu quá dài.
-                    
-                    // Rút gọn tên đơn vị thụ hưởng tối đa 12 ký tự nếu quá dài
-                    if (payeeNoTones.length > 12) payeeNoTones = payeeNoTones.slice(0, 12).trim();
-                    
-                    // Tính toán số ký tự còn trống để điền mô tả (tối đa 40)
-                    const spaceForDesc = 40 - (ymd.length + plate.length + payeeNoTones.length + 3);
-                    if (descNoTones.length > spaceForDesc && spaceForDesc > 0) {
-                      descNoTones = descNoTones.slice(0, spaceForDesc).trim();
-                    }
-                    
                     // Ghép chuỗi diễn giải: ngày + biển số + mô tả + đơn vị thụ hưởng không dấu
                     const fullInfo = `${ymd} ${plate} ${descNoTones} ${payeeNoTones}`.replace(/\s+/g, ' ').trim();
                     
-                    // Chốt lại an toàn 40 ký tự cuối cùng
-                    return fullInfo.slice(0, 40);
+                    // Trả lại 200 ký tự theo yêu cầu của ứng dụng Sacombank
+                    return fullInfo.slice(0, 200);
                   })())}&t=${Date.now()}`} 
                   alt="VietQR Payment Code" 
                   className="w-full h-full object-contain"
