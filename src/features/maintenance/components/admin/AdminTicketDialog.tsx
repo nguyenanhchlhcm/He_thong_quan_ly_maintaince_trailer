@@ -19,6 +19,15 @@ const isValidImageUrl = (url: any) => {
   return str !== '' && str !== 'null' && str !== 'undefined'
 }
 
+const removeVietnameseTones = (str: string): string => {
+  if (!str) return ''
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+}
+
 interface AdminTicketDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -470,8 +479,25 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
           ) : (
             <div className="flex flex-col items-center justify-center py-4 space-y-4">
               <div className="bg-white p-3 rounded-2xl border border-slate-800 shadow-xl overflow-hidden flex items-center justify-center w-[260px] h-[260px]">
-                <img 
-                  src={`https://img.vietqr.io/image/${ticket.ngan_hang_ngoai}-${ticket.so_tai_khoan_ngoai}-compact.png?amount=${ticket.tong_chi_phi}&addInfo=${encodeURIComponent((() => { const d = new Date(ticket.ngay_tiep_nhan || ticket.created_at); const ymd = String(d.getFullYear()).slice(2) + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0'); const plate = (ticket.vehicles?.bien_so || ticket.id_xe || '').replace(/[^a-zA-Z0-9]/g,''); const desc = (ticket.ghi_chu_ngoai || ticket.loai_sua_ngoai || '').slice(0,30).replace(/[^a-zA-Z0-9 ]/g,''); return `${ymd} ${plate} ${desc}`.trim(); })())}&accountName=${encodeURIComponent(ticket.ten_tai_khoan_ngoai || '')}`} 
+                 <img 
+                  src={`https://img.vietqr.io/image/${ticket.ngan_hang_ngoai}-${ticket.so_tai_khoan_ngoai}-compact.png?amount=${ticket.tong_chi_phi}&addInfo=${encodeURIComponent((() => { 
+                    const d = new Date(ticket.ngay_tiep_nhan || ticket.created_at); 
+                    const ymd = String(d.getFullYear()).slice(2) + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0'); 
+                    const plate = (ticket.vehicles?.bien_so || ticket.id_xe || '').replace(/[^a-zA-Z0-9]/g,''); 
+                    
+                    // Loại bỏ tiếng Việt có dấu và ký tự đặc biệt ở mô tả
+                    const descRaw = ticket.ghi_chu_ngoai || ticket.loai_sua_ngoai || '';
+                    const descNoTones = removeVietnameseTones(descRaw).replace(/[^a-zA-Z0-9 ]/g,'');
+                    
+                    // Loại bỏ tiếng Việt có dấu và ký tự đặc biệt ở đơn vị thụ hưởng (gara ngoài)
+                    const payeeRaw = ticket.don_vi_sua_ngoai || '';
+                    const payeeNoTones = removeVietnameseTones(payeeRaw).replace(/[^a-zA-Z0-9 ]/g,'');
+                    
+                    // Ghép chuỗi diễn giải: ngày + biển số + mô tả + đơn vị thụ hưởng không dấu
+                    const fullInfo = `${ymd} ${plate} ${descNoTones} ${payeeNoTones}`.replace(/\s+/g, ' ').trim();
+                    // Giới hạn độ dài nội dung chuyển khoản để đảm bảo tương thích an toàn với các ngân hàng
+                    return fullInfo.slice(0, 50);
+                  })())}&accountName=${encodeURIComponent(removeVietnameseTones(ticket.ten_tai_khoan_ngoai || ''))}`} 
                   alt="VietQR Payment Code" 
                   className="w-full h-full object-contain"
                 />
