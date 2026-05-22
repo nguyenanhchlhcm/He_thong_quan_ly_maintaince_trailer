@@ -66,6 +66,19 @@ ${icon} <b>CẬP NHẬT TRẠNG THÁI PHIẾU BẢO TRÌ</b>
 
 👉 <a href="https://he-thong-quan-ly-maintaince-trailer.vercel.app/admin/tickets">Kiểm tra ngay tại đây</a>
       `.trim()
+    } else if (type === 'payment_success') {
+      messageHtml = `
+✅ <b>THANH TOÁN QR GARA NGOÀI THÀNH CÔNG</b>
+
+📌 <b>Mã phiếu:</b> <code>${ticket.ma_phieu}</code>
+🚛 <b>Biển số xe:</b> <code>${ticket.bien_so}</code>
+🏦 <b>Ngân hàng:</b> ${ticket.ngan_hang_ngoai}
+💳 <b>Số tài khoản:</b> <code>${ticket.so_tai_khoan_ngoai}</code>
+👤 <b>Người nhận:</b> <b>${ticket.ten_tai_khoan_ngoai}</b>
+💵 <b>Số tiền thanh toán:</b> <code>${ticket.tong_chi_phi.toLocaleString('vi-VN')} VNĐ</code>
+
+👉 <a href="https://he-thong-quan-ly-maintaince-trailer.vercel.app/admin/tickets">Xem thông tin chi tiết</a>
+      `.trim()
     }
 
     if (!messageHtml) {

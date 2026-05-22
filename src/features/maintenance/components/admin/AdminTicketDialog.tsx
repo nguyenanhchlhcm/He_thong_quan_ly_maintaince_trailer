@@ -71,6 +71,23 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
         `Đã thanh toán QR và nghiệm thu xong phiếu ${ticket.ma_phieu || ticket.id.slice(0,8)}`
       )
 
+      // Gửi thông báo Telegram
+      try {
+        await fetch('/api/telegram-notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'payment_success',
+            ticket: {
+              ...ticket,
+              bien_so: ticket.vehicles?.bien_so || 'N/A'
+            }
+          })
+        });
+      } catch (e) {
+        console.error('Không thể gửi thông báo Telegram:', e);
+      }
+
       toast.success('Xác nhận thanh toán và nghiệm thu phiếu thành công!')
       setShowQRDialog(false)
       onSuccess()
