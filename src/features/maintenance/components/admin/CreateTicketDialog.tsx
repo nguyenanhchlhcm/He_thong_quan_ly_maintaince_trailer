@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, Plus, Trash2, Package, Truck, User, Wrench, MapPin, FileText, Calendar } from 'lucide-react'
+import { Loader2, Plus, Trash2, Package, Truck, User, Wrench, MapPin, FileText, Calendar, Search } from 'lucide-react'
 import { Xe, VatTuSKU, Profile, LoaiPhieu, LoaiSuaNgoai } from '@/types/database'
 import { logAction } from '@/lib/supabase/audit'
 import { uploadBase64Image } from '@/lib/supabase/storage'
@@ -63,7 +63,8 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
   const [nganHangNgoai, setNganHangNgoai] = useState('')
   const [soTaiKhoanNgoai, setSoTaiKhoanNgoai] = useState('')
   const [tenTaiKhoanNgoai, setTenTaiKhoanNgoai] = useState('')
-  const [banks, setBanks] = useState<{ code: string; shortName: string; customLabel: string }[]>([])
+  const [banks, setBanks] = useState<{ code: string; shortName: string; customLabel: string; bin: string }[]>([])
+  const [isLookingUp, setIsLookingUp] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -72,7 +73,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
   }, [open])
 
   useEffect(() => {
-    if (open && loaiPhieu === 'Bên ngoài' && banks.length === 0) {
+    if (open && banks.length === 0) {
       fetch('https://api.vietqr.io/v2/banks')
         .then(res => res.json())
         .then(res => {
@@ -80,7 +81,8 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
             const list = res.data.map((b: any) => ({
               code: b.code,
               shortName: b.shortName,
-              customLabel: `${b.code} - ${b.shortName}`
+              customLabel: `${b.code} - ${b.shortName}`,
+              bin: b.bin
             }))
             setBanks(list)
           }
@@ -88,20 +90,20 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
         .catch(err => {
           console.error('Failed to fetch banks:', err)
           setBanks([
-            { code: 'VCB', shortName: 'Vietcombank', customLabel: 'VCB - Vietcombank' },
-            { code: 'TCB', shortName: 'Techcombank', customLabel: 'TCB - Techcombank' },
-            { code: 'MB', shortName: 'MBBank', customLabel: 'MB - MBBank' },
-            { code: 'ACB', shortName: 'ACB', customLabel: 'ACB - ACB' },
-            { code: 'BIDV', shortName: 'BIDV', customLabel: 'BIDV - BIDV' },
-            { code: 'CTG', shortName: 'VietinBank', customLabel: 'CTG - VietinBank' },
-            { code: 'VBA', shortName: 'Agribank', customLabel: 'VBA - Agribank' },
-            { code: 'VPB', shortName: 'VPBank', customLabel: 'VPB - VPBank' },
-            { code: 'STB', shortName: 'Sacombank', customLabel: 'STB - Sacombank' },
-            { code: 'TPB', shortName: 'TPBank', customLabel: 'TPB - TPBank' }
+            { code: 'VCB', shortName: 'Vietcombank', customLabel: 'VCB - Vietcombank', bin: '970436' },
+            { code: 'TCB', shortName: 'Techcombank', customLabel: 'TCB - Techcombank', bin: '970407' },
+            { code: 'MB', shortName: 'MBBank', customLabel: 'MB - MBBank', bin: '970422' },
+            { code: 'ACB', shortName: 'ACB', customLabel: 'ACB - ACB', bin: '970416' },
+            { code: 'BIDV', shortName: 'BIDV', customLabel: 'BIDV - BIDV', bin: '970418' },
+            { code: 'CTG', shortName: 'VietinBank', customLabel: 'CTG - VietinBank', bin: '970415' },
+            { code: 'VBA', shortName: 'Agribank', customLabel: 'VBA - Agribank', bin: '970405' },
+            { code: 'VPB', shortName: 'VPBank', customLabel: 'VPB - VPBank', bin: '970432' },
+            { code: 'STB', shortName: 'Sacombank', customLabel: 'STB - Sacombank', bin: '970403' },
+            { code: 'TPB', shortName: 'TPBank', customLabel: 'TPB - TPBank', bin: '970423' }
           ])
         })
     }
-  }, [open, loaiPhieu, banks.length])
+  }, [open, banks.length])
 
   useEffect(() => {
     if (open) {
@@ -242,6 +244,52 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
     return selectedItems.reduce((sum, item) => sum + (item.so_luong * item.don_gia), 0)
   }
 
+  const lookupAccountName = async () => {
+    if (!nganHangNgoai || !soTaiKhoanNgoai) {
+      return toast.error('Vui lòng chọn Ngân hàng và nhập Số tài khoản trước khi tra cứu');
+    }
+
+    const clientId = process.env.NEXT_PUBLIC_VIETQR_CLIENT_ID;
+    const apiKey = process.env.NEXT_PUBLIC_VIETQR_API_KEY;
+
+    if (!clientId || !apiKey) {
+      return toast.warning('Chưa cấu hình API Key VietQR (Casso). Tính năng tự động lấy tên sẽ không hoạt động, vui lòng nhập tay tên tài khoản.');
+    }
+
+    const selectedBank = banks.find(b => b.code === nganHangNgoai);
+    if (!selectedBank?.bin) return toast.error('Không tìm thấy mã BIN của ngân hàng này');
+
+    setIsLookingUp(true);
+    try {
+      const response = await fetch('https://api.vietqr.io/v2/lookup', {
+        method: 'POST',
+        headers: {
+          'x-client-id': clientId,
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bin: selectedBank.bin,
+          accountNumber: soTaiKhoanNgoai
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.code === '00' && result.data?.accountName) {
+        setTenTaiKhoanNgoai(result.data.accountName.toUpperCase());
+        toast.success('Tra cứu tên tài khoản thành công!');
+      } else {
+        toast.error(result.desc || 'Không tìm thấy tên tài khoản. Vui lòng kiểm tra lại STK.');
+      }
+    } catch (error) {
+      console.error('Lỗi tra cứu tài khoản:', error);
+      toast.error('Có lỗi xảy ra khi tra cứu, vui lòng thử lại sau.');
+    } finally {
+      setIsLookingUp(false);
+    }
+  }
+
   const { user: authUser } = useAuthStore()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -249,6 +297,9 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
     if (!selectedVehicle) return toast.error('Vui lòng chọn xe')
     if (selectedItems.length === 0) {
       return toast.error('Vui lòng thêm ít nhất 1 hạng mục (Vật tư hoặc Dịch vụ)')
+    }
+    if (loaiPhieu === 'Bên ngoài' && (soTaiKhoanNgoai || tenTaiKhoanNgoai) && !nganHangNgoai) {
+      return toast.error('Vui lòng chọn Ngân hàng trước khi lưu thông tin thanh toán')
     }
 
     setIsSubmitting(true)
@@ -614,12 +665,24 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                         </div>
                         <div className="space-y-2">
                           <Label className="text-slate-400 text-[11px]">Số tài khoản</Label>
-                          <Input
-                            value={soTaiKhoanNgoai}
-                            onChange={(e) => setSoTaiKhoanNgoai(e.target.value)}
-                            placeholder="Nhập số tài khoản..."
-                            className="bg-slate-800 border-slate-700 text-slate-100"
-                          />
+                          <div className="flex gap-2">
+                            <Input
+                              value={soTaiKhoanNgoai}
+                              onChange={(e) => setSoTaiKhoanNgoai(e.target.value)}
+                              placeholder="Nhập số tài khoản..."
+                              className="bg-slate-800 border-slate-700 text-slate-100 flex-1"
+                            />
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              className="bg-slate-800 border-slate-700 hover:bg-slate-700 hover:text-white px-3"
+                              onClick={lookupAccountName}
+                              disabled={isLookingUp || !nganHangNgoai || !soTaiKhoanNgoai}
+                              title="Tra cứu tự động tên chủ tài khoản"
+                            >
+                              {isLookingUp ? <Loader2 className="w-4 h-4 animate-spin text-amber-500" /> : <Search className="w-4 h-4 text-amber-500" />}
+                            </Button>
+                          </div>
                         </div>
                         <div className="space-y-2">
                           <Label className="text-slate-400 text-[11px]">Tên chủ tài khoản</Label>
