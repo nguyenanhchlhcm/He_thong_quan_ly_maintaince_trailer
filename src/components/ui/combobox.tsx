@@ -168,6 +168,23 @@ function ComboboxEmpty({
   )
 }
 
+const InputGroup = ComboboxPrimitive.InputGroup as any
+
+function ComboboxInputGroup({
+  className,
+  ...props
+}: ComboboxPrimitive.InputGroup.Props & {
+  className?: string
+}) {
+  return (
+    <InputGroup
+      data-slot="combobox-input-group"
+      className={cn("relative flex items-center w-full", className)}
+      {...props}
+    />
+  )
+}
+
 export {
   ComboboxRoot,
   ComboboxInput,
@@ -177,4 +194,5 @@ export {
   ComboboxList,
   ComboboxItem,
   ComboboxEmpty,
+  ComboboxInputGroup,
 }

@@ -13,6 +13,8 @@ import {
   ComboboxList,
   ComboboxItem,
   ComboboxEmpty,
+  ComboboxInputGroup,
+  ComboboxTrigger,
 } from '@/components/ui/combobox'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -699,11 +701,14 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                           }}
                           onInputValueChange={(val) => setDonViSuaNgoai(val)}
                         >
-                          <ComboboxInput
-                            placeholder="VD: Vá vỏ lưu động ABC..."
-                            className="bg-slate-800 border-amber-500/30 text-slate-100"
-                            required
-                          />
+                          <ComboboxInputGroup className="relative w-full">
+                            <ComboboxInput
+                              placeholder="VD: Vá vỏ lưu động ABC..."
+                              className="bg-slate-800 border-amber-500/30 text-slate-100 w-full pr-10"
+                              required
+                            />
+                            <ComboboxTrigger className="absolute right-0 top-0 h-full w-10 px-0 flex items-center justify-center bg-transparent border-none text-slate-400 hover:text-slate-200 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none" />
+                          </ComboboxInputGroup>
                           <ComboboxPopup className="bg-slate-900 border-slate-800 text-slate-100">
                             <ComboboxList>
                               {repairUnits.length > 0 ? (
