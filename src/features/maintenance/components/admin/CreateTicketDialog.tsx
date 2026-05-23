@@ -65,10 +65,13 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
   const [tenTaiKhoanNgoai, setTenTaiKhoanNgoai] = useState('')
   const [banks, setBanks] = useState<{ code: string; shortName: string; customLabel: string; bin: string }[]>([])
   const [isLookingUp, setIsLookingUp] = useState(false)
+  const [payeeAccounts, setPayeeAccounts] = useState<{ ten: string; ngan_hang: string; so_tk: string }[]>([])
+  const [isNewPayee, setIsNewPayee] = useState(false)
 
   useEffect(() => {
     if (open) {
       fetchMasterData()
+      fetchPayeeAccounts()
     }
   }, [open])
 
@@ -117,6 +120,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
         setNganHangNgoai(editTicket.ngan_hang_ngoai || '')
         setSoTaiKhoanNgoai(editTicket.so_tai_khoan_ngoai || '')
         setTenTaiKhoanNgoai(editTicket.ten_tai_khoan_ngoai || '')
+        setIsNewPayee(false)
         setLaborCost(editTicket.tien_cong || 0)
         setReceiptPhotoBase64(null)
         
@@ -136,6 +140,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
         setNganHangNgoai('')
         setSoTaiKhoanNgoai('')
         setTenTaiKhoanNgoai('')
+        setIsNewPayee(false)
         setReceiptPhotoBase64(null)
         setNgayTiepNhan(new Date().toISOString().split('T')[0])
       }
@@ -242,6 +247,52 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
 
   const calculateTotalVatTu = () => {
     return selectedItems.reduce((sum, item) => sum + (item.so_luong * item.don_gia), 0)
+  }
+
+  const fetchPayeeAccounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('phieu_bao_tri')
+        .select('ten_tai_khoan_ngoai, ngan_hang_ngoai, so_tai_khoan_ngoai')
+        .not('ten_tai_khoan_ngoai', 'is', null)
+        .not('ten_tai_khoan_ngoai', 'eq', '')
+      
+      if (error) throw error
+      
+      // Lọc unique theo tên + ngân hàng + STK
+      const uniqueMap = new Map<string, { ten: string; ngan_hang: string; so_tk: string }>()
+      ;(data || []).forEach((row: any) => {
+        const key = `${row.ten_tai_khoan_ngoai}|${row.ngan_hang_ngoai}|${row.so_tai_khoan_ngoai}`
+        if (!uniqueMap.has(key)) {
+          uniqueMap.set(key, {
+            ten: row.ten_tai_khoan_ngoai,
+            ngan_hang: row.ngan_hang_ngoai,
+            so_tk: row.so_tai_khoan_ngoai
+          })
+        }
+      })
+      setPayeeAccounts(Array.from(uniqueMap.values()))
+    } catch (err) {
+      console.error('Lỗi tải danh sách người thụ hưởng:', err)
+    }
+  }
+
+  const handlePayeeSelect = (payeeName: string) => {
+    if (payeeName === '__NEW__') {
+      setIsNewPayee(true)
+      setTenTaiKhoanNgoai('')
+      setNganHangNgoai('')
+      setSoTaiKhoanNgoai('')
+      return
+    }
+    setIsNewPayee(false)
+    setTenTaiKhoanNgoai(payeeName)
+    // Tìm tài khoản theo tên và auto-fill ngân hàng + STK
+    const matched = payeeAccounts.find(p => p.ten === payeeName)
+    if (matched) {
+      setNganHangNgoai(matched.ngan_hang || '')
+      setSoTaiKhoanNgoai(matched.so_tk || '')
+    }
   }
 
   const lookupAccountName = async () => {
@@ -650,6 +701,51 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                     <div className="pt-3 border-t border-amber-500/20 space-y-3">
                       <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider block">Thông tin thanh toán chuyển khoản (VietQR)</Label>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Bước 1: Chọn Tên chủ tài khoản */}
+                        <div className="space-y-2">
+                          <Label className="text-slate-400 text-[11px]">Tên chủ tài khoản</Label>
+                          {!isNewPayee ? (
+                            <select
+                              value={tenTaiKhoanNgoai}
+                              onChange={(e) => handlePayeeSelect(e.target.value)}
+                              className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-slate-100"
+                            >
+                              <option value="">Chọn người nhận...</option>
+                              {payeeAccounts.map((p, idx) => (
+                                <option key={`${p.ten}-${p.so_tk}-${idx}`} value={p.ten}>
+                                  {p.ten} ({banks.find(b => b.code === p.ngan_hang)?.shortName || p.ngan_hang})
+                                </option>
+                              ))}
+                              <option value="__NEW__">➕ Thêm người nhận mới...</option>
+                            </select>
+                          ) : (
+                            <div className="flex gap-2">
+                              <Input
+                                value={tenTaiKhoanNgoai}
+                                onChange={(e) => setTenTaiKhoanNgoai(e.target.value.toUpperCase())}
+                                placeholder="NHẬP TÊN CHỦ TK MỚI..."
+                                className="bg-slate-800 border-amber-500/30 text-slate-100 font-mono flex-1"
+                                autoFocus
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-10 w-10 bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-400 hover:text-white shrink-0"
+                                onClick={() => {
+                                  setIsNewPayee(false)
+                                  setTenTaiKhoanNgoai('')
+                                  setNganHangNgoai('')
+                                  setSoTaiKhoanNgoai('')
+                                }}
+                                title="Quay lại chọn từ danh sách"
+                              >
+                                ✕
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        {/* Bước 2: Ngân hàng (tự điền hoặc chọn) */}
                         <div className="space-y-2">
                           <Label className="text-slate-400 text-[11px]">Ngân hàng</Label>
                           <select
@@ -663,6 +759,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                             ))}
                           </select>
                         </div>
+                        {/* Bước 3: Số tài khoản (tự điền, cho phép sửa) */}
                         <div className="space-y-2">
                           <Label className="text-slate-400 text-[11px]">Số tài khoản</Label>
                           <div className="flex gap-2">
@@ -683,15 +780,6 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                               {isLookingUp ? <Loader2 className="w-4 h-4 animate-spin text-amber-500" /> : <Search className="w-4 h-4 text-amber-500" />}
                             </Button>
                           </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-slate-400 text-[11px]">Tên chủ tài khoản</Label>
-                          <Input
-                            value={tenTaiKhoanNgoai}
-                            onChange={(e) => setTenTaiKhoanNgoai(e.target.value.toUpperCase())}
-                            placeholder="NHAP TEN CHU TK..."
-                            className="bg-slate-800 border-slate-700 text-slate-100 font-mono"
-                          />
                         </div>
                       </div>
                     </div>
