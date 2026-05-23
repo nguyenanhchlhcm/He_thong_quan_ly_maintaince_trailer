@@ -6,6 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  ComboboxRoot,
+  ComboboxInput,
+  ComboboxPopup,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from '@/components/ui/combobox'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Loader2, Plus, Trash2, Package, Truck, User, Wrench, MapPin, FileText, Calendar, Search } from 'lucide-react'
@@ -67,11 +75,14 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
   const [isLookingUp, setIsLookingUp] = useState(false)
   const [payeeAccounts, setPayeeAccounts] = useState<{ ten: string; ngan_hang: string; so_tk: string }[]>([])
   const [isNewPayee, setIsNewPayee] = useState(false)
+  const [repairUnits, setRepairUnits] = useState<string[]>([])
+  const [showAddRepairUnit, setShowAddRepairUnit] = useState(false)
 
   useEffect(() => {
     if (open) {
       fetchMasterData()
       fetchPayeeAccounts()
+      fetchRepairUnits()
     }
   }, [open])
 
@@ -274,6 +285,23 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
       setPayeeAccounts(Array.from(uniqueMap.values()))
     } catch (err) {
       console.error('Lỗi tải danh sách người thụ hưởng:', err)
+    }
+  }
+
+  const fetchRepairUnits = async () => {
+    try {
+      const { data } = await supabase
+        .from('phieu_bao_tri')
+        .select('don_vi_sua_ngoai')
+        .not('don_vi_sua_ngoai', 'is', null)
+        .not('don_vi_sua_ngoai', 'eq', '')
+
+      if (data) {
+        const unique = [...new Set(data.map(r => r.don_vi_sua_ngoai as string))]
+        setRepairUnits(unique.sort())
+      }
+    } catch (err) {
+      console.error('Lỗi tải danh sách đơn vị sửa chữa:', err)
     }
   }
 
@@ -664,13 +692,32 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Tên đơn vị sửa (Tiệm/Gara ngoài) <span className="text-red-500">*</span></Label>
-                        <Input
-                          value={donViSuaNgoai}
-                          onChange={(e) => setDonViSuaNgoai(e.target.value)}
-                          placeholder="VD: Vá vỏ lưu động ABC..."
-                          className="bg-slate-800 border-amber-500/30 text-slate-100"
-                          required
-                        />
+                        <ComboboxRoot<string>
+                          value={donViSuaNgoai || null}
+                          onValueChange={(val) => {
+                            if (val) setDonViSuaNgoai(val)
+                          }}
+                          onInputValueChange={(val) => setDonViSuaNgoai(val)}
+                        >
+                          <ComboboxInput
+                            placeholder="VD: Vá vỏ lưu động ABC..."
+                            className="bg-slate-800 border-amber-500/30 text-slate-100"
+                            required
+                          />
+                          <ComboboxPopup className="bg-slate-900 border-slate-800 text-slate-100">
+                            <ComboboxList>
+                              {repairUnits.length > 0 ? (
+                                repairUnits.map((unit) => (
+                                  <ComboboxItem key={unit} value={unit}>
+                                    {unit}
+                                  </ComboboxItem>
+                                ))
+                              ) : (
+                                <ComboboxEmpty>Chưa có đơn vị nào</ComboboxEmpty>
+                              )}
+                            </ComboboxList>
+                          </ComboboxPopup>
+                        </ComboboxRoot>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-amber-400 text-xs font-bold uppercase tracking-wider">Loại sửa chữa <span className="text-red-500">*</span></Label>
