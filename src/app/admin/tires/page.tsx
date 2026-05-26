@@ -3,7 +3,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { TireTable } from '@/features/master-data/tires/components/TireTable'
 import { TireDialog } from '@/features/master-data/tires/components/TireDialog'
-import { AssignTireDialog } from '@/features/master-data/tires/components/AssignTireDialog'
 import { QuanLyVoXe } from '@/types/database'
 import { Disc, AlertTriangle, Truck, RefreshCw, Loader2 } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
@@ -16,14 +15,13 @@ export default function TiresPage() {
   
   const [selectedTire, setSelectedTire] = useState<QuanLyVoXe | null>(null)
   const [isTireDialogOpen, setIsTireDialogOpen] = useState(false)
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
 
   const fetchTires = useCallback(async () => {
     setIsLoading(true)
     try {
       const { data, error } = await supabase
         .from('quan_ly_vo_xe')
-        .select('*')
+        .select('*, vehicles!id_xe(model)')
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -129,7 +127,6 @@ export default function TiresPage() {
           <TireTable 
             data={tires} 
             onEdit={(tire) => { setSelectedTire(tire); setIsTireDialogOpen(true); }} 
-            onAssign={(tire) => { setSelectedTire(tire); setIsAssignDialogOpen(true); }} 
             onDelete={handleDeleteTire}
             onAdd={() => { setSelectedTire(null); setIsTireDialogOpen(true); }}
             onRefresh={fetchTires}
@@ -143,14 +140,6 @@ export default function TiresPage() {
         onOpenChange={(open) => { setIsTireDialogOpen(open); if (!open) setSelectedTire(null); }}
         onSuccess={fetchTires}
         initialData={selectedTire}
-      />
-
-      <AssignTireDialog 
-        key={selectedTire ? `assign-${selectedTire.id_vo}` : 'assign-none'}
-        open={isAssignDialogOpen}
-        onOpenChange={(open) => { setIsAssignDialogOpen(open); if (!open) setSelectedTire(null); }}
-        onSuccess={fetchTires}
-        tire={selectedTire}
       />
     </div>
   )
