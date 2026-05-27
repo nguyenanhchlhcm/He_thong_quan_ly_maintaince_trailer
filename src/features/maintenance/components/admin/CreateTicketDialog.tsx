@@ -428,7 +428,7 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
       const ticketRef = `admin_ticket_${Date.now()}`
 
       let receiptPhotoUrl = editTicket?.receipt_photo_url || null
-      if (loaiPhieu === 'Bên ngoài' && receiptPhotoBase64) {
+      if (receiptPhotoBase64) {
         receiptPhotoUrl = await uploadBase64Image('t2m-evidence', `admin_receipt_${Date.now()}`, receiptPhotoBase64)
       }
 
@@ -883,6 +883,18 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                         onPhotoChange={setReceiptPhotoBase64}
                       />
                     </div>
+                  </div>
+                )}
+
+                {loaiPhieu === 'Nội bộ' && (
+                  <div className="space-y-3 bg-primary/5 border border-primary/20 rounded-xl p-4 animate-in fade-in-0 slide-in-from-top-2 duration-300">
+                    <Label className="text-primary text-xs font-bold uppercase tracking-wider mb-2 block">Ảnh Hóa Đơn / Phiếu Thu (Nếu có)</Label>
+                    <SinglePhotoUploader 
+                      title="Chụp/Tải lên hóa đơn" 
+                      required={false}
+                      initialUrl={editTicket?.receipt_photo_url}
+                      onPhotoChange={setReceiptPhotoBase64}
+                    />
                   </div>
                 )}
               </div>
