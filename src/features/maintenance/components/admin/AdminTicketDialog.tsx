@@ -318,7 +318,8 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
 
         <div className="space-y-4">
           <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest px-1">Danh sách vật tư thay thế</h4>
-          <div className="border border-slate-800 rounded-xl overflow-hidden">
+          {/* Desktop/Tablet Table Layout */}
+          <div className="hidden md:block border border-slate-800 rounded-xl overflow-hidden">
             <Table>
               <TableHeader className="bg-slate-900">
                 <TableRow className="border-slate-800">
@@ -376,6 +377,70 @@ export function AdminTicketDialog({ open, onOpenChange, onSuccess, ticket, onEdi
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Mobile Card-List Layout */}
+          <div className="block md:hidden space-y-3">
+            {isLoading ? (
+              <div className="h-32 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : details.length > 0 ? (
+              details.map((item) => (
+                <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-3 animate-in fade-in-20 duration-200">
+                  {/* Name and ID */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-bold text-slate-200">{item.skus?.ten_vat_tu || 'Không rõ'}</p>
+                      <p className="text-[9px] text-slate-500 font-mono mt-0.5">#{item.id_sku?.slice(0, 8)}</p>
+                    </div>
+                    <span className="text-[9px] bg-slate-850 px-2 py-0.5 text-slate-400 font-bold uppercase rounded-full border border-slate-700/50 shrink-0">
+                      SL: {item.so_luong}
+                    </span>
+                  </div>
+
+                  {/* Price grid */}
+                  <div className="grid grid-cols-2 gap-2 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                    <div className="space-y-0.5">
+                      <span className="text-[9px] text-slate-500 uppercase font-bold">Đơn giá</span>
+                      <p className="text-xs font-mono font-medium text-slate-300">{item.don_gia.toLocaleString()} đ</p>
+                    </div>
+                    <div className="space-y-0.5 text-right">
+                      <span className="text-[9px] text-slate-500 uppercase font-bold">Thành tiền</span>
+                      <p className="text-xs font-mono font-bold text-primary">{item.thanh_tien.toLocaleString()} đ</p>
+                    </div>
+                  </div>
+
+                  {/* Visual Proofs */}
+                  {(isValidImageUrl(item.anh_vat_tu_cu_url) || isValidImageUrl(item.anh_vat_tu_moi_url)) ? (
+                    <div className="flex gap-4 pt-1.5 border-t border-slate-800/50">
+                      {isValidImageUrl(item.anh_vat_tu_cu_url) && (
+                        <div className="space-y-1">
+                          <span className="text-[9px] text-slate-500 uppercase font-bold block">Trước</span>
+                          <a href={item.anh_vat_tu_cu_url} target="_blank" rel="noreferrer" className="block w-14 h-14 rounded-lg overflow-hidden border border-slate-800 hover:border-slate-700">
+                            <img src={item.anh_vat_tu_cu_url} alt="Cũ" className="w-full h-full object-cover" />
+                          </a>
+                        </div>
+                      )}
+                      {isValidImageUrl(item.anh_vat_tu_moi_url) && (
+                        <div className="space-y-1">
+                          <span className="text-[9px] text-slate-500 uppercase font-bold block">Sau</span>
+                          <a href={item.anh_vat_tu_moi_url} target="_blank" rel="noreferrer" className="block w-14 h-14 rounded-lg overflow-hidden border border-slate-800 hover:border-slate-700">
+                            <img src={item.anh_vat_tu_moi_url} alt="Mới" className="w-full h-full object-cover" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-[9px] text-slate-600 italic">Không có ảnh minh chứng</p>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="h-20 border border-dashed border-slate-800 rounded-xl flex items-center justify-center text-slate-500 text-xs">
+                Không có chi tiết vật tư.
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col items-end gap-2 px-4 py-2 bg-slate-900/30 rounded-xl">

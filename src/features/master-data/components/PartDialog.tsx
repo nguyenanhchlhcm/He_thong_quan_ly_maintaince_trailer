@@ -24,7 +24,8 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
   const [tenVatTu, setTenVatTu] = useState('')
   const [donViTinh, setDonViTinh] = useState<'Cái' | 'Bộ' | 'Can' | 'Lít' | 'Gói'>('Cái')
   const [giaThamKhao, setGiaThamKhao] = useState('')
-  const [nhomVatTu, setNhomVatTu] = useState<'Động cơ' | 'Gầm' | 'Điện' | 'Lốp' | 'Máy lạnh'>('Động cơ')
+  const [nhomVatTu, setNhomVatTu] = useState<string>('Động cơ')
+  const [customNhom, setCustomNhom] = useState('')
   const [skuPhoto, setSkuPhoto] = useState<string | null>(null)
   const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -34,7 +35,17 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
       setTenVatTu(initialData.name || initialData.ten_vat_tu || '')
       setDonViTinh((initialData.unit || initialData.don_vi_tinh || 'Cái') as any)
       setGiaThamKhao((initialData.price || initialData.gia_tham_khao || 0).toString())
-      setNhomVatTu(initialData.nhom_vat_tu || 'Động cơ')
+      
+      const currentNhom = initialData.nhom_vat_tu || initialData.loai || 'Động cơ'
+      const standardGroups = ['Động cơ', 'Gầm', 'Điện', 'Lốp', 'Máy lạnh']
+      if (standardGroups.includes(currentNhom)) {
+        setNhomVatTu(currentNhom)
+        setCustomNhom('')
+      } else {
+        setNhomVatTu('Khác')
+        setCustomNhom(currentNhom)
+      }
+      
       setExistingPhotoUrl(initialData.photo_url || null)
       setSkuPhoto(null)
     } else {
@@ -42,6 +53,7 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
       setDonViTinh('Cái')
       setGiaThamKhao('0')
       setNhomVatTu('Động cơ')
+      setCustomNhom('')
       setExistingPhotoUrl(null)
       setSkuPhoto(null)
     }
@@ -50,6 +62,11 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!tenVatTu) return toast.error('Vui lòng nhập tên vật tư')
+
+    const finalNhom = nhomVatTu === 'Khác' ? customNhom.trim() : nhomVatTu
+    if (nhomVatTu === 'Khác' && !customNhom.trim()) {
+      return toast.error('Vui lòng nhập tên nhóm vật tư khác')
+    }
 
     setIsSubmitting(true)
 
@@ -65,7 +82,8 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
         name: tenVatTu, 
         unit: donViTinh, 
         price: giaThamKhao ? parseFloat(giaThamKhao) : 0,
-        loai: nhomVatTu,
+        loai: finalNhom,
+        nhom_vat_tu: finalNhom,
         photo_url: finalPhotoUrl
       }
 
@@ -122,9 +140,23 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
                   <SelectItem value="Điện">⚡ Điện</SelectItem>
                   <SelectItem value="Lốp">🛞 Lốp</SelectItem>
                   <SelectItem value="Máy lạnh">❄️ Máy lạnh</SelectItem>
+                  <SelectItem value="Khác">➕ Khác (Nhập mới...)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {nhomVatTu === 'Khác' && (
+              <div className="grid gap-2 animate-in fade-in-20 duration-200">
+                <Label htmlFor="custom-group">Tên nhóm vật tư khác <span className="text-red-500">*</span></Label>
+                <Input
+                  id="custom-group"
+                  value={customNhom}
+                  onChange={(e) => setCustomNhom(e.target.value)}
+                  placeholder="VD: Cabin, Thủy lực, Thân vỏ..."
+                  className="bg-slate-800 border-slate-700 focus:ring-primary"
+                  required
+                />
+              </div>
+            )}
             <div className="grid gap-2">
               <Label htmlFor="part-name">Tên vật tư <span className="text-red-500">*</span></Label>
               <Input

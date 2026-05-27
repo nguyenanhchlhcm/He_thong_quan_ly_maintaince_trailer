@@ -333,8 +333,40 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
     const clientId = process.env.NEXT_PUBLIC_VIETQR_CLIENT_ID;
     const apiKey = process.env.NEXT_PUBLIC_VIETQR_API_KEY;
 
+    const fallbackToDb = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('phieu_bao_tri')
+          .select('ten_tai_khoan_ngoai')
+          .eq('ngan_hang_ngoai', nganHangNgoai)
+          .eq('so_tai_khoan_ngoai', soTaiKhoanNgoai)
+          .not('ten_tai_khoan_ngoai', 'is', null)
+          .not('ten_tai_khoan_ngoai', 'eq', '')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0 && data[0].ten_tai_khoan_ngoai) {
+          setTenTaiKhoanNgoai(data[0].ten_tai_khoan_ngoai.toUpperCase());
+          toast.success('Tìm thấy tên tài khoản từ lịch sử giao dịch cũ!');
+          return true;
+        }
+        return false;
+      } catch (err) {
+        console.error('Lỗi khi tra cứu lịch sử database:', err);
+        return false;
+      }
+    };
+
     if (!clientId || !apiKey) {
-      return toast.warning('Chưa cấu hình API Key VietQR (Casso). Tính năng tự động lấy tên sẽ không hoạt động, vui lòng nhập tay tên tài khoản.');
+      setIsLookingUp(true);
+      const found = await fallbackToDb();
+      setIsLookingUp(false);
+      if (!found) {
+        toast.warning('Chưa cấu hình API Key VietQR và không tìm thấy tài khoản này trong lịch sử. Vui lòng nhập tay.');
+      }
+      return;
     }
 
     const selectedBank = banks.find(b => b.code === nganHangNgoai);
@@ -361,11 +393,17 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
         setTenTaiKhoanNgoai(result.data.accountName.toUpperCase());
         toast.success('Tra cứu tên tài khoản thành công!');
       } else {
-        toast.error(result.desc || 'Không tìm thấy tên tài khoản. Vui lòng kiểm tra lại STK.');
+        const found = await fallbackToDb();
+        if (!found) {
+          toast.error(result.desc || 'Không tìm thấy tên tài khoản trên VietQR và lịch sử giao dịch.');
+        }
       }
     } catch (error) {
       console.error('Lỗi tra cứu tài khoản:', error);
-      toast.error('Có lỗi xảy ra khi tra cứu, vui lòng thử lại sau.');
+      const found = await fallbackToDb();
+      if (!found) {
+        toast.error('Có lỗi xảy ra khi kết nối mạng VietQR và không có lịch sử giao dịch cũ.');
+      }
     } finally {
       setIsLookingUp(false);
     }
@@ -887,7 +925,8 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                   {selectedItems.length > 0 ? (
                     selectedItems.map((item) => (
                       <div key={item.id_sku} className="bg-slate-800/50 rounded-lg border border-slate-700 overflow-hidden">
-                        <div className="flex items-center gap-3 p-3">
+                        {/* Desktop & Tablet View */}
+                        <div className="hidden md:flex items-center gap-3 p-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${item.loai === 'Dịch vụ' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700 text-slate-400'}`}>
@@ -925,6 +964,54 @@ export function CreateTicketDialog({ open, onOpenChange, onSuccess, editTicket }
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
+                        </div>
+
+                        {/* Mobile Card Layout */}
+                        <div className="flex md:hidden flex-col gap-3 p-3 animate-in fade-in-20 duration-200">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className={`text-[9px] px-1 py-0.5 rounded font-bold uppercase ${item.loai === 'Dịch vụ' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700 text-slate-400'}`}>
+                                  {item.loai === 'Dịch vụ' ? 'Dịch vụ' : 'Vật tư'}
+                                </span>
+                                <p className="text-xs font-semibold text-slate-200 line-clamp-2">{item.name}</p>
+                              </div>
+                              <p className="text-[9px] text-slate-500 font-mono mt-0.5">#{item.id_sku.slice(0, 8)}</p>
+                            </div>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-slate-500 hover:text-red-400 shrink-0 bg-slate-900/30 hover:bg-red-500/10"
+                              onClick={() => removeItem(item.id_sku)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 bg-slate-900/30 p-2.5 rounded-md border border-slate-700/50">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-slate-400 font-bold uppercase">Số lượng</Label>
+                              <Input 
+                                type="number" 
+                                value={item.so_luong} 
+                                onChange={(e) => updateItem(item.id_sku, 'so_luong', Number(e.target.value))}
+                                className="h-8 bg-slate-900 border-slate-700 text-center text-xs"
+                                min={1}
+                                onFocus={(e) => e.target.select()}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-slate-400 font-bold uppercase">Đơn giá (đ)</Label>
+                              <Input 
+                                type="number" 
+                                value={item.don_gia} 
+                                onChange={(e) => updateItem(item.id_sku, 'don_gia', Number(e.target.value))}
+                                className="h-8 bg-slate-900 border-slate-700 text-right font-mono text-xs"
+                                onFocus={(e) => e.target.select()}
+                              />
+                            </div>
+                          </div>
                         </div>
                         
                         {/* Ảnh minh chứng cho từng hạng mục */}
