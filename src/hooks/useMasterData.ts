@@ -49,7 +49,6 @@ export function useParts() {
           id,
           name,
           ten_vat_tu:name,
-          nhom_vat_tu,
           unit,
           don_vi_tinh:unit,
           price,

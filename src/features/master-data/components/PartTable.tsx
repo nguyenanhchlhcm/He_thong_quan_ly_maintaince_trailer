@@ -58,7 +58,7 @@ export function PartTable({ data, onEdit, onDelete, onAdd }: PartTableProps) {
                   <TableCell className="font-medium">{part.name || part.ten_vat_tu}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="bg-slate-700/50 text-slate-400 border-slate-700">
-                      {part.nhom_vat_tu}
+                      {part.loai || part.nhom_vat_tu}
                     </Badge>
                   </TableCell>
                   <TableCell>{part.unit || part.don_vi_tinh || '-'}</TableCell>

@@ -36,7 +36,7 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
       setDonViTinh((initialData.unit || initialData.don_vi_tinh || 'Cái') as any)
       setGiaThamKhao((initialData.price || initialData.gia_tham_khao || 0).toString())
       
-      const currentNhom = initialData.nhom_vat_tu || initialData.loai || 'Động cơ'
+      const currentNhom = initialData.loai || 'Động cơ'
       const standardGroups = ['Động cơ', 'Gầm', 'Điện', 'Lốp', 'Máy lạnh']
       if (standardGroups.includes(currentNhom)) {
         setNhomVatTu(currentNhom)
@@ -83,7 +83,6 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
         unit: donViTinh, 
         price: giaThamKhao ? parseFloat(giaThamKhao) : 0,
         loai: finalNhom,
-        nhom_vat_tu: finalNhom,
         photo_url: finalPhotoUrl
       }
 
