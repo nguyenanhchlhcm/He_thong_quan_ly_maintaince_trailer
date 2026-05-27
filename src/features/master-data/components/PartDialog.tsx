@@ -22,7 +22,8 @@ interface PartDialogProps {
 
 export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartDialogProps) {
   const [tenVatTu, setTenVatTu] = useState('')
-  const [donViTinh, setDonViTinh] = useState<'Cái' | 'Bộ' | 'Can' | 'Lít' | 'Gói'>('Cái')
+  const [donViTinh, setDonViTinh] = useState<string>('Cái')
+  const [customDonVi, setCustomDonVi] = useState('')
   const [giaThamKhao, setGiaThamKhao] = useState('')
   const [nhomVatTu, setNhomVatTu] = useState<string>('Động cơ')
   const [customNhom, setCustomNhom] = useState('')
@@ -33,9 +34,18 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
   useEffect(() => {
     if (initialData) {
       setTenVatTu(initialData.name || initialData.ten_vat_tu || '')
-      setDonViTinh((initialData.unit || initialData.don_vi_tinh || 'Cái') as any)
       setGiaThamKhao((initialData.price || initialData.gia_tham_khao || 0).toString())
       
+      const currentUnit = initialData.unit || initialData.don_vi_tinh || 'Cái'
+      const standardUnits = ['Cái', 'Bộ', 'Can', 'Lít', 'Gói']
+      if (standardUnits.includes(currentUnit)) {
+        setDonViTinh(currentUnit)
+        setCustomDonVi('')
+      } else {
+        setDonViTinh('Khác')
+        setCustomDonVi(currentUnit)
+      }
+
       const currentNhom = initialData.loai || 'Động cơ'
       const standardGroups = ['Động cơ', 'Gầm', 'Điện', 'Lốp', 'Máy lạnh']
       if (standardGroups.includes(currentNhom)) {
@@ -51,6 +61,7 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
     } else {
       setTenVatTu('')
       setDonViTinh('Cái')
+      setCustomDonVi('')
       setGiaThamKhao('0')
       setNhomVatTu('Động cơ')
       setCustomNhom('')
@@ -68,6 +79,11 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
       return toast.error('Vui lòng nhập tên nhóm vật tư khác')
     }
 
+    const finalUnit = donViTinh === 'Khác' ? customDonVi.trim() : donViTinh
+    if (donViTinh === 'Khác' && !customDonVi.trim()) {
+      return toast.error('Vui lòng nhập đơn vị tính khác')
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -80,7 +96,7 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
 
       const payload = { 
         name: tenVatTu, 
-        unit: donViTinh, 
+        unit: finalUnit, 
         price: giaThamKhao ? parseFloat(giaThamKhao) : 0,
         loai: finalNhom,
         photo_url: finalPhotoUrl
@@ -179,9 +195,23 @@ export function PartDialog({ open, onOpenChange, onSuccess, initialData }: PartD
                   <SelectItem value="Can">Can</SelectItem>
                   <SelectItem value="Lít">Lít</SelectItem>
                   <SelectItem value="Gói">Gói</SelectItem>
+                  <SelectItem value="Khác">➕ Khác (Nhập mới...)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {donViTinh === 'Khác' && (
+              <div className="grid gap-2 animate-in fade-in-20 duration-200">
+                <Label htmlFor="custom-unit">Tên đơn vị tính khác <span className="text-red-500">*</span></Label>
+                <Input
+                  id="custom-unit"
+                  value={customDonVi}
+                  onChange={(e) => setCustomDonVi(e.target.value)}
+                  placeholder="VD: Mét, Kg, Hộp, Cặp, Vỏ..."
+                  className="bg-slate-800 border-slate-700 focus:ring-primary"
+                  required
+                />
+              </div>
+            )}
             <div className="grid gap-2">
               <Label htmlFor="price">Giá nhập tham khảo (VNĐ)</Label>
               <Input
