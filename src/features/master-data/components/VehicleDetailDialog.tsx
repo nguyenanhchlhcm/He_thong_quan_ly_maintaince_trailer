@@ -19,7 +19,7 @@ export function VehicleDetailDialog({ open, onOpenChange, vehicle }: VehicleDeta
   if (!vehicle) return null
 
   // Determine vehicle type for URL parameters
-  const getVehicleTypeParam = (model: string | null) => {
+  const getVehicleTypeParam = (model?: string | null) => {
     if (model === 'Rơ-moóc') return 'trailer'
     return 'tractor' // Default to tractor for 'Đầu kéo' or 'Xe tải'
   }
