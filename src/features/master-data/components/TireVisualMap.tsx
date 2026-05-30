@@ -554,36 +554,22 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
   // Assign tire from warehouse to an empty slot
   const assignMutation = useMutation({
     mutationFn: async ({ tire, dbPosition }: { tire: QuanLyVoXe; dbPosition: string }) => {
-      // 1. Main operation: assign tire to vehicle
-      const { error: updateErr } = await supabase
-        .from('quan_ly_vo_xe')
-        .update({
-          id_xe: vehicleId,
-          vi_tri_lap: dbPosition,
-          trang_thai_vo: 'Đang chạy',
-        })
-        .eq('id_vo', tire.id_vo)
+      const response = await fetch('/api/tires/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vehicleId,
+          tireId: tire.id_vo,
+          dbPosition,
+        }),
+      })
 
-      if (updateErr) {
-        console.error('[assignTire] quan_ly_vo_xe UPDATE failed:', updateErr)
-        throw new Error('Lỗi cập nhật lốp: ' + updateErr.message)
+      if (!response.ok) {
+        const errData = await response.json()
+        throw new Error(errData.error || 'Lỗi không xác định khi gọi API')
       }
 
-      // 2. Log to tire_history (best-effort — never blocks success)
-      const { error: historyErr } = await supabase.from('tire_history').insert([
-        {
-          id_vo: tire.id_vo,
-          id_xe_cu: null,
-          id_xe_moi: vehicleId,
-          vi_tri_cu: null,
-          vi_tri_moi: dbPosition,
-          hanh_dong: 'Xuất kho → Gắn xe',
-        },
-      ])
-      if (historyErr) {
-        console.warn('[assignTire] tire_history insert blocked (RLS):', historyErr.message)
-        // intentionally NOT throwing — history is non-critical
-      }
+      return response.json()
     },
     onSuccess: () => {
       toast.success('Gắn lốp vào xe thành công!')
