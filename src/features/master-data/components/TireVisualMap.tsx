@@ -122,6 +122,12 @@ const TRAILER_AXLES: AxleConfig[] = [
 ]
 
 // ─── Helpers ────────────────────────────────────────────
+function formatShortSerial(serial: string) {
+  if (!serial) return ''
+  if (serial.length <= 8) return serial
+  return `..${serial.slice(-6)}`
+}
+
 function getTreadDepthPercent(depth: number | null) {
   const maxDepth = 16
   const val = depth || 0
@@ -250,9 +256,13 @@ function TireSlot({
             </div>
           ) : (
             <>
-              {/* Serial number */}
-              <span className="text-[10px] font-semibold text-foreground tracking-wide font-mono mt-1">
-                {tire.id_vo}
+              {/* Tread depth (mm) */}
+              <span className="text-[10px] font-bold text-slate-200 mt-1">
+                {tire.tinh_trang_gai != null ? `${tire.tinh_trang_gai} mm` : '—'}
+              </span>
+              {/* Shortened Serial number */}
+              <span className="text-[9px] font-medium text-slate-400 font-mono tracking-tighter mt-0.5 max-w-[64px] truncate">
+                {formatShortSerial(tire.id_vo)}
               </span>
               {/* Blinking Cần Thay label if needed */}
               {status.needsReplacement && (
