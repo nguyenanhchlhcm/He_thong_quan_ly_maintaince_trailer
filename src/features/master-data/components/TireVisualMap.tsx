@@ -9,6 +9,7 @@ import { QuanLyVoXe } from '@/types/database'
 import { toast } from 'sonner'
 import { Loader2, RefreshCw, X, ArrowLeftRight, ArrowLeft } from 'lucide-react'
 import { TireDetailDialog, TireDetail } from './TireDetailDialog'
+import { AssignTireDialog } from './AssignTireDialog'
 
 // ─── Types ──────────────────────────────────────────────
 type VehicleType = 'tractor' | 'trailer'
@@ -310,7 +311,7 @@ function Axle({
                 label={s.label}
                 onClick={() => onSlotClick(s.posCode, s.dbPosition, t, s.label)}
                 isHighlighted={highlightedPos === s.dbPosition}
-                isClickable={isRotationMode || !!t}
+                isClickable={isRotationMode || !!t || true}
                 isInspectionMode={isInspectionMode}
                 onTreadChange={onTreadChange}
                 statusFilter={statusFilter}
@@ -330,7 +331,7 @@ function Axle({
                 label={s.label}
                 onClick={() => onSlotClick(s.posCode, s.dbPosition, t, s.label)}
                 isHighlighted={highlightedPos === s.dbPosition}
-                isClickable={isRotationMode || !!t}
+                isClickable={isRotationMode || !!t || true}
                 isInspectionMode={isInspectionMode}
                 onTreadChange={onTreadChange}
                 statusFilter={statusFilter}
@@ -364,7 +365,7 @@ function Axle({
                 label={s.label}
                 onClick={() => onSlotClick(s.posCode, s.dbPosition, t, s.label)}
                 isHighlighted={highlightedPos === s.dbPosition}
-                isClickable={isRotationMode || !!t}
+                isClickable={isRotationMode || !!t || true}
                 isInspectionMode={isInspectionMode}
                 onTreadChange={onTreadChange}
                 statusFilter={statusFilter}
@@ -386,7 +387,7 @@ function Axle({
                 label={s.label}
                 onClick={() => onSlotClick(s.posCode, s.dbPosition, t, s.label)}
                 isHighlighted={highlightedPos === s.dbPosition}
-                isClickable={isRotationMode || !!t}
+                isClickable={isRotationMode || !!t || true}
                 isInspectionMode={isInspectionMode}
                 onTreadChange={onTreadChange}
                 statusFilter={statusFilter}
@@ -460,6 +461,10 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
   const [selectedTire, setSelectedTire] = useState<QuanLyVoXe | null>(null)
   const [selectedSlotLabel, setSelectedSlotLabel] = useState<string>('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  // Assign tire to empty slot state
+  const [assignSlot, setAssignSlot] = useState<{ posCode: string; dbPosition: string; label: string } | null>(null)
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
 
   // State Mutex for tire rotation
   const [rotationState, setRotationState] = useState<{
@@ -546,6 +551,43 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
     },
   })
 
+  // Assign tire from warehouse to an empty slot
+  const assignMutation = useMutation({
+    mutationFn: async ({ tire, dbPosition }: { tire: QuanLyVoXe; dbPosition: string }) => {
+      const { error: updateErr } = await supabase
+        .from('quan_ly_vo_xe')
+        .update({
+          id_xe: vehicleId,
+          vi_tri_lap: dbPosition,
+          trang_thai_vo: 'Đang chạy',
+        })
+        .eq('id_vo', tire.id_vo)
+      if (updateErr) throw updateErr
+
+      // Log to tire_history
+      await supabase.from('tire_history').insert([
+        {
+          id_vo: tire.id_vo,
+          id_xe_cu: null,
+          id_xe_moi: vehicleId,
+          vi_tri_cu: null,
+          vi_tri_moi: dbPosition,
+          hanh_dong: 'Xuất kho → Gắn xe',
+        },
+      ])
+    },
+    onSuccess: () => {
+      toast.success('Gắn lốp vào xe thành công!')
+      queryClient.invalidateQueries({ queryKey: ['tires', 'vehicle', vehicleId] })
+      queryClient.invalidateQueries({ queryKey: ['tires', 'warehouse'] })
+      setIsAssignDialogOpen(false)
+      setAssignSlot(null)
+    },
+    onError: (err: any) => {
+      toast.error('Lỗi khi gắn lốp: ' + err.message)
+    },
+  })
+
   const handleRotateRequest = (tire: QuanLyVoXe, pos: string, label: string) => {
     setRotationState({ firstTire: tire, firstPos: pos, firstLabel: label })
     setIsDialogOpen(false)
@@ -571,7 +613,9 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
         setSelectedSlotLabel(`${posCode} — ${label}`)
         setIsDialogOpen(true)
       } else {
-        toast.info(`Vị trí ${posCode} (${label}) hiện đang trống.`)
+        // Open assign dialog to pick a tire from warehouse
+        setAssignSlot({ posCode, dbPosition, label })
+        setIsAssignDialogOpen(true)
       }
     }
   }
@@ -802,6 +846,20 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
           if (selectedTire) {
             handleRotateRequest(selectedTire, selectedTire.vi_tri_lap || '', selectedSlotLabel)
           }
+        }}
+      />
+
+      {/* Assign tire from warehouse dialog */}
+      <AssignTireDialog
+        open={isAssignDialogOpen}
+        onOpenChange={setIsAssignDialogOpen}
+        posLabel={assignSlot ? `${assignSlot.posCode} — ${assignSlot.label}` : ''}
+        dbPosition={assignSlot?.dbPosition || ''}
+        vehicleId={vehicleId}
+        isLoading={assignMutation.isPending}
+        onConfirm={(tire) => {
+          if (!assignSlot) return
+          assignMutation.mutate({ tire, dbPosition: assignSlot.dbPosition })
         }}
       />
     </div>
