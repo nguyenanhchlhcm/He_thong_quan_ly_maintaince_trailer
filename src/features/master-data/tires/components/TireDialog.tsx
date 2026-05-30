@@ -24,6 +24,7 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
   const [idVo, setIdVo] = useState('')
   const [tinhTrangGai, setTinhTrangGai] = useState('')
   const [trangThai, setTrangThai] = useState('Đang chạy')
+  const [dotCode, setDotCode] = useState('')
   const [serialPhoto, setSerialPhoto] = useState<string | null>(null)
   const [treadPhoto, setTreadPhoto] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -33,12 +34,14 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
       setIdVo(initialData.id_vo)
       setTinhTrangGai(initialData.tinh_trang_gai?.toString() || '')
       setTrangThai(initialData.trang_thai_vo || 'Đang chạy')
+      setDotCode(initialData.dot_code || '')
       setSerialPhoto(initialData.serial_photo_url || null)
       setTreadPhoto(initialData.tread_condition_photo_url || null)
     } else {
       setIdVo('')
       setTinhTrangGai('')
       setTrangThai('Đang chạy')
+      setDotCode('')
       setSerialPhoto(null)
       setTreadPhoto(null)
     }
@@ -76,6 +79,7 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
         id_vo: idVo, 
         tinh_trang_gai: tinhTrangGai ? parseFloat(tinhTrangGai) : 0,
         trang_thai_vo: trangThai,
+        dot_code: dotCode.trim() || null,
         serial_photo_url: finalSerialUrl,
         tread_condition_photo_url: finalTreadUrl
       }
@@ -139,6 +143,31 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
                 placeholder="VD: 14.5"
                 className="bg-slate-800 border-slate-700 focus:ring-primary"
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="dot-code">
+                Mã DOT (Ngày sản xuất)
+                <span className="ml-1 text-xs text-slate-500 font-normal">— 4 chữ số</span>
+              </Label>
+              <Input
+                id="dot-code"
+                value={dotCode}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, '').slice(0, 4)
+                  setDotCode(v)
+                }}
+                placeholder="VD: 3125  (Tuần 31 / Năm 2025)"
+                maxLength={4}
+                className="bg-slate-800 border-slate-700 focus:ring-primary font-mono tracking-widest"
+              />
+              {dotCode.length === 4 && (
+                <p className="text-xs text-cyan-400">
+                  📅 Tuần <strong>{dotCode.slice(0, 2)}</strong> / Năm <strong>20{dotCode.slice(2)}</strong>
+                </p>
+              )}
+              {dotCode.length > 0 && dotCode.length < 4 && (
+                <p className="text-xs text-amber-400">Nhập đủ 4 chữ số (TTNN)</p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label>Trạng thái lốp</Label>

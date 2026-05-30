@@ -58,6 +58,8 @@ export interface QuanLyVoXe {
   trang_thai_vo: 'Đang chạy' | 'Chờ đắp' | 'Thanh lý' | null;
   serial_photo_url?: string | null;
   tread_condition_photo_url?: string | null;
+  /** DOT manufacture date code: WWYYY format (e.g. "3125" = week 31, year 2025) */
+  dot_code?: string | null;
   created_at: string;
 }
 

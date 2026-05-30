@@ -67,6 +67,7 @@ export function TireTable({ data, onEdit, onDelete, onAdd, onRefresh }: TireTabl
               <TableHead className="text-slate-400">Xe đang gắn</TableHead>
               <TableHead className="text-slate-400">Vị trí lắp</TableHead>
               <TableHead className="text-slate-400">Độ sâu gai</TableHead>
+              <TableHead className="text-slate-400">Mã DOT</TableHead>
               <TableHead className="text-slate-400">Trạng thái</TableHead>
               <TableHead className="text-right text-slate-400">Thao tác</TableHead>
             </TableRow>
@@ -79,6 +80,18 @@ export function TireTable({ data, onEdit, onDelete, onAdd, onRefresh }: TireTabl
                   <TableCell className="font-medium text-slate-300">{tire.id_xe || 'Trong kho'}</TableCell>
                   <TableCell className="text-slate-400">{tire.vi_tri_lap || 'N/A'}</TableCell>
                   <TableCell className="font-mono">{tire.tinh_trang_gai} mm</TableCell>
+                  <TableCell>
+                    {tire.dot_code ? (
+                      <span
+                        className="font-mono text-sm text-cyan-400 tracking-widest"
+                        title={`Tuần ${tire.dot_code.slice(0, 2)} / Năm 20${tire.dot_code.slice(2)}`}
+                      >
+                        {tire.dot_code}
+                      </span>
+                    ) : (
+                      <span className="text-slate-600">—</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(tire.trang_thai_vo || '')}>
                       {tire.trang_thai_vo}
@@ -136,7 +149,7 @@ export function TireTable({ data, onEdit, onDelete, onAdd, onRefresh }: TireTabl
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-slate-500 italic">
+                <TableCell colSpan={7} className="h-32 text-center text-slate-500 italic">
                   Không tìm thấy lốp nào.
                 </TableCell>
               </TableRow>
