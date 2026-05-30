@@ -190,34 +190,64 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
               </Select>
             </div>
 
-            {(trangThai === 'Thanh lý' || trangThai === 'Chờ đắp') && (
+            {/* ── EDIT MODE: luôn hiện ảnh đã lưu, cho phép chụp lại ── */}
+            {initialData ? (
               <div className="grid gap-4 pt-4 border-t border-slate-800">
-                <div className="text-sm font-semibold text-amber-500">
-                  🛡️ Bằng chứng bắt buộc (Anti-Fraud)
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-300">📷 Ảnh lốp</span>
+                  <span className="text-xs text-slate-500">Nhấn vào ảnh để chụp lại</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <SinglePhotoUploader
+                    key={`serial-${initialData.id_vo}-${open}`}
                     title="Serial Number"
                     description="Chụp rõ số Serial"
-                    required={true}
+                    required={trangThai === 'Thanh lý' || trangThai === 'Chờ đắp'}
                     onPhotoChange={setSerialPhoto}
+                    initialUrl={initialData.serial_photo_url || undefined}
                     icon={<Camera className="w-5 h-5" />}
                   />
                   <SinglePhotoUploader
+                    key={`tread-${initialData.id_vo}-${open}`}
                     title="Tình trạng Gai/Rách"
                     description="Chụp rõ mặt lốp"
-                    required={true}
+                    required={trangThai === 'Thanh lý' || trangThai === 'Chờ đắp'}
                     onPhotoChange={setTreadPhoto}
+                    initialUrl={initialData.tread_condition_photo_url || undefined}
                     icon={<Camera className="w-5 h-5" />}
                   />
                 </div>
-                {initialData?.serial_photo_url && !serialPhoto?.startsWith('data:') && (
-                  <p className="text-xs text-green-500">✓ Đã có ảnh Serial trong hệ thống.</p>
-                )}
-                {initialData?.tread_condition_photo_url && !treadPhoto?.startsWith('data:') && (
-                  <p className="text-xs text-green-500">✓ Đã có ảnh Gai lốp trong hệ thống.</p>
+                {(trangThai === 'Thanh lý' || trangThai === 'Chờ đắp') && (
+                  <p className="text-xs text-amber-500">
+                    🛡️ Bằng chứng bắt buộc — cần có đủ 2 ảnh để lưu trạng thái này.
+                  </p>
                 )}
               </div>
+            ) : (
+              /* ── CREATE MODE: chỉ hiện khi cần bằng chứng ── */
+              (trangThai === 'Thanh lý' || trangThai === 'Chờ đắp') && (
+                <div className="grid gap-4 pt-4 border-t border-slate-800">
+                  <div className="text-sm font-semibold text-amber-500">
+                    🛡️ Bằng chứng bắt buộc (Anti-Fraud)
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SinglePhotoUploader
+                      title="Serial Number"
+                      description="Chụp rõ số Serial"
+                      required={true}
+                      onPhotoChange={setSerialPhoto}
+                      icon={<Camera className="w-5 h-5" />}
+                    />
+                    <SinglePhotoUploader
+                      title="Tình trạng Gai/Rách"
+                      description="Chụp rõ mặt lốp"
+                      required={true}
+                      onPhotoChange={setTreadPhoto}
+                      icon={<Camera className="w-5 h-5" />}
+                    />
+                  </div>
+                </div>
+              )
             )}
           </div>
 
