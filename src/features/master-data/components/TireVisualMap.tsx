@@ -563,9 +563,13 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
           trang_thai_vo: 'Đang chạy',
         })
         .eq('id_vo', tire.id_vo)
-      if (updateErr) throw updateErr
 
-      // 2. Log to tire_history (best-effort — ignore RLS/permission errors)
+      if (updateErr) {
+        console.error('[assignTire] quan_ly_vo_xe UPDATE failed:', updateErr)
+        throw new Error('Lỗi cập nhật lốp: ' + updateErr.message)
+      }
+
+      // 2. Log to tire_history (best-effort — never blocks success)
       const { error: historyErr } = await supabase.from('tire_history').insert([
         {
           id_vo: tire.id_vo,
@@ -577,8 +581,8 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
         },
       ])
       if (historyErr) {
-        // RLS may block this — not critical, skip silently
-        console.warn('[tire_history] insert skipped:', historyErr.message)
+        console.warn('[assignTire] tire_history insert blocked (RLS):', historyErr.message)
+        // intentionally NOT throwing — history is non-critical
       }
     },
     onSuccess: () => {
@@ -589,7 +593,7 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
       setAssignSlot(null)
     },
     onError: (err: any) => {
-      toast.error('Lỗi khi gắn lốp: ' + err.message)
+      toast.error(err.message || 'Lỗi không xác định khi gắn lốp')
     },
   })
 
