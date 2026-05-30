@@ -554,6 +554,7 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
   // Assign tire from warehouse to an empty slot
   const assignMutation = useMutation({
     mutationFn: async ({ tire, dbPosition }: { tire: QuanLyVoXe; dbPosition: string }) => {
+      // 1. Main operation: assign tire to vehicle
       const { error: updateErr } = await supabase
         .from('quan_ly_vo_xe')
         .update({
@@ -564,8 +565,8 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
         .eq('id_vo', tire.id_vo)
       if (updateErr) throw updateErr
 
-      // Log to tire_history
-      await supabase.from('tire_history').insert([
+      // 2. Log to tire_history (best-effort — ignore RLS/permission errors)
+      const { error: historyErr } = await supabase.from('tire_history').insert([
         {
           id_vo: tire.id_vo,
           id_xe_cu: null,
@@ -575,6 +576,10 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
           hanh_dong: 'Xuất kho → Gắn xe',
         },
       ])
+      if (historyErr) {
+        // RLS may block this — not critical, skip silently
+        console.warn('[tire_history] insert skipped:', historyErr.message)
+      }
     },
     onSuccess: () => {
       toast.success('Gắn lốp vào xe thành công!')
