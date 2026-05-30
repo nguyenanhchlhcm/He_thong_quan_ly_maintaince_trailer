@@ -54,10 +54,15 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
     setIsSubmitting(true)
 
     try {
-      // 1. Validate Scrap Evidence
-      const needsEvidence = trangThai === 'Thanh lý' || trangThai === 'Chờ đắp'
-      if (needsEvidence) {
+      // Validate: tạo mới luôn cần đủ 2 ảnh
+      if (!initialData) {
         if (!serialPhoto || !treadPhoto) {
+          throw new Error('Vui lòng cung cấp đủ ảnh Serial Number và tình trạng gai lốp.')
+        }
+      } else {
+        // Edit: chỉ cần 2 ảnh khi đổi sang trạng thái cần bằng chứng
+        const needsEvidence = trangThai === 'Thanh lý' || trangThai === 'Chờ đắp'
+        if (needsEvidence && (!serialPhoto || !treadPhoto)) {
           throw new Error('Vui lòng cung cấp đủ hình ảnh Serial và tình trạng gai lốp để làm bằng chứng.')
         }
       }
@@ -224,30 +229,28 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
                 )}
               </div>
             ) : (
-              /* ── CREATE MODE: chỉ hiện khi cần bằng chứng ── */
-              (trangThai === 'Thanh lý' || trangThai === 'Chờ đắp') && (
-                <div className="grid gap-4 pt-4 border-t border-slate-800">
-                  <div className="text-sm font-semibold text-amber-500">
-                    🛡️ Bằng chứng bắt buộc (Anti-Fraud)
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <SinglePhotoUploader
-                      title="Serial Number"
-                      description="Chụp rõ số Serial"
-                      required={true}
-                      onPhotoChange={setSerialPhoto}
-                      icon={<Camera className="w-5 h-5" />}
-                    />
-                    <SinglePhotoUploader
-                      title="Tình trạng Gai/Rách"
-                      description="Chụp rõ mặt lốp"
-                      required={true}
-                      onPhotoChange={setTreadPhoto}
-                      icon={<Camera className="w-5 h-5" />}
-                    />
-                  </div>
+              /* ── CREATE MODE: luôn bắt buộc 2 ảnh ── */
+              <div className="grid gap-4 pt-4 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-amber-500">🛡️ Bằng chứng nhập kho (bắt buộc)</span>
                 </div>
-              )
+                <div className="grid grid-cols-2 gap-3">
+                  <SinglePhotoUploader
+                    title="Serial Number"
+                    description="Chụp rõ số Serial"
+                    required={true}
+                    onPhotoChange={setSerialPhoto}
+                    icon={<Camera className="w-5 h-5" />}
+                  />
+                  <SinglePhotoUploader
+                    title="Tình trạng Gai/Rách"
+                    description="Chụp rõ mặt lốp"
+                    required={true}
+                    onPhotoChange={setTreadPhoto}
+                    icon={<Camera className="w-5 h-5" />}
+                  />
+                </div>
+              </div>
             )}
           </div>
 
