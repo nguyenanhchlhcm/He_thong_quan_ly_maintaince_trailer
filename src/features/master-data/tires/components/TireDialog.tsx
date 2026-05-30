@@ -111,15 +111,18 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-slate-900 border-slate-800 text-slate-100 sm:max-w-[425px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
+      <DialogContent className="bg-slate-900 border-slate-800 text-slate-100 sm:max-w-[500px] max-h-[90vh] p-0 flex flex-col">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          {/* Header — cố định */}
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-800 shrink-0">
             <DialogTitle>{initialData ? 'Sửa thông tin lốp' : 'Nhập kho lốp mới'}</DialogTitle>
             <DialogDescription className="text-slate-400">
               Quản lý Serial Number và tình trạng kỹ thuật của lốp.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+
+          {/* Body — cuộn được */}
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             <div className="grid gap-2">
               <Label htmlFor="id-vo">Serial Number (ID Lốp) <span className="text-red-500">*</span></Label>
               <Input
@@ -132,43 +135,47 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
                 disabled={!!initialData}
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="gai">Độ sâu gai hiện tại (mm)</Label>
-              <Input
-                id="gai"
-                type="number"
-                step="0.1"
-                value={tinhTrangGai}
-                onChange={(e) => setTinhTrangGai(e.target.value)}
-                placeholder="VD: 14.5"
-                className="bg-slate-800 border-slate-700 focus:ring-primary"
-              />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="gai">Độ sâu gai (mm)</Label>
+                <Input
+                  id="gai"
+                  type="number"
+                  step="0.1"
+                  value={tinhTrangGai}
+                  onChange={(e) => setTinhTrangGai(e.target.value)}
+                  placeholder="VD: 14.5"
+                  className="bg-slate-800 border-slate-700 focus:ring-primary"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="dot-code">
+                  Mã DOT
+                  <span className="ml-1 text-xs text-slate-500 font-normal">— 4 số</span>
+                </Label>
+                <Input
+                  id="dot-code"
+                  value={dotCode}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, '').slice(0, 4)
+                    setDotCode(v)
+                  }}
+                  placeholder="VD: 3125"
+                  maxLength={4}
+                  className="bg-slate-800 border-slate-700 focus:ring-primary font-mono tracking-widest"
+                />
+                {dotCode.length === 4 && (
+                  <p className="text-xs text-cyan-400">
+                    📅 Tuần <strong>{dotCode.slice(0, 2)}</strong> / Năm <strong>20{dotCode.slice(2)}</strong>
+                  </p>
+                )}
+                {dotCode.length > 0 && dotCode.length < 4 && (
+                  <p className="text-xs text-amber-400">Nhập đủ 4 chữ số</p>
+                )}
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="dot-code">
-                Mã DOT (Ngày sản xuất)
-                <span className="ml-1 text-xs text-slate-500 font-normal">— 4 chữ số</span>
-              </Label>
-              <Input
-                id="dot-code"
-                value={dotCode}
-                onChange={(e) => {
-                  const v = e.target.value.replace(/\D/g, '').slice(0, 4)
-                  setDotCode(v)
-                }}
-                placeholder="VD: 3125  (Tuần 31 / Năm 2025)"
-                maxLength={4}
-                className="bg-slate-800 border-slate-700 focus:ring-primary font-mono tracking-widest"
-              />
-              {dotCode.length === 4 && (
-                <p className="text-xs text-cyan-400">
-                  📅 Tuần <strong>{dotCode.slice(0, 2)}</strong> / Năm <strong>20{dotCode.slice(2)}</strong>
-                </p>
-              )}
-              {dotCode.length > 0 && dotCode.length < 4 && (
-                <p className="text-xs text-amber-400">Nhập đủ 4 chữ số (TTNN)</p>
-              )}
-            </div>
+
             <div className="grid gap-2">
               <Label>Trạng thái lốp</Label>
               <Select value={trangThai} onValueChange={(val: any) => setTrangThai(val)}>
@@ -176,53 +183,55 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
                   <SelectValue placeholder="Chọn trạng thái" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                  <SelectItem value="Đang chạy">Đang chạy</SelectItem>
-                  <SelectItem value="Chờ đắp">Chờ đắp</SelectItem>
-                  <SelectItem value="Thanh lý">Thanh lý</SelectItem>
+                  <SelectItem value="Đang chạy">🟢 Đang chạy</SelectItem>
+                  <SelectItem value="Chờ đắp">🟡 Chờ đắp</SelectItem>
+                  <SelectItem value="Thanh lý">🔴 Thanh lý</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
+
             {(trangThai === 'Thanh lý' || trangThai === 'Chờ đắp') && (
-              <div className="grid gap-4 mt-2 pt-4 border-t border-slate-800">
+              <div className="grid gap-4 pt-4 border-t border-slate-800">
                 <div className="text-sm font-semibold text-amber-500">
-                  Bằng chứng bắt buộc (Anti-Fraud)
+                  🛡️ Bằng chứng bắt buộc (Anti-Fraud)
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <SinglePhotoUploader 
-                    title="Serial Number" 
-                    description="Chụp rõ số Serial" 
+                  <SinglePhotoUploader
+                    title="Serial Number"
+                    description="Chụp rõ số Serial"
                     required={true}
                     onPhotoChange={setSerialPhoto}
                     icon={<Camera className="w-5 h-5" />}
                   />
-                  <SinglePhotoUploader 
-                    title="Tình trạng Gai/Rách" 
-                    description="Chụp rõ mặt lốp" 
+                  <SinglePhotoUploader
+                    title="Tình trạng Gai/Rách"
+                    description="Chụp rõ mặt lốp"
                     required={true}
                     onPhotoChange={setTreadPhoto}
                     icon={<Camera className="w-5 h-5" />}
                   />
                 </div>
                 {initialData?.serial_photo_url && !serialPhoto?.startsWith('data:') && (
-                  <p className="text-xs text-green-500">Đã có ảnh Serial trong hệ thống.</p>
+                  <p className="text-xs text-green-500">✓ Đã có ảnh Serial trong hệ thống.</p>
                 )}
                 {initialData?.tread_condition_photo_url && !treadPhoto?.startsWith('data:') && (
-                  <p className="text-xs text-green-500">Đã có ảnh Gai lốp trong hệ thống.</p>
+                  <p className="text-xs text-green-500">✓ Đã có ảnh Gai lốp trong hệ thống.</p>
                 )}
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="ghost" 
+
+          {/* Footer — cố định đáy */}
+          <DialogFooter className="px-6 py-4 border-t border-slate-800 shrink-0 bg-slate-900/80 backdrop-blur-sm">
+            <Button
+              type="button"
+              variant="ghost"
               onClick={() => onOpenChange(false)}
               className="text-slate-400"
             >
               Hủy
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="min-w-[100px]">
+            <Button type="submit" disabled={isSubmitting} className="min-w-[120px]">
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
