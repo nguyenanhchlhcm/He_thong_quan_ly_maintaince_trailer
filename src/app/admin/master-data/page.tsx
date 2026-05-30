@@ -11,6 +11,7 @@ import { PartTable } from '@/features/master-data/components/PartTable'
 import { GarageTable } from '@/features/master-data/components/GarageTable'
 import { UserTable } from '@/features/master-data/components/UserTable'
 import { VehicleDialog } from '@/features/master-data/components/VehicleDialog'
+import { VehicleDetailDialog } from '@/features/master-data/components/VehicleDetailDialog'
 import { PartDialog } from '@/features/master-data/components/PartDialog'
 import { GarageDialog } from '@/features/master-data/components/GarageDialog'
 import { UserRoleDialog } from '@/features/master-data/components/UserRoleDialog'
@@ -56,6 +57,8 @@ function MasterDataContent() {
   const deleteSupplier = useDeleteSupplier()
   
   const [selectedVehicle, setSelectedVehicle] = useState<Xe | null>(null)
+  const [selectedDetailVehicle, setSelectedDetailVehicle] = useState<Xe | null>(null)
+  const [isDetailVehicleDialogOpen, setIsDetailVehicleDialogOpen] = useState(false)
   const [selectedPart, setSelectedPart] = useState<VatTuSKU | null>(null)
   const [selectedGarage, setSelectedGarage] = useState<Gara | null>(null)
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null)
@@ -193,6 +196,7 @@ function MasterDataContent() {
                 onEdit={(xe) => { setSelectedVehicle(xe); setIsVehicleDialogOpen(true); }} 
                 onDelete={handleDeleteVehicle} 
                 onAdd={() => { setSelectedVehicle(null); setIsVehicleDialogOpen(true); }}
+                onRowClick={(xe) => { setSelectedDetailVehicle(xe); setIsDetailVehicleDialogOpen(true); }}
               />
             </CardContent>
           </Card>
@@ -348,6 +352,13 @@ function MasterDataContent() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Cửa sổ chi tiết xe */}
+      <VehicleDetailDialog
+        open={isDetailVehicleDialogOpen}
+        onOpenChange={setIsDetailVehicleDialogOpen}
+        vehicle={selectedDetailVehicle}
+      />
 
       {/* Cửa sổ nhập liệu (Dialogs) - Có Key để đảm bảo làm mới dữ liệu */}
       <VehicleDialog 

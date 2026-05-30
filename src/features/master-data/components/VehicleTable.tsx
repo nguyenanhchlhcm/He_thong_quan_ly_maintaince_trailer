@@ -13,9 +13,10 @@ interface VehicleTableProps {
   onEdit: (xe: Xe) => void
   onDelete: (id: string) => void
   onAdd: () => void
+  onRowClick: (xe: Xe) => void
 }
 
-export function VehicleTable({ data, onEdit, onDelete, onAdd }: VehicleTableProps) {
+export function VehicleTable({ data, onEdit, onDelete, onAdd, onRowClick }: VehicleTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredData = data.filter(xe => 
@@ -55,7 +56,11 @@ export function VehicleTable({ data, onEdit, onDelete, onAdd }: VehicleTableProp
           <TableBody>
             {filteredData.length > 0 ? (
               filteredData.map((xe) => (
-                <TableRow key={xe.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
+                <TableRow 
+                  key={xe.id} 
+                  className="border-slate-800 hover:bg-slate-800/40 cursor-pointer transition-colors"
+                  onClick={() => onRowClick(xe)}
+                >
                   <TableCell>
                     <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-bold">
                       {xe.id}
@@ -65,7 +70,7 @@ export function VehicleTable({ data, onEdit, onDelete, onAdd }: VehicleTableProp
                   <TableCell>{xe.loai_xe}</TableCell>
                   <TableCell className="font-mono text-right pr-12">{xe.so_km_hien_tai?.toLocaleString()} km</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                       <Button 
                         variant="ghost" 
                         size="icon" 
