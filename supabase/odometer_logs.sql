@@ -40,8 +40,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     -- 1. UPDATE vehicles SET odometer = NEW.odometer_moi WHERE id = NEW.id_xe
     UPDATE public.vehicles 
-    SET odometer = NEW.odometer_moi, 
-        so_km_hien_tai = NEW.odometer_moi 
+    SET odometer = NEW.odometer_moi 
     WHERE id = NEW.id_xe;
 
     -- 2. UPDATE quan_ly_vo_xe SET so_km_da_chay = so_km_da_chay + NEW.delta_km WHERE id_xe = NEW.id_xe AND trang_thai_vo = 'Đang chạy'
