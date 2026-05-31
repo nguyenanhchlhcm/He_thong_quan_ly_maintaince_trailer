@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { Loader2, RefreshCw, X, ArrowLeftRight, ArrowLeft } from 'lucide-react'
 import { TireDetailDialog, TireDetail } from './TireDetailDialog'
 import { AssignTireDialog } from './AssignTireDialog'
+import { ShiftHandoverModal } from './ShiftHandoverModal'
 
 // ─── Types ──────────────────────────────────────────────
 type VehicleType = 'tractor' | 'trailer'
@@ -475,6 +476,7 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
   // Assign tire to empty slot state
   const [assignSlot, setAssignSlot] = useState<{ posCode: string; dbPosition: string; label: string } | null>(null)
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
+  const [isShiftModalOpen, setIsShiftModalOpen] = useState(false)
 
   // State Mutex for tire rotation
   const [rotationState, setRotationState] = useState<{
@@ -752,6 +754,15 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
           </span>
         </label>
 
+        {/* Odometer Shift Handover Button */}
+        <button
+          type="button"
+          onClick={() => setIsShiftModalOpen(true)}
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-bold text-emerald-400 hover:text-white hover:bg-emerald-600 active:scale-95 transition-all shadow-sm cursor-pointer"
+        >
+          📝 Chốt ca / Odometer
+        </button>
+
         {/* Right Side: Export Vehicle Profile Button */}
         <button
           type="button"
@@ -866,6 +877,14 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
           if (!assignSlot) return
           assignMutation.mutate({ tire, dbPosition: assignSlot.dbPosition })
         }}
+      />
+
+      {/* Shift handover / Odometer logger dialog */}
+      <ShiftHandoverModal
+        open={isShiftModalOpen}
+        onOpenChange={setIsShiftModalOpen}
+        initialVehicleId={vehicleId}
+        initialVehicleType={vehicleType}
       />
     </div>
   )

@@ -60,6 +60,18 @@ export interface QuanLyVoXe {
   tread_condition_photo_url?: string | null;
   /** DOT manufacture date code: WWYYY format (e.g. "3125" = week 31, year 2025) */
   dot_code?: string | null;
+  so_km_da_chay?: number; // Accumulated running distance in km
+  created_at: string;
+}
+
+export interface OdometerLog {
+  id: string;
+  id_xe: string;
+  id_mooc: string | null;
+  odometer_cu: number;
+  odometer_moi: number;
+  delta_km: number | null;
+  photo_url: string | null;
   created_at: string;
 }
 
