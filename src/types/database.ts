@@ -61,6 +61,8 @@ export interface QuanLyVoXe {
   /** DOT manufacture date code: WWYYY format (e.g. "3125" = week 31, year 2025) */
   dot_code?: string | null;
   so_km_da_chay?: number; // Accumulated running distance in km
+  /** ISO timestamp of when the tire was first installed on a vehicle */
+  ngay_lap_dat?: string | null;
   created_at: string;
 }
 

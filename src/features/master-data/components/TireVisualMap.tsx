@@ -31,6 +31,7 @@ interface TireSlotProps {
   tire?: QuanLyVoXe | null
   posCode: string
   label: string
+  vehicleType: VehicleType
   onClick?: () => void
   isHighlighted?: boolean
   isClickable?: boolean
@@ -42,6 +43,7 @@ interface TireSlotProps {
 interface AxleProps {
   axle: AxleConfig
   tires: QuanLyVoXe[]
+  vehicleType: VehicleType
   onSlotClick: (posCode: string, dbPosition: string, tire: QuanLyVoXe | null, label: string) => void
   highlightedPos?: string | null
   isRotationMode?: boolean
@@ -156,12 +158,24 @@ function getTireStatus(depth: number | null): {
   return { percent, colorClass, needsReplacement }
 }
 
+// ─── Constants ─────────────────────────────────────────
+const TRACTOR_ROTATION_KM = 15_000
+const TRAILER_ROTATION_KM = 20_000
+
+function getActiveDays(ngay_lap_dat: string | null | undefined): number | null {
+  if (!ngay_lap_dat) return null
+  const d = new Date(ngay_lap_dat)
+  if (isNaN(d.getTime())) return null
+  return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24))
+}
+
 // ─── Sub-components ─────────────────────────────────────
 
 function TireSlot({
   tire,
   posCode,
   label,
+  vehicleType,
   onClick,
   isHighlighted,
   isClickable,
@@ -171,128 +185,163 @@ function TireSlot({
 }: TireSlotProps) {
   const hasTire = !!tire
   const status = getTireStatus(hasTire ? tire.tinh_trang_gai : null)
+  const kmThreshold = vehicleType === 'tractor' ? TRACTOR_ROTATION_KM : TRAILER_ROTATION_KM
+  const needsRotation = hasTire && (tire.so_km_da_chay ?? 0) >= kmThreshold
+  const activeDays = hasTire ? getActiveDays(tire.ngay_lap_dat) : null
 
-  // Calculate opacity class based on status filter
+  // Opacity for status filter
   let opacityClass = ''
   if (statusFilter && statusFilter !== 'all') {
     if (statusFilter === 'warning') {
       const isYellow = hasTire && !status.needsReplacement && (status.percent >= 40 && status.percent <= 70)
-      if (!isYellow) {
-        opacityClass = 'opacity-20 transition-all duration-300 pointer-events-none'
-      }
+      if (!isYellow) opacityClass = 'opacity-20 transition-all duration-300 pointer-events-none'
     } else if (statusFilter === 'critical') {
       const isRed = hasTire && status.needsReplacement
-      if (!isRed) {
-        opacityClass = 'opacity-20 transition-all duration-300 pointer-events-none'
-      }
+      if (!isRed) opacityClass = 'opacity-20 transition-all duration-300 pointer-events-none'
     }
   }
 
   return (
-    <button
-      type="button"
-      onClick={isClickable ? onClick : undefined}
-      disabled={!isClickable}
-      aria-label={hasTire ? `Lốp ${tire.id_vo} – Vị trí ${posCode}` : `Vị trí trống ${posCode}`}
-      className={cn(
-        'relative flex flex-col items-center justify-center',
-        'w-[72px] h-[100px] rounded-lg',
-        'text-xs font-medium transition-all duration-200 select-none touch-manipulation',
-        isClickable && 'active:scale-95 cursor-pointer',
-        hasTire
-          ? [
-              'bg-gradient-to-b from-slate-700/80 to-slate-800/90',
-              status.colorClass,
-              'shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.06)]',
-              isClickable && 'hover:shadow-primary/10',
-            ]
-          : [
-              'border border-dashed border-slate-600/40',
-              'bg-slate-800/20',
-              !isClickable && 'opacity-60',
-            ],
-        isHighlighted && [
-          'ring-2 ring-emerald-500 ring-offset-2 ring-offset-slate-950 scale-105',
-          'shadow-[0_0_15px_rgba(16,185,129,0.4)] animate-pulse',
-        ],
-        opacityClass
-      )}
-    >
-      {hasTire ? (
-        <>
-          {/* Green activity dot */}
-          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]" />
-          {/* Position code — RED, prominent */}
-          <span className="text-[15px] font-black text-red-500 leading-none tracking-wider mt-1">
-            {posCode}
-          </span>
-          {/* Sub-label — gray */}
-          <span className="text-[9px] text-slate-400/70 mt-0.5">{label}</span>
-          
-          {isInspectionMode ? (
-            <div className="mt-1 z-10" onClick={(e) => e.stopPropagation()}>
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                max="25"
-                defaultValue={tire.tinh_trang_gai || 0}
-                onBlur={(e) => {
-                  const val = parseFloat(e.target.value)
-                  if (!isNaN(val) && onTreadChange) {
-                    onTreadChange(tire.id_vo, val)
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const val = parseFloat((e.target as HTMLInputElement).value)
-                    if (!isNaN(val) && onTreadChange) {
-                      onTreadChange(tire.id_vo, val)
-                      ;(e.target as HTMLInputElement).blur()
-                    }
-                  }
-                }}
-                className="w-12 h-6 text-center text-xs font-bold text-slate-900 bg-white rounded border border-slate-350 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+    <div className={cn('relative group/tire', opacityClass)}>
+      <button
+        type="button"
+        onClick={isClickable ? onClick : undefined}
+        disabled={!isClickable}
+        aria-label={hasTire ? `Lốp ${tire.id_vo} – Vị trí ${posCode}` : `Vị trí trống ${posCode}`}
+        className={cn(
+          'relative flex flex-col items-center justify-center',
+          'w-[72px] h-[100px] rounded-lg',
+          'text-xs font-medium transition-all duration-200 select-none touch-manipulation',
+          isClickable && 'active:scale-95 cursor-pointer',
+          hasTire
+            ? [
+                'bg-gradient-to-b from-slate-700/80 to-slate-800/90',
+                status.colorClass,
+                'shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.06)]',
+                isClickable && 'hover:shadow-primary/10',
+              ]
+            : [
+                'border border-dashed border-slate-600/40',
+                'bg-slate-800/20',
+                !isClickable && 'opacity-60',
+              ],
+          isHighlighted && [
+            'ring-2 ring-emerald-500 ring-offset-2 ring-offset-slate-950 scale-105',
+            'shadow-[0_0_15px_rgba(16,185,129,0.4)] animate-pulse',
+          ]
+        )}
+      >
+        {hasTire ? (
+          <>
+            {/* Green activity dot */}
+            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]" />
+            {/* Rotation alert — yellow spinning icon, top-left corner */}
+            {needsRotation && (
+              <RefreshCw
+                aria-label="Cần đảo lốp"
+                className="absolute top-1.5 left-1.5 w-3 h-3 text-yellow-400 animate-spin [animation-duration:3s] drop-shadow-[0_0_4px_rgba(234,179,8,0.7)]"
               />
-            </div>
-          ) : (
-            <>
-              {/* Tread depth (mm) */}
-              <span className="text-[10px] font-bold text-slate-200 mt-1">
-                {tire.tinh_trang_gai != null ? `${tire.tinh_trang_gai} mm` : '—'}
-              </span>
-              {/* Shortened Serial number */}
-              <span className="text-[9px] font-medium text-slate-400 font-mono tracking-tighter mt-0.5 max-w-[64px] truncate">
-                {formatShortSerial(tire.id_vo)}
-              </span>
-              {/* Blinking Cần Thay label if needed */}
-              {status.needsReplacement && (
-                <span className="absolute bottom-1 text-[8px] bg-red-600 text-white font-extrabold px-1 rounded animate-pulse uppercase tracking-tight scale-90">
-                  Cần Thay
+            )}
+            {/* Position code */}
+            <span className="text-[15px] font-black text-red-500 leading-none tracking-wider mt-1">
+              {posCode}
+            </span>
+            {/* Sub-label */}
+            <span className="text-[9px] text-slate-400/70 mt-0.5">{label}</span>
+            {isInspectionMode ? (
+              <div className="mt-1 z-10" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  max="25"
+                  defaultValue={tire.tinh_trang_gai || 0}
+                  onBlur={(e) => {
+                    const val = parseFloat(e.target.value)
+                    if (!isNaN(val) && onTreadChange) onTreadChange(tire.id_vo, val)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const val = parseFloat((e.target as HTMLInputElement).value)
+                      if (!isNaN(val) && onTreadChange) {
+                        onTreadChange(tire.id_vo, val)
+                        ;(e.target as HTMLInputElement).blur()
+                      }
+                    }
+                  }}
+                  className="w-12 h-6 text-center text-xs font-bold text-slate-900 bg-white rounded border border-slate-350 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            ) : (
+              <>
+                <span className="text-[10px] font-bold text-slate-200 mt-1">
+                  {tire.tinh_trang_gai != null ? `${tire.tinh_trang_gai} mm` : '—'}
                 </span>
-              )}
-            </>
-          )}
-        </>
-      ) : (
-        <>
-          {/* Position code — RED, even when empty */}
-          <span className="text-[15px] font-black text-red-500/50 leading-none tracking-wider">
-            {posCode}
-          </span>
-          {/* Sub-label */}
-          <span className="text-[9px] text-slate-500/50 mt-0.5">{label}</span>
-          {/* Empty indicator */}
-          <span className="text-[10px] text-slate-500/70 font-bold mt-1">+ Trống</span>
-        </>
+                <span className="text-[9px] font-medium text-slate-400 font-mono tracking-tighter mt-0.5 max-w-[64px] truncate">
+                  {formatShortSerial(tire.id_vo)}
+                </span>
+                {status.needsReplacement && (
+                  <span className="absolute bottom-1 text-[8px] bg-red-600 text-white font-extrabold px-1 rounded animate-pulse uppercase tracking-tight scale-90">
+                    Cần Thay
+                  </span>
+                )}
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            <span className="text-[15px] font-black text-red-500/50 leading-none tracking-wider">
+              {posCode}
+            </span>
+            <span className="text-[9px] text-slate-500/50 mt-0.5">{label}</span>
+            <span className="text-[10px] text-slate-500/70 font-bold mt-1">+ Trống</span>
+          </>
+        )}
+      </button>
+
+      {/* Hover Popover — lifecycle metrics, appears above tire block */}
+      {hasTire && (
+        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-48 opacity-0 group-hover/tire:opacity-100 transition-opacity duration-150">
+          <div className="relative bg-slate-800 border border-slate-700/80 rounded-xl shadow-2xl p-3 space-y-1.5 text-left">
+            {/* Serial */}
+            <div>
+              <span className="block text-[9px] uppercase tracking-widest text-slate-500 font-semibold">Serial</span>
+              <span className="text-[10px] font-mono font-bold text-slate-200 break-all leading-snug">{tire.id_vo}</span>
+            </div>
+            {/* Total km */}
+            <div className="flex items-center justify-between border-t border-slate-700/50 pt-1.5">
+              <span className="text-[9px] uppercase tracking-widest text-slate-500 font-semibold">Tổng KM</span>
+              <span className="text-[11px] font-mono font-bold text-primary">
+                {(tire.so_km_da_chay ?? 0).toLocaleString('vi-VN')} km
+              </span>
+            </div>
+            {/* Active days */}
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] uppercase tracking-widest text-slate-500 font-semibold">Đã chạy</span>
+              <span className="text-[11px] font-mono font-bold text-slate-300">
+                {activeDays !== null ? `${activeDays} ngày` : '—'}
+              </span>
+            </div>
+            {/* Rotation warning row */}
+            {needsRotation && (
+              <div className="flex items-center gap-1.5 border-t border-yellow-500/20 pt-1.5">
+                <RefreshCw className="w-3 h-3 text-yellow-400 shrink-0 animate-spin [animation-duration:3s]" />
+                <span className="text-[9px] text-yellow-400 font-semibold">Cần đảo lốp</span>
+              </div>
+            )}
+            {/* Arrow */}
+            <div className="absolute left-1/2 -translate-x-1/2 -bottom-[7px] w-3 h-3 bg-slate-800 border-r border-b border-slate-700/80 rotate-45" />
+          </div>
+        </div>
       )}
-    </button>
+    </div>
   )
 }
 
 function Axle({
   axle,
   tires,
+  vehicleType,
   onSlotClick,
   highlightedPos,
   isRotationMode,
@@ -320,6 +369,7 @@ function Axle({
                 tire={t}
                 posCode={s.posCode}
                 label={s.label}
+                vehicleType={vehicleType}
                 onClick={() => onSlotClick(s.posCode, s.dbPosition, t, s.label)}
                 isHighlighted={highlightedPos === s.dbPosition}
                 isClickable={isRotationMode || !!t || true}
@@ -340,6 +390,7 @@ function Axle({
                 tire={t}
                 posCode={s.posCode}
                 label={s.label}
+                vehicleType={vehicleType}
                 onClick={() => onSlotClick(s.posCode, s.dbPosition, t, s.label)}
                 isHighlighted={highlightedPos === s.dbPosition}
                 isClickable={isRotationMode || !!t || true}
@@ -374,6 +425,7 @@ function Axle({
                 tire={t}
                 posCode={s.posCode}
                 label={s.label}
+                vehicleType={vehicleType}
                 onClick={() => onSlotClick(s.posCode, s.dbPosition, t, s.label)}
                 isHighlighted={highlightedPos === s.dbPosition}
                 isClickable={isRotationMode || !!t || true}
@@ -396,6 +448,7 @@ function Axle({
                 tire={t}
                 posCode={s.posCode}
                 label={s.label}
+                vehicleType={vehicleType}
                 onClick={() => onSlotClick(s.posCode, s.dbPosition, t, s.label)}
                 isHighlighted={highlightedPos === s.dbPosition}
                 isClickable={isRotationMode || !!t || true}
@@ -808,6 +861,7 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
               <Axle
                 axle={axle}
                 tires={tires}
+                vehicleType={vehicleType}
                 onSlotClick={handleSlotClick}
                 highlightedPos={rotationState?.firstPos}
                 isRotationMode={!!rotationState}
@@ -842,6 +896,10 @@ export function TireVisualMap({ vehicleId, vehicleType }: TireVisualMapProps) {
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-black text-red-500">A</span>
           <span className="text-[10px] text-muted-foreground/60">Mã vị trí</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <RefreshCw className="w-2.5 h-2.5 text-yellow-400 animate-spin [animation-duration:3s]" />
+          <span className="text-[10px] text-muted-foreground/60">Cần đảo lốp</span>
         </div>
       </div>
 
