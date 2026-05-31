@@ -23,7 +23,7 @@ interface TireDialogProps {
 export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireDialogProps) {
   const [idVo, setIdVo] = useState('')
   const [tinhTrangGai, setTinhTrangGai] = useState('')
-  const [trangThai, setTrangThai] = useState('Đang chạy')
+  const [trangThai, setTrangThai] = useState('Chưa lắp')
   const [dotCode, setDotCode] = useState('')
   const [serialPhoto, setSerialPhoto] = useState<string | null>(null)
   const [treadPhoto, setTreadPhoto] = useState<string | null>(null)
@@ -33,14 +33,14 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
     if (initialData) {
       setIdVo(initialData.id_vo)
       setTinhTrangGai(initialData.tinh_trang_gai?.toString() || '')
-      setTrangThai(initialData.trang_thai_vo || 'Đang chạy')
+      setTrangThai(initialData.trang_thai_vo || 'Chưa lắp')
       setDotCode(initialData.dot_code || '')
       setSerialPhoto(initialData.serial_photo_url || null)
       setTreadPhoto(initialData.tread_condition_photo_url || null)
     } else {
       setIdVo('')
       setTinhTrangGai('')
-      setTrangThai('Đang chạy')
+      setTrangThai('Chưa lắp')
       setDotCode('')
       setSerialPhoto(null)
       setTreadPhoto(null)
@@ -61,7 +61,7 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
         }
       } else {
         // Edit: chỉ cần 2 ảnh khi đổi sang trạng thái cần bằng chứng
-        const needsEvidence = trangThai === 'Thanh lý' || trangThai === 'Chờ đắp'
+        const needsEvidence = trangThai === 'Thanh lý' || trangThai === 'Chưa lắp'
         if (needsEvidence && (!serialPhoto || !treadPhoto)) {
           throw new Error('Vui lòng cung cấp đủ hình ảnh Serial và tình trạng gai lốp để làm bằng chứng.')
         }
@@ -189,7 +189,7 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
                 </SelectTrigger>
                 <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
                   <SelectItem value="Đang chạy">🟢 Đang chạy</SelectItem>
-                  <SelectItem value="Chờ đắp">🟡 Chờ đắp</SelectItem>
+                  <SelectItem value="Chưa lắp">🟡 Chưa lắp</SelectItem>
                   <SelectItem value="Thanh lý">🔴 Thanh lý</SelectItem>
                 </SelectContent>
               </Select>
@@ -207,7 +207,7 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
                     key={`serial-${initialData.id_vo}-${open}`}
                     title="Serial Number"
                     description="Chụp rõ số Serial"
-                    required={trangThai === 'Thanh lý' || trangThai === 'Chờ đắp'}
+                    required={trangThai === 'Thanh lý' || trangThai === 'Chưa lắp'}
                     onPhotoChange={setSerialPhoto}
                     initialUrl={initialData.serial_photo_url || undefined}
                     icon={<Camera className="w-5 h-5" />}
@@ -216,13 +216,13 @@ export function TireDialog({ open, onOpenChange, onSuccess, initialData }: TireD
                     key={`tread-${initialData.id_vo}-${open}`}
                     title="Tình trạng Gai/Rách"
                     description="Chụp rõ mặt lốp"
-                    required={trangThai === 'Thanh lý' || trangThai === 'Chờ đắp'}
+                    required={trangThai === 'Thanh lý' || trangThai === 'Chưa lắp'}
                     onPhotoChange={setTreadPhoto}
                     initialUrl={initialData.tread_condition_photo_url || undefined}
                     icon={<Camera className="w-5 h-5" />}
                   />
                 </div>
-                {(trangThai === 'Thanh lý' || trangThai === 'Chờ đắp') && (
+                {(trangThai === 'Thanh lý' || trangThai === 'Chưa lắp') && (
                   <p className="text-xs text-amber-500">
                     🛡️ Bằng chứng bắt buộc — cần có đủ 2 ảnh để lưu trạng thái này.
                   </p>

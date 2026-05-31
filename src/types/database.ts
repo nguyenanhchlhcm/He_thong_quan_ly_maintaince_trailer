@@ -55,7 +55,7 @@ export interface QuanLyVoXe {
   id_xe: string | null; // refers to vehicles.id
   vi_tri_lap: string | null;
   tinh_trang_gai: number | null;
-  trang_thai_vo: 'Đang chạy' | 'Chờ đắp' | 'Thanh lý' | null;
+  trang_thai_vo: 'Đang chạy' | 'Chưa lắp' | 'Thanh lý' | null;
   serial_photo_url?: string | null;
   tread_condition_photo_url?: string | null;
   /** DOT manufacture date code: WWYYY format (e.g. "3125" = week 31, year 2025) */

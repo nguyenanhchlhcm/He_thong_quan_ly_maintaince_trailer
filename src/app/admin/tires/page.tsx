@@ -39,7 +39,7 @@ export default function TiresPage() {
   }, [fetchTires])
 
   const runningTires = tires.filter(t => t.trang_thai_vo === 'Đang chạy').length
-  const retreadTires = tires.filter(t => t.trang_thai_vo === 'Chờ đắp').length
+  const retreadTires = tires.filter(t => t.trang_thai_vo === 'Chưa lắp').length
   const scrappedTires = tires.filter(t => t.trang_thai_vo === 'Thanh lý').length
 
   const handleDeleteTire = async (id: string) => {
@@ -97,7 +97,7 @@ export default function TiresPage() {
               <RefreshCw className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-400">Chờ đắp</p>
+              <p className="text-sm font-medium text-slate-400">Chưa lắp</p>
               <h3 className="text-2xl font-bold text-slate-100">{retreadTires}</h3>
             </div>
           </CardContent>

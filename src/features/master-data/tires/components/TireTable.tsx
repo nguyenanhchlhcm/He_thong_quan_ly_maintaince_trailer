@@ -32,7 +32,7 @@ export function TireTable({ data, onEdit, onDelete, onAdd, onRefresh }: TireTabl
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Đang chạy': return 'bg-green-500/10 text-green-500 border-green-500/20'
-      case 'Chờ đắp': return 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+      case 'Chưa lắp': return 'bg-amber-500/10 text-amber-500 border-amber-500/20'
       case 'Thanh lý': return 'bg-red-500/10 text-red-500 border-red-500/20'
       default: return 'bg-slate-500/10 text-slate-500 border-slate-500/20'
     }

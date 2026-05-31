@@ -51,9 +51,14 @@ export function AssignTireDialog({
   })
 
   const filtered = useMemo(() =>
-    warehouseTires.filter(t =>
-      t.id_vo.toLowerCase().includes(search.toLowerCase())
-    ),
+    warehouseTires.filter(t => {
+      const matchSearch = t.id_vo.toLowerCase().includes(search.toLowerCase())
+      // Trạng thái khả dụng: Chưa lắp, Chờ đắp (tương thích ngược) hoặc trống
+      const isUsableStatus = t.trang_thai_vo === 'Chưa lắp' || t.trang_thai_vo === 'Chờ đắp' || !t.trang_thai_vo
+      // Điều kiện độ sâu gai lốp: lốp mới nhập bãi hoặc lốp cũ còn tốt (> 3 mm)
+      const isGoodCondition = (t.tinh_trang_gai || 0) > 3
+      return matchSearch && isUsableStatus && isGoodCondition
+    }),
     [warehouseTires, search]
   )
 
@@ -163,7 +168,7 @@ export function AssignTireDialog({
 
                   {/* Status badge */}
                   <Badge className="shrink-0 bg-slate-700/50 text-slate-300 border-slate-600 text-[11px]">
-                    {tire.trang_thai_vo || 'Kho'}
+                    {tire.trang_thai_vo === 'Chờ đắp' ? 'Chưa lắp' : (tire.trang_thai_vo || 'Kho')}
                   </Badge>
                 </button>
               )
